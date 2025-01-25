@@ -7,7 +7,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path={endPoints.LOGIN} element={<Login />} />
+      <Route path="/" element={<Navigate to={endPoints.LOGIN} />} />
+        <Route path={endPoints.LOGIN} index element={<Login />} />
         {/* <Route path={endPoints.REGISTER} element={<Register />} /> */}
       </Routes>
     </BrowserRouter>
