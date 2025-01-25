@@ -1,0 +1,11 @@
+.searchFieldsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px; /* Khoảng cách giữa các searchField */
+}
+
+.searchField {
+  flex: 1;
+  min-width: 120px;
+  max-width: 100%;
+}
