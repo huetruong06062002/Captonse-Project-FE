@@ -31,5 +31,5 @@ export default defineConfig({
       },
     },
   },
-  base: './', // Add this line
+  base: '/', // Add this line
 });
