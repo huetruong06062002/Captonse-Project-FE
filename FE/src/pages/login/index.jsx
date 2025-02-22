@@ -13,8 +13,9 @@ const { Title } = Typography;
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { redirectPath } = useSelector((state) => state.auth);
+  const { redirectPath, isLoading } = useSelector((state) => state.auth);
 
+  console.log("isloading", isLoading)
   const onFinish = async (values) => {
     console.log(values);
     try {
@@ -69,6 +70,7 @@ const Login = () => {
               htmlType="submit"
               className="login-form-button"
               size="large"
+              loading={isLoading}
             >
               Đăng nhập
             </Button>

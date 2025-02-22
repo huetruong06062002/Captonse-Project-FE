@@ -29,6 +29,7 @@ const authSlice = createSlice({
     rewardpoints: null,
     role: false,
     refreshToken: null,
+    isLoading: false,
   },
   reducers: {
     logout: (state) => {
