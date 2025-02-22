@@ -4,18 +4,22 @@ import { useSelector } from "react-redux";
 import endPoints from "../routers/router";
 
 const PrivateRoute = ({ allowedRoles }) => {
-  const { accessToken, role, redirectPath } = useSelector(
+  let { accessToken, role, redirectPath } = useSelector(
     (state) => state.auth
   );
   console.log("accessToken", accessToken);
   const location = useLocation();
+
+  if(redirectPath != "Admin" || redirectPath != "Staff"){
+    redirectPath = endPoints.FORBIDDEN;
+  }
 
   if (!accessToken) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (allowedRoles && !allowedRoles.includes(role)) {
-    return <Navigate to={redirectPath || "/login"} replace />;
+    return <Navigate to={redirectPath || "/forbidden"} replace />;
   }
 
   return <Outlet />;
