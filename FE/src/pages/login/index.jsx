@@ -4,29 +4,32 @@ import { Form, Input, Button, message, Typography, Card } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 
-import logo2 from "@assets/logo2.svg";
+import logo from "@assets/logo3.jpg";
 import "./index.css";
+import { login } from '@redux/features/authReducer/authSlice';
 
 const { Title } = Typography;
 
 const Login = () => {
-  // const dispatch = useDispatch();
-  // const navigate = useNavigate();
-  // const { redirectPath } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { redirectPath } = useSelector((state) => state.auth);
 
-  // const onFinish = async (values) => {
-  //   try {
-  //     await dispatch(login(values)).unwrap();
-  //     message.success("Đăng nhập thành công");
-  //     navigate(redirectPath || "/");
-  //   } catch (error) {}
-  // };
+  const onFinish = async (values) => {
+    console.log(values);
+    try {
+      await dispatch(login(values)).unwrap();
+      
+      message.success("Đăng nhập thành công");
+      navigate(redirectPath || "/admin");
+    } catch (error) {}
+  };
 
   return (
     <div className="login-container">
       <Card className="login-card">
         <div className="login-logo-container">
-          <img src={logo2} alt="Logo" className="login-logo" />
+          <img src={logo} style={{width:"10rem", height:"10rem"}} alt="Logo" className="login-logo" />
           <Title level={3} className="login-title">
             Đăng nhập
           </Title>
@@ -35,17 +38,17 @@ const Login = () => {
           name="normal_login"
           className="login-form"
           initialValues={{ remember: true }}
-          // onFinish={onFinish}
+          onFinish={onFinish}
         >
           <Form.Item
-            name="username"
+            name="phoneNumber"
             rules={[
               { required: true, message: "Vui lòng nhập tên đăng nhập!" },
             ]}
           >
             <Input
               prefix={<UserOutlined className="site-form-item-icon" />}
-              placeholder="Tên đăng nhập"
+              placeholder="Số điện thoại"
               size="large"
             />
           </Form.Item>

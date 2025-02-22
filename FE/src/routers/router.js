@@ -1,6 +1,6 @@
 const endPoints = {
   ALL: "/",
-  DASHBOARD: "/dashboard",
+  ADMIN: "/admin",
   LOGIN: "/login",
   REGISTER: "/register",
 };
