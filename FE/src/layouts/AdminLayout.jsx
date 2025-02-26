@@ -22,6 +22,7 @@ import {
   Space,
   theme,
   Tag,
+  Tooltip,
 } from "antd";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
@@ -55,26 +56,12 @@ const AdminLayout = () => {
   useEffect(() => {
     const currentPath = location.pathname;
     let activeKey = currentPath;
-
-    // Check if the current path is a job detail page
-    if (
-      currentPath.startsWith(endPoints.QUANLYCONGVIEC) &&
-      currentPath !== endPoints.QUANLYCONGVIEC
-    ) {
-      activeKey = endPoints.QUANLYCONGVIEC;
-    }
-
     dispatch(setActiveKey(activeKey));
-
-    // Find the parent key if it's a child route
     const parentKey = menuItems.find(
       (item) =>
         item.children && item.children.some((child) => child.key === activeKey)
     )?.key;
-
-    if (parentKey) {
-      dispatch(setOpenKeys([parentKey]));
-    }
+    if (parentKey) dispatch(setOpenKeys([parentKey]));
   }, [location.pathname, dispatch]);
 
   const handleMenuClick = ({ key }) => {
@@ -94,48 +81,64 @@ const AdminLayout = () => {
       allowedRoles: ["Admin"],
     },
     {
-      key: endPoints.QUANLYDUAN,
-      icon: <ScheduleOutlined />,
-      label: "Quản lý dự án",
-      allowedRoles: ["Admin", "Mentor", "Hr", "Intern"],
-    },
-    {
-      key: endPoints.QUANLYINTERN,
+      key: endPoints.QuanLyGiaoNhanHang,
       icon: <TeamOutlined />,
-      label: "Quản lý Intern",
-      allowedRoles: ["Admin", "Hr"],
+      label: "Quản lý giao nhận đơn hàng",
+      allowedRoles: ["Admin"],
       children: [
         {
-          key: `${endPoints.QUANLYINTERN}/${endPoints.DANHSACHINTERN}`,
+          key: `${endPoints.DANH_SACH_TAT_CA_DON_HANG}`,
           icon: <UsergroupAddOutlined />,
-          label: "Danh sách Intern",
+          label: "Danh sách tất cả đơn hàng",
+          allowedRoles: ["Admin", "Hr"],
+        },
+        {
+          key: `${endPoints.DANH_SACH_DON_HANG_KHACH_VUA_DAT}`,
+          icon: <UsergroupAddOutlined />,
+          label: (
+            <Tooltip title="Danh sách đơn hàng khách hàng vừa đặt">
+              Danh sách đơn hàng khách hàng vừa đặt
+            </Tooltip>
+          ),
           allowedRoles: ["Admin", "Hr"],
         },
         {
           key: `${endPoints.QUANLYINTERN}/${endPoints.KYTHUCTAP}`,
           icon: <CalendarOutlined />,
-          label: "Kì thực tập",
+          label: (
+            <Tooltip title="Danh sách đơn hàng nhân viên đã nhận">
+              Danh sách đơn hàng nhân viên đã nhận
+            </Tooltip>
+          ),
+          allowedRoles: ["Admin", "Hr"],
+        },
+        {
+          key: `${endPoints.QUANLYINTERN}/${endPoints.KYTHUCTAP}`,
+          icon: <CalendarOutlined />,
+          label: (
+            <Tooltip title="Danh sách đơn hàng đã giặt xong">
+              Danh sách đơn hàng đã giặt xong
+            </Tooltip>
+          ),
+          allowedRoles: ["Admin", "Hr"],
+        },
+        {
+          key: `${endPoints.QUANLYINTERN}/${endPoints.KYTHUCTAP}`,
+          icon: <CalendarOutlined />,
+          label: (
+            <Tooltip title="Danh sách đơn hàng đã hoàn thành">
+              Danh sách đơn hàng đã hoàn thành
+            </Tooltip>
+          ),
           allowedRoles: ["Admin", "Hr"],
         },
       ],
     },
     {
-      key: endPoints.QUANLYCAUHOI,
-      icon: <QuestionOutlined />,
-      label: "Quản lí câu hỏi",
-      allowedRoles: ["Admin","Mentor" ,"Hr"]
-    },
-    {
-      key: endPoints.QUANLYVITRI,
-      icon: <SettingOutlined />,
-      label: "Quản lý vị trí",
-      allowedRoles: ["Admin", "Hr"],
-    },
-    {
-      key: endPoints.QUANLYCONGVIEC,
-      icon: <SolutionOutlined />,
-      label: "Quản lý công việc",
-      allowedRoles: ["Admin", "Mentor", "Intern"],
+      key: endPoints.QUANLYNGUOIDUNG,
+      icon: <UsergroupAddOutlined />,
+      label: "Quản lý các dịch vụ",
+      allowedRoles: ["Admin"],
     },
     {
       key: endPoints.QUANLYNGUOIDUNG,
@@ -182,7 +185,7 @@ const AdminLayout = () => {
           marginRight: 10,
         }}
         theme="light"
-        width={270}
+        width={300}
       >
         <div style={{ textAlign: "center", padding: "16px" }}>
           <img
@@ -200,6 +203,7 @@ const AdminLayout = () => {
           onClick={handleMenuClick}
           onOpenChange={onOpenChange}
           items={filteredMenuItems}
+          style={{ whiteSpace: "normal" }} // Allow text to wrap
         />
       </Sider>
       <Layout>
@@ -261,7 +265,6 @@ const AdminLayout = () => {
             borderRadius: 20,
           }}
         >
-
           {location.pathname === "/" ? <WelcomeMessage /> : <Outlet />}
         </Content>
       </Layout>
