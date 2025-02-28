@@ -135,7 +135,7 @@ const AdminLayout = () => {
       ],
     },
     {
-      key: endPoints.QUANLYNGUOIDUNG,
+      key: endPoints.SERVICES,
       icon: <UsergroupAddOutlined />,
       label: "Quản lý các dịch vụ",
       allowedRoles: ["Admin"],
