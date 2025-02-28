@@ -1,10 +1,11 @@
 import { Table, Tag, Input } from 'antd';
-import OrderCustomerBooking from "../../../FakeData/data";
+import data from "../../../FakeData/data";
 import React, { useState } from "react";
 
 const { Search } = Input;
 
 function ListAllOrders() {
+  const {OrderCustomerBooking} = data;
   const [filteredData, setFilteredData] = useState(OrderCustomerBooking);
 
   const statusColors = {

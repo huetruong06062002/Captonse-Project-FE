@@ -2,7 +2,7 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { persistStore, persistReducer } from "redux-persist";
 import authReducer from "./features/authReducer/authSlice.js";
 import sidebarReducer from "./features/sidebarMenuSlice.js";
-
+import orderReducer from "./features/orderReducer/orderSlice.js";
 import storage from "redux-persist/lib/storage";
 
 const persistConfig = {
@@ -13,7 +13,8 @@ const persistConfig = {
 
 const rootReducer = combineReducers({
   sidebar: sidebarReducer,
-  auth : authReducer
+  auth : authReducer,
+  order: orderReducer ,
 });
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
