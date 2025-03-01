@@ -116,18 +116,31 @@ const postRequestMultipartFormData = async (url, formData, params = {}) => {
 };
 
 // [PUT] -> multipart/form-data with URL parameters
-const putRequestMultipartFormData = async (url, params, filePayload) => {
+const putRequestMultipartFormData = async (url, params = {}, filePayload) => {
+  console.log("url, params = {}, filePayload |", url, params, filePayload);
   try {
     const formData = new FormData();
 
-    // Only append the file if filePayload is defined and contains FileUpload
-    if (filePayload && filePayload.FileUpload) {
-      formData.append("FileUpload", filePayload.FileUpload);
-    }
-
+    // Chuyển params thành query string nếu có
     const queryParams = serializeParams(params);
     const fullUrl = `${url}?${queryParams}`;
 
+    
+
+    // Append các file và dữ liệu từ filePayload
+    if (filePayload && filePayload.icon) {
+      formData.append("Icon", filePayload.icon);  // Append file nếu có
+    }
+
+    // Nếu params có các tham số khác, thêm chúng vào formData
+    for (const key in params) {
+      if (params[key]) {
+        formData.append(key, params[key]);
+      }
+    }
+
+  
+    // Thực hiện PUT request
     const res = await axiosClientVer2.put(fullUrl, formData, {
       headers: {
         Accept: "application/json, text/plain, */*",

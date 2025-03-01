@@ -1,17 +1,98 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Table, Tag, Button, message, Spin } from "antd";
+import { Table, Button, Input, message, Spin, Form, Modal } from "antd";
 import { IoIosRefresh } from "react-icons/io";
-import { fetchServices } from "../../redux/features/serviceReducer/serviceSlice"; // Import Thunk
+import { fetchServices, addService, deleteService, updateService } from "../../redux/features/serviceReducer/serviceSlice"; // Import Thunks
 import moment from 'moment';
 
 function Services() {
   const dispatch = useDispatch();
   const { services, isLoading, error } = useSelector((state) => state.service); // Lấy dữ liệu từ Redux store
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [name, setName] = useState("");
+  const [icon, setIcon] = useState(null);
+  const [editingService, setEditingService] = useState(null); // State để lưu dịch vụ đang chỉnh sửa
+
   useEffect(() => {
-    // Gọi API khi component mount
     dispatch(fetchServices());
   }, [dispatch]);
+
+  const handleIconChange = (e) => {
+    setIcon(e.target.files[0]);  // Set file icon khi người dùng chọn file
+  };
+
+  const handleSubmit = () => {
+    if (!name || !icon) {
+      message.error("Please provide both name and icon.");
+      return;
+    }
+
+    const newService = {
+      name: name,
+      icon: icon,
+    };
+
+    dispatch(addService(newService))  // Gọi API POST để thêm dịch vụ
+      .then(() => {
+        dispatch(fetchServices());
+        setIsModalVisible(false);  // Đóng Modal sau khi thêm dịch vụ
+        setName("");  // Reset form
+        setIcon(null);  // Reset file input
+      })
+      .catch((error) => {
+        message.error("Failed to add service");
+      });
+  };
+
+  const handleOpenModal = (service = null) => {
+    if (service) {
+      setEditingService(service);  // Nếu chỉnh sửa, đặt dịch vụ vào form
+      setName(service.name);
+    } else {
+      setEditingService(null);
+      setName("");
+      setIcon(null);
+    }
+    setIsModalVisible(true);  // Mở Modal khi bấm nút "Thêm Dịch Vụ"
+  };
+
+  const handleCancelModal = () => {
+    setIsModalVisible(false);  // Đóng Modal khi bấm nút "Cancel"
+  };
+
+  const handleSaveService = () => {
+    if (!name) {
+      message.error("Tên dịch vụ là bắt buộc.");
+      return;
+    }
+
+ 
+
+    dispatch(updateService({ id: editingService.categoryid, updatedService }))
+      .then(() => {
+        setIsModalVisible(false);  // Đóng Modal sau khi cập nhật
+        dispatch(fetchServices());  // Gọi lại API sau khi cập nhật thành công
+        setName("");
+        setIcon(null);
+      })
+      .catch((error) => {
+        message.error("Failed to update service");
+      });
+  };
+
+  const handleDeleteService = (id) => {
+    Modal.confirm({
+      title: 'Bạn có chắc chắn muốn xóa dịch vụ này?',
+      onOk: () => {
+        dispatch(deleteService(id));  // Gọi API DELETE để xóa dịch vụ
+      },
+    });
+  };
+  var updatedService = {
+    name: name,
+    icon: icon || editingService?.icon,  // Giữ nguyên icon cũ nếu không chọn mới
+  };
+
 
   const columns = [
     {
@@ -33,23 +114,72 @@ function Services() {
       key: "createdAt",
       render: (text) => moment(text).format("HH:mm:ss | DD/MM/YYYY"), 
     },
+    {
+      title: "Thao tác",
+      key: "action",
+      render: (_, record) => (
+        <div>
+          <Button
+            onClick={() => handleOpenModal(record)}  // Chỉnh sửa dịch vụ
+            style={{ marginRight: 10 }}
+          >
+            Chỉnh sửa
+          </Button>
+          <Button
+            type="danger"
+            onClick={() => handleDeleteService(record.categoryid)} // Xóa dịch vụ
+          >
+            Xóa
+          </Button>
+        </div>
+      ),
+    },
   ];
-  useEffect(() => {
-    // Gọi API khi component mount
-    dispatch(fetchServices());
-  }, [dispatch]);
-  // Hiển thị khi dữ liệu đang tải
+
   if (isLoading) return <Spin tip="Loading services..." />;
 
-  // Hiển thị thông báo lỗi nếu có
   if (error) {
     message.error(error?.message || "Failed to fetch services");
   }
+
   return (
     <div>
-      <Button type="primary" onClick={() => dispatch(fetchServices())}>
+      <Button type="primary" onClick={() => handleOpenModal()}>
+        Thêm Dịch Vụ
+      </Button>
+      <Button type="primary" onClick={() => dispatch(fetchServices())} style={{ marginLeft: 10 }}>
         <IoIosRefresh />
       </Button>
+
+      {/* Modal Form */}
+      <Modal
+        title={editingService ? "Chỉnh sửa Dịch Vụ" : "Thêm Dịch Vụ"}
+        visible={isModalVisible}
+        onOk={editingService ? handleSaveService : handleSubmit}
+        onCancel={handleCancelModal}
+        okText={editingService ? "Lưu" : "Thêm"}
+        cancelText="Hủy"
+        maskClosable={false}
+      >
+        <Form layout="vertical">
+          <Form.Item label="Tên Dịch Vụ">
+            <Input 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              placeholder="Nhập tên dịch vụ" 
+            />
+          </Form.Item>
+
+          <Form.Item label="Hình Ảnh">
+            <input 
+              type="file" 
+              onChange={handleIconChange} 
+              accept="image/*"
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
       <Table
         columns={columns}
         dataSource={services}
