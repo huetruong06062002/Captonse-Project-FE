@@ -224,4 +224,47 @@ const drivers = [
   },
 ];
 
-export default { OrderCustomerBooking, drivers };
+const staffs = [
+  {
+      "Mã nhân viên": "STAFF6386",
+      "Tên nhân viên": "Nguyễn Văn A",
+      "Số điện thoại": "0925047940"
+  },
+  {
+      "Mã nhân viên": "STAFF9517",
+      "Tên nhân viên": "Hoàng Thị E",
+      "Số điện thoại": "0924999670"
+  },
+  {
+      "Mã nhân viên": "STAFF1709",
+      "Tên nhân viên": "Hoàng Thị E",
+      "Số điện thoại": "0971701999"
+  },
+  {
+      "Mã nhân viên": "STAFF6636",
+      "Tên nhân viên": "Đỗ Văn F",
+      "Số điện thoại": "0994343973"
+  },
+  {
+      "Mã nhân viên": "STAFF4063",
+      "Tên nhân viên": "Vũ Thị G",
+      "Số điện thoại": "0964906429"
+  },
+  {
+      "Mã nhân viên": "STAFF2811",
+      "Tên nhân viên": "Bùi Văn H",
+      "Số điện thoại": "0936299102"
+  },
+  {
+      "Mã nhân viên": "STAFF3118",
+      "Tên nhân viên": "Trần Thị B",
+      "Số điện thoại": "0959890441"
+  },
+  {
+      "Mã nhân viên": "STAFF7731",
+      "Tên nhân viên": "Nguyễn Văn A",
+      "Số điện thoại": "0912421644"
+  }
+]
+
+export default { OrderCustomerBooking, drivers, staffs };

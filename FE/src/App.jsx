@@ -9,6 +9,7 @@ import DashBoard from "@pages/dashboard";
 import OrderBookingCustomer from "@pages/quan-li-giao-nhan-hang/quan-li-don-hang-khach-vua-dat";
 import ListAllOrders from "@pages/quan-li-giao-nhan-hang/danh-sach-tat-ca-don-hang";
 import Services from '@pages/service';
+import QuanLiDonHangDaNhan from '@pages/quan-li-giao-nhan-hang/quan-li-don-hang-da-nhan';
 
 function App() {
   return (
@@ -29,6 +30,10 @@ function App() {
             <Route
               path={endPoints.DANH_SACH_DON_HANG_KHACH_VUA_DAT}
               element={<OrderBookingCustomer />}
+            />
+             <Route
+              path={endPoints.DANH_SACH_DON_HANG_DA_NHAN}
+              element={<QuanLiDonHangDaNhan />}
             />
             <Route path={endPoints.SERVICES} element={<Services />} />
           </Route>

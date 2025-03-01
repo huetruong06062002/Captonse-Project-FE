@@ -100,17 +100,17 @@ const AdminLayout = () => {
               Danh sách đơn hàng khách hàng vừa đặt
             </Tooltip>
           ),
-          allowedRoles: ["Admin", "Hr"],
+          allowedRoles: ["Admin"],
         },
         {
-          key: `${endPoints.QUANLYINTERN}/${endPoints.KYTHUCTAP}`,
+          key: `${endPoints.DANH_SACH_DON_HANG_DA_NHAN}`,
           icon: <CalendarOutlined />,
           label: (
-            <Tooltip title="Danh sách đơn hàng nhân viên đã nhận">
-              Danh sách đơn hàng nhân viên đã nhận
+            <Tooltip title="Danh sách đơn hàng đã nhận">
+              Danh sách đơn hàng đã nhận
             </Tooltip>
           ),
-          allowedRoles: ["Admin", "Hr"],
+          allowedRoles: ["Admin"],
         },
         {
           key: `${endPoints.QUANLYINTERN}/${endPoints.KYTHUCTAP}`,

@@ -24,7 +24,7 @@ function OrderBookingCustomer() {
   const dispatch = useDispatch();
   const orderedChoosen = useSelector((state) => state.order.orderedChoosen);
   const selectedDriver = useSelector((state) => state.order.selectedDriver); // Lấy tài xế đã chọn từ store Redux
-  console.log("current", current);
+  console.log("selectedDriver", selectedDriver);
 
   const steps = [
     {
@@ -165,6 +165,7 @@ function OrderBookingCustomer() {
   };
 
   const rowSelectionDrivers = {
+    selectedRowKeys: selectedDriver ? [selectedDriver.key] : [], // Chỉ chọn 1 nhân viên
     onChange: (selectedRowKeys, selectedRows) => {
       dispatch(setSelectedDriver(selectedRows[0])); // Lưu tài xế đầu tiên được chọn
       console.log(
