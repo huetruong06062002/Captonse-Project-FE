@@ -8,7 +8,7 @@ export const fetchServices = createAsyncThunk(
   "services/fetchServices",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await getRequest("/Service/services");
+      const response = await getRequest("/categories");
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -25,7 +25,7 @@ export const addService = createAsyncThunk(
       formData.append("Name", newService.name);
       formData.append("Icon", newService.icon);  // Icon phải là file (từ input file)
       
-      const response = await postRequestMultipartFormData("/Service/services", formData);
+      const response = await postRequestMultipartFormData("/categories", formData);
 
       // Thêm dịch vụ mới vào state mà không cần gọi lại API
       dispatch(serviceSlice.actions.addServiceToList(response.data)); 
@@ -42,7 +42,7 @@ export const deleteService = createAsyncThunk(
   "services/deleteService",
   async (id, { dispatch, rejectWithValue }) => {
     try {
-      const response = await deleteRequest(`/Service/services${id}`);
+      const response = await deleteRequest(`/categories/${id}`);
       dispatch(serviceSlice.actions.removeService(id)); // Loại bỏ dịch vụ khỏi state
       return response.data;
     } catch (error) {
@@ -54,27 +54,35 @@ export const deleteService = createAsyncThunk(
 export const updateService = createAsyncThunk(
   "services/updateService",
   async ({ id, updatedService }, { dispatch, rejectWithValue }) => {
-    console.log("updatedService", updatedService);  // Kiểm tra dữ liệu truyền vào
     try {
+      // Kiểm tra nếu updatedService không có dữ liệu gì
+      if (!updatedService || (!updatedService.name && !updatedService.icon)) {
+        return rejectWithValue({ message: "Dữ liệu cập nhật không hợp lệ" });
+      }
+
       // Tạo đối tượng FormData
       const formData = new FormData();
       
-      // Append các tham số vào FormData
-      if (updatedService.name) formData.append("Name", updatedService.name);
-      if (updatedService.icon) formData.append("Icon", updatedService.icon);  // Nếu có icon thì thêm vào FormData
+      // Append các tham số vào FormData nếu có
+      formData.append("Name", updatedService.name);
+      formData.append("Icon", updatedService.icon);
 
-      // Truyền formData vào hàm putRequestMultipartFormData
-      const response = await putRequestMultipartFormData(`/Service/services${id}`, {}, formData);
+  
+      // Gọi API PUT với formData
+      const response = await putRequestMultipartFormData(`/categories/${id}`, {}, formData);
 
-      // Cập nhật dịch vụ trong store
-      dispatch(serviceSlice.actions.updateServiceInList(response.data)); 
-      
+      console.log("check response", response);
+      // Cập nhật dữ liệu vào store
+      dispatch(serviceSlice.actions.updateServiceInList(response));
+
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      // Xử lý lỗi trả về từ API
+      console.log("error", error);
+      return rejectWithValue(error.response?.data || { message: "Đã có lỗi xảy ra" });
     }
   }
-);
+)
 
 // Slice cho services
 const serviceSlice = createSlice({
@@ -89,10 +97,11 @@ const serviceSlice = createSlice({
       state.services.push(action.payload);  // Thêm dịch vụ mới vào danh sách
     },
     removeService: (state, action) => {
-      state.services = state.services.filter(service => service.categoryid !== action.payload);  // Loại bỏ dịch vụ
+      state.services = state.services.filter(service => service.categoryId !== action.payload);  // Loại bỏ dịch vụ
     },
     updateServiceInList: (state, action) => {
-      const index = state.services.findIndex(service => service.categoryid === action.payload.categoryid);
+      console.log("check action", action);
+      const index = state.services.findIndex(service => service.categoryId === action.payload.categoryid);
       if (index !== -1) {
         state.services[index] = action.payload;  // Cập nhật dịch vụ trong state
       }

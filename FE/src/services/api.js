@@ -117,6 +117,7 @@ const postRequestMultipartFormData = async (url, formData, params = {}) => {
 
 // [PUT] -> multipart/form-data with URL parameters
 const putRequestMultipartFormData = async (url, params = {}, filePayload) => {
+  
   console.log("url, params = {}, filePayload |", url, params, filePayload);
   try {
     const formData = new FormData();
@@ -139,7 +140,8 @@ const putRequestMultipartFormData = async (url, params = {}, filePayload) => {
       }
     }
 
-  
+    
+    console.log("check ")
     // Thực hiện PUT request
     const res = await axiosClientVer2.put(fullUrl, formData, {
       headers: {

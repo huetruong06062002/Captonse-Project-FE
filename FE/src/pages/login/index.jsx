@@ -16,6 +16,8 @@ const Login = () => {
   const { redirectPath, isLoading } = useSelector((state) => state.auth);
 
   console.log("isloading", isLoading)
+  debugger
+
   const onFinish = async (values) => {
     console.log(values);
     try {
@@ -57,7 +59,7 @@ const Login = () => {
             name="password"
             rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
           >
-            <Input
+            <Input.Password
               prefix={<LockOutlined className="site-form-item-icon" />}
               type="password"
               placeholder="Mật khẩu"
