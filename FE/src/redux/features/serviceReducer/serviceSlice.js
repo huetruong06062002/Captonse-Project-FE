@@ -64,12 +64,13 @@ export const updateService = createAsyncThunk(
       const formData = new FormData();
       
       // Append các tham số vào FormData nếu có
+      console.log("check updatedService", updatedService);
       formData.append("Name", updatedService.name);
       formData.append("Icon", updatedService.icon);
 
   
       // Gọi API PUT với formData
-      const response = await putRequestMultipartFormData(`/categories/${id}`, {}, formData);
+      const response = await putRequestMultipartFormData(`/categories/${id}`, formData, {}, null);
 
       console.log("check response", response);
       // Cập nhật dữ liệu vào store

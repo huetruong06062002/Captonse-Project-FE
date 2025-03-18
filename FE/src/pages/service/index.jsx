@@ -9,6 +9,14 @@ import {
   updateService,
 } from "../../redux/features/serviceReducer/serviceSlice"; // Import Thunks
 import moment from "moment";
+import { IoIosAdd } from "react-icons/io";
+import { RxUpdate } from "react-icons/rx";
+import { FcViewDetails } from "react-icons/fc";
+import { MdOutlineDeleteOutline } from "react-icons/md";
+import { FaSearch } from "react-icons/fa";
+import "./index.css";
+
+const { Search } = Input;
 
 function Services() {
   const dispatch = useDispatch();
@@ -87,8 +95,7 @@ function Services() {
     Modal.confirm({
       title: "Bạn có chắc chắn muốn xóa dịch vụ này?",
       onOk: () => {
-        dispatch(deleteService(id))
-        .then(() => {
+        dispatch(deleteService(id)).then(() => {
           dispatch(fetchServices());
         }); // Gọi API DELETE để xóa dịch vụ
       },
@@ -123,25 +130,33 @@ function Services() {
       title: "Thao tác",
       key: "action",
       render: (_, record) => (
-        <div>
+        <div style={{ display: "flex"}}>
           <Button
             onClick={() => handleOpenModal(record)} // Chỉnh sửa dịch vụ
-            style={{ marginRight: 10 }}
+            style={{border:"none", background:"none" , }}
           >
-            Chỉnh sửa
+            <RxUpdate  style={{color:"orange", width:"20px", height:"20px"}} />
           </Button>
+          <Button style={{border:"none", background:"none"}}>
+            <FcViewDetails style={{ width:"20px", height:"20px"}} />
+          </Button>  
           <Button
             type="danger"
             onClick={() => handleDeleteService(record.categoryId)} // Xóa dịch vụ
+            style={{border:"none", background:"none"}}
           >
-            Xóa
+            <MdOutlineDeleteOutline style={{color:"red", width:"20px", height:"20px"}} />
           </Button>
         </div>
       ),
     },
   ];
 
-  if (isLoading) return <Spin tip="Loading services..." />;
+  if (isLoading) return (
+    <div className="centered-spin">
+      <Spin tip="Loading services..." />
+    </div>
+  );
 
   if (error) {
     message.error(error?.message || "Failed to fetch services");
@@ -149,16 +164,28 @@ function Services() {
 
   return (
     <div>
-      <Button type="primary" onClick={() => handleOpenModal()}>
-        Thêm Dịch Vụ
-      </Button>
-      <Button
-        type="primary"
-        onClick={() => dispatch(fetchServices())}
-        style={{ marginLeft: 10 }}
-      >
-        <IoIosRefresh />
-      </Button>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <Search
+          placeholder="Tìm kiếm dịch vụ"
+          enterButton={<FaSearch />}
+          size="large"
+          style={{ width: "50%" }}
+        />
+
+        <div style={{display:"flex", gap:"10px"}}>
+          <Button
+            type="primary"
+            onClick={() => dispatch(fetchServices())}
+            style={{ marginLeft: 10 }}
+          >
+            <IoIosRefresh />
+          </Button>
+          <Button type="primary" onClick={() => handleOpenModal()}>
+            <IoIosAdd />
+          </Button>
+        </div>
+      </div>
+      <br />
 
       {/* Modal Form */}
       <Modal

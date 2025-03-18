@@ -16,7 +16,7 @@ const Login = () => {
   const { redirectPath, isLoading } = useSelector((state) => state.auth);
 
   console.log("isloading", isLoading)
-  debugger
+
 
   const onFinish = async (values) => {
     console.log(values);

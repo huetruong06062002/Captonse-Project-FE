@@ -116,33 +116,28 @@ const postRequestMultipartFormData = async (url, formData, params = {}) => {
 };
 
 // [PUT] -> multipart/form-data with URL parameters
-const putRequestMultipartFormData = async (url, params = {}, filePayload) => {
-  
-  console.log("url, params = {}, filePayload |", url, params, filePayload);
+const putRequestMultipartFormData = async (url, formData, params = {}, filePayload = null) => {
   try {
-    const formData = new FormData();
+    // Create a new FormData object if it's not passed
+    const data = new FormData();
 
-    // Chuyển params thành query string nếu có
-    const queryParams = serializeParams(params);
-    const fullUrl = `${url}?${queryParams}`;
-
-    
-
-    // Append các file và dữ liệu từ filePayload
-    if (filePayload && filePayload.icon) {
-      formData.append("Icon", filePayload.icon);  // Append file nếu có
+    // Append the file to the formData if filePayload is provided and contains FileUpload
+    if (filePayload && filePayload.FileUpload) {
+      data.append("FileUpload", filePayload.FileUpload);
     }
 
-    // Nếu params có các tham số khác, thêm chúng vào formData
-    for (const key in params) {
-      if (params[key]) {
-        formData.append(key, params[key]);
-      }
+    // Append other form data if necessary
+    for (const [key, value] of Object.entries(formData)) {
+      data.append(key, value);
     }
 
-    
-    console.log("check ")
-    // Thực hiện PUT request
+    // Serialize query parameters
+    const queryParams = new URLSearchParams(params).toString();
+    const fullUrl = queryParams ? `${url}?${queryParams}` : url;
+
+    console.log("fullUrl:", fullUrl);
+    console.log("formData:", data);
+
     const res = await axiosClientVer2.put(fullUrl, formData, {
       headers: {
         Accept: "application/json, text/plain, */*",
@@ -150,12 +145,16 @@ const putRequestMultipartFormData = async (url, params = {}, filePayload) => {
       },
     });
 
+
+
     return res.data;
   } catch (error) {
     console.error("Error in putRequestMultipartFormData:", error);
     throw error;
   }
 };
+
+
 
 export {
   getRequest,
