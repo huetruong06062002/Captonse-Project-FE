@@ -22,12 +22,15 @@ export const ServicesDetail = (props) => {
   const [isAddSubCategoryModalVisible, setAddSubCategoryModalVisible] =
     useState(false);
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(null);
+  const [selectedServicesUpdate, setSelectedServicesUpdate] = useState(null);
+  console.log("selectedServicesUpdate",selectedServicesUpdate);
+
   const [form] = Form.useForm();
 
   const [isOpenCreateServiceLevel1, setIsOpenCreateServiceLevel1] =
     useState(false);
 
-  const handleUpdateServiceLevel1 = () => {
+  const handleCreateServiceLevel1 = () => {
     setAddSubCategoryModalVisible(false);
     setIsOpenCreateServiceLevel1(true);
   };
@@ -36,7 +39,7 @@ export const ServicesDetail = (props) => {
   const onClose = () => {
     setOpenDrawerDetail(false);
   };
-  console.log("servicesDetail", servicesDetail);
+ 
 
   // Hàm lấy dữ liệu chi tiết dịch vụ từ API
   const getServiceDetail = async () => {
@@ -62,12 +65,18 @@ export const ServicesDetail = (props) => {
   }, [openDrawerDetail]);
 
   // Hàm xử lý khi người dùng chọn một subcategory trong Tree
+ 
   const onSelectSubCategory = (selectedKeys, { selected, node }) => {
     if (selected) {
+      console.log("node subCategory", node.subCategory)
       console.log("check node id ", node.key);
+      console.log("selected",selected)
       setSelectedSubCategoryId(node.key); // Lưu ID của subcategory đã chọn
+      setSelectedServicesUpdate(node.subCategory);
+      console.log("servicesDetail", servicesDetail);
       // setAddSubCategoryModalVisible(true); // Mở modal để thêm thông tin dịch vụ cho danh mục con
     }
+   
   };
 
   // Hàm xử lý việc thêm dịch vụ mới cho danh mục con đã chọn
@@ -173,10 +182,11 @@ export const ServicesDetail = (props) => {
             serviceDetailFull={serviceDetailFull}
             onSelectSubCategory={onSelectSubCategory}
             handleAddSubCategory={handleAddSubCategory}
-            handleUpdateServiceLevel1={handleUpdateServiceLevel1}
+            handleCreateServiceLevel1={handleCreateServiceLevel1}
             setAddSubCategoryModalVisible={setAddSubCategoryModalVisible}
             selectedSubCategoryId={selectedSubCategoryId}
             getServiceDetail={getServiceDetail}
+            setSelectedServicesUpdate={setSelectedServicesUpdate}
           />
         )}
       </Drawer>

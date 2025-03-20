@@ -7,10 +7,11 @@ const TreeServicesDetail = ({
   serviceDetailFull,
   onSelectSubCategory,
   onUpdateSubCategory,
-  handleUpdateServiceLevel1,
+  handleCreateServiceLevel1,
   setAddSubCategoryModalVisible,
   selectedSubCategoryId,
-  getServiceDetail
+  getServiceDetail,
+  setSelectedServicesUpdate
 }) => {
   const handleDelete = async () => {
     try {
@@ -58,9 +59,15 @@ const TreeServicesDetail = ({
                 color: "orange",
                 cursor: "pointer",
               }}
+              onClick={() => {
+                onSelectSubCategory([subCategory.subCategoryId], {
+                  selected: true,
+                  node: { subCategory: subCategory },      
+                });               
+              }}
             >
               <Tooltip placement="topLeft" title={"Cập nhật dịch vụ"}>
-                <MdUpdate onClick={() => handleUpdateServiceLevel1()} />
+                <MdUpdate onClick={() => handleCreateServiceLevel1()} />
               </Tooltip>
             </p>
           </div>
