@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Table, Button, Input, message, Spin, Form, Modal } from "antd";
+import {
+  Table,
+  Button,
+  Input,
+  message,
+  Spin,
+  Form,
+  Modal,
+  Tooltip,
+} from "antd";
 import { IoIosRefresh } from "react-icons/io";
 import {
   fetchServices,
@@ -15,6 +24,7 @@ import { FcViewDetails } from "react-icons/fc";
 import { MdOutlineDeleteOutline } from "react-icons/md";
 import { FaSearch } from "react-icons/fa";
 import "./index.css";
+import { ServicesDetail } from "./components/ServicesDetail";
 
 const { Search } = Input;
 
@@ -25,6 +35,8 @@ function Services() {
   const [name, setName] = useState("");
   const [icon, setIcon] = useState(null);
   const [editingService, setEditingService] = useState(null); // State để lưu dịch vụ đang chỉnh sửa
+  const [openDrawerDetail, setOpenDrawerDetail] = useState(false);
+  const [servicesDetail, setServicesDetail] = useState(null);
 
   useEffect(() => {
     dispatch(fetchServices());
@@ -101,6 +113,17 @@ function Services() {
       },
     });
   };
+
+  const handleViewDetail = (record) => {
+    setServicesDetail(record);
+    showDrawer();
+    console.log(record);
+  };
+
+  const showDrawer = () => {
+    setOpenDrawerDetail(true);
+  };
+
   var updatedService = {
     name: name,
     icon: icon || editingService?.icon, // Giữ nguyên icon cũ nếu không chọn mới
@@ -130,33 +153,47 @@ function Services() {
       title: "Thao tác",
       key: "action",
       render: (_, record) => (
-        <div style={{ display: "flex"}}>
+        <div style={{ display: "flex" }}>
           <Button
             onClick={() => handleOpenModal(record)} // Chỉnh sửa dịch vụ
-            style={{border:"none", background:"none" , }}
+            style={{ border: "none", background: "none" }}
           >
-            <RxUpdate  style={{color:"orange", width:"20px", height:"20px"}} />
+            <Tooltip placement="left" title="Cập nhập dịch vụ">
+              <RxUpdate
+                style={{ color: "orange", width: "20px", height: "20px" }}
+              />
+            </Tooltip>
           </Button>
-          <Button style={{border:"none", background:"none"}}>
-            <FcViewDetails style={{ width:"20px", height:"20px"}} />
-          </Button>  
+          <Button
+            style={{ border: "none", background: "none" }}
+            onClick={() => handleViewDetail(record)}
+          >
+            <Tooltip placement="top" title="Xem chi tiết dịch vụ">
+              <FcViewDetails style={{ width: "20px", height: "20px" }} />
+            </Tooltip>
+          </Button>
           <Button
             type="danger"
             onClick={() => handleDeleteService(record.categoryId)} // Xóa dịch vụ
-            style={{border:"none", background:"none"}}
+            style={{ border: "none", background: "none" }}
           >
-            <MdOutlineDeleteOutline style={{color:"red", width:"20px", height:"20px"}} />
+            <Tooltip placement="right" title="Xóa dịch vụ">
+              <MdOutlineDeleteOutline
+                style={{ color: "red", width: "20px", height: "20px" }}
+              />
+            </Tooltip>
           </Button>
         </div>
       ),
     },
   ];
 
-  if (isLoading) return (
-    <div className="centered-spin">
-      <Spin tip="Loading services..." />
-    </div>
-  );
+  if (isLoading)
+    return (
+      <div className="centered-spin">
+        <Spin tip="Loading services..." />
+      </div>
+    );
 
   if (error) {
     message.error(error?.message || "Failed to fetch services");
@@ -164,6 +201,12 @@ function Services() {
 
   return (
     <div>
+      <ServicesDetail
+        openDrawerDetail={openDrawerDetail}
+        setOpenDrawerDetail={setOpenDrawerDetail}
+        showDrawer={showDrawer}
+        servicesDetail={servicesDetail}
+      />
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <Search
           placeholder="Tìm kiếm dịch vụ"
@@ -172,16 +215,20 @@ function Services() {
           style={{ width: "50%" }}
         />
 
-        <div style={{display:"flex", gap:"10px"}}>
+        <div style={{ display: "flex", gap: "10px" }}>
           <Button
             type="primary"
             onClick={() => dispatch(fetchServices())}
             style={{ marginLeft: 10 }}
           >
-            <IoIosRefresh />
+            <Tooltip placement="left" title="Refresh">
+              <IoIosRefresh />
+            </Tooltip>
           </Button>
           <Button type="primary" onClick={() => handleOpenModal()}>
-            <IoIosAdd />
+            <Tooltip placement="right" title="Thêm Dịch Vụ">
+              <IoIosAdd />
+            </Tooltip>
           </Button>
         </div>
       </div>
