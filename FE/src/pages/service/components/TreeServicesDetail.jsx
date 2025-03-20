@@ -1,32 +1,83 @@
 import React from "react";
-import { Tree } from "antd";
+import { message, Popconfirm, Tooltip, Tree } from "antd";
 import { MdUpdate } from "react-icons/md";
+import { LuDelete } from "react-icons/lu";
+import { axiosClientVer2 } from '../../../config/axiosInterceptor';
+const TreeServicesDetail = ({
+  serviceDetailFull,
+  onSelectSubCategory,
+  onUpdateSubCategory,
+  handleUpdateServiceLevel1,
+  setAddSubCategoryModalVisible,
+  selectedSubCategoryId,
+  getServiceDetail
+}) => {
+  const handleDelete = async () => {
+    try {
+      const response = await axiosClientVer2.delete(
+        `/subcategories/${selectedSubCategoryId}`
+      );
+      message.success("Xóa danh mục con thành công");
+      getServiceDetail(); // Lấy lại thông tin sau khi xóa
+    } catch (err) {
+      console.error("Error during delete:", err);
+      message.error("Không thể xóa danh mục con");
+    }
+  };
+  
 
-const TreeServicesDetail = ({ serviceDetailFull, onSelectSubCategory }) => {
+  const handleCancelDelete = (e) => {
+    console.log(e);
+    message.error("Click on No");
+  };
   const renderTreeData = (subCategories) => {
     return subCategories.map((subCategory) => ({
       title: (
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <p
-            style={{
-              color: "#2ecc71",
-              cursor: "pointer", // Thêm con trỏ chuột để cho thấy đây là một phần có thể click
-            }}
-            onClick={() => onSelectSubCategory([subCategory.subCategoryId], { selected: true, node: { key: subCategory.subCategoryId } })}
-          >
-            {subCategory.name}
-          </p>
-          {/* Biểu tượng update không có sự kiện onClick */}
-          <p
-            style={{
-              paddingTop: "4px",
-              fontSize: "1rem",
-              color: "orange",
-              cursor: "pointer",
-            }}
-          >
-            <MdUpdate />
-          </p>
+        <div style={{ display: "flex", gap: "0.25rem" }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <p
+              style={{
+                color: "#2ecc71",
+                cursor: "pointer", // Thêm con trỏ chuột để cho thấy đây là một phần có thể click
+              }}
+              onClick={() => {
+                onSelectSubCategory([subCategory.subCategoryId], {
+                  selected: true,
+                  node: { key: subCategory.subCategoryId },
+                });
+                setAddSubCategoryModalVisible(true);
+              }}
+            >
+              {subCategory.name}
+            </p>
+          </div>
+          {/* Biểu tượng update chỉ có sự kiện onClick */}
+          <div>
+            <p
+              style={{
+                color: "orange",
+                cursor: "pointer",
+              }}
+            >
+              <Tooltip placement="topLeft" title={"Cập nhật dịch vụ"}>
+                <MdUpdate onClick={() => handleUpdateServiceLevel1()} />
+              </Tooltip>
+            </p>
+          </div>
+          <div>
+            <Tooltip placement="topLeft" title={"Xóa dịch vụ"}>
+              <Popconfirm
+                title="Xóa dịch vụ"
+                description="Bạn muốn xóa dịch vụ này"
+                onConfirm={handleDelete}
+                onCancel={handleCancelDelete}
+                okText="Đồng ý"
+                cancelText="Không"
+              >
+                <LuDelete style={{ color: "red" }} />
+              </Popconfirm>
+            </Tooltip>
+          </div>
         </div>
       ),
       key: subCategory.subCategoryId,

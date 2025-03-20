@@ -24,10 +24,19 @@ export const ServicesDetail = (props) => {
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(null);
   const [form] = Form.useForm();
 
+  const [isOpenCreateServiceLevel1, setIsOpenCreateServiceLevel1] =
+    useState(false);
+
+  const handleUpdateServiceLevel1 = () => {
+    setAddSubCategoryModalVisible(false);
+    setIsOpenCreateServiceLevel1(true);
+  };
+
   // Hàm đóng Drawer
   const onClose = () => {
     setOpenDrawerDetail(false);
   };
+  console.log("servicesDetail", servicesDetail);
 
   // Hàm lấy dữ liệu chi tiết dịch vụ từ API
   const getServiceDetail = async () => {
@@ -57,7 +66,7 @@ export const ServicesDetail = (props) => {
     if (selected) {
       console.log("check node id ", node.key);
       setSelectedSubCategoryId(node.key); // Lưu ID của subcategory đã chọn
-      setAddSubCategoryModalVisible(true); // Mở modal để thêm thông tin dịch vụ cho danh mục con
+      // setAddSubCategoryModalVisible(true); // Mở modal để thêm thông tin dịch vụ cho danh mục con
     }
   };
 
@@ -65,36 +74,63 @@ export const ServicesDetail = (props) => {
   const handleAddSubCategory = async (values) => {
     const { Name, Description, Price, Image } = values;
     const formData = new FormData();
-  
+
     // Thêm dữ liệu vào FormData
     formData.append("SubCategoryId", selectedSubCategoryId);
     formData.append("Name", Name);
     formData.append("Description", Description);
     formData.append("Price", +Price);
-    
+
     // Kiểm tra nếu có ảnh được chọn
     if (Image && Image.file) {
       formData.append("Image", Image.file); // Image là đối tượng file khi sử dụng Upload của Ant Design
     }
-  
+
     try {
       setIsLoading(true);
       // Gửi FormData tới API
-      const response = await axiosClientVer2.post("/service-details", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data", // Đảm bảo content type là multipart/form-data
-        },
-      });
+      const response = await axiosClientVer2.post(
+        "/service-details",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data", // Đảm bảo content type là multipart/form-data
+          },
+        }
+      );
       message.success("Dịch vụ đã được thêm thành công");
       setAddSubCategoryModalVisible(false); // Đóng modal sau khi thêm
       getServiceDetail(); // Lấy lại thông tin chi tiết để cập nhật
     } catch (err) {
       message.error("Không thể thêm dịch vụ");
-    } finally{
+    } finally {
       setIsLoading(false);
     }
   };
 
+  const handleCreateServies = async (values) => {
+    const { name } = values;
+    console.log("values", values);
+    try {
+      setIsLoading(true);
+      const response = await axiosClientVer2.post("/subcategories", {
+        categoryId: servicesDetail.categoryId,
+        name: name,
+      });
+  
+      message.success("Dịch vụ đã được tạo thành công!");
+      console.log(response.data);
+  
+      setIsOpenCreateServiceLevel1(false); // Đóng modal sau khi tạo dịch vụ
+      getServiceDetail(); // Lấy lại chi tiết dịch vụ
+    } catch (error) {
+      message.error("Đã xảy ra lỗi khi tạo dịch vụ");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   return (
     <>
       <Drawer
@@ -110,14 +146,14 @@ export const ServicesDetail = (props) => {
         placement={"right"}
         onClose={onClose}
         open={openDrawerDetail}
-        width={1000}
+        width={1200}
         extra={
           <Space>
             <Button
               type="primary"
-              onClick={() => setAddSubCategoryModalVisible(true)}
+              onClick={() => setIsOpenCreateServiceLevel1(true)}
             >
-              Thêm dịch vụ con cho danh mục 
+              Thêm dịch vụ con cho danh mục
             </Button>
             <Button
               style={{ background: "red", color: "white" }}
@@ -136,9 +172,49 @@ export const ServicesDetail = (props) => {
           <TreeServicesDetail
             serviceDetailFull={serviceDetailFull}
             onSelectSubCategory={onSelectSubCategory}
+            handleAddSubCategory={handleAddSubCategory}
+            handleUpdateServiceLevel1={handleUpdateServiceLevel1}
+            setAddSubCategoryModalVisible={setAddSubCategoryModalVisible}
+            selectedSubCategoryId={selectedSubCategoryId}
+            getServiceDetail={getServiceDetail}
           />
         )}
       </Drawer>
+
+      {/*Modal tạo services cấp 1  */}
+      <Modal
+        title="Tạo Dịch Vụ"
+        open={isOpenCreateServiceLevel1}
+        onCancel={() => {
+          setIsOpenCreateServiceLevel1(false);
+        }}
+        footer={null} // Ẩn footer mặc định
+      >
+        <Form
+          form={form} // Liên kết với form
+          name="service-form"
+          onFinish={handleCreateServies} // Đảm bảo chỉ sử dụng onFinish
+        >
+          <Form.Item
+            label="Tên Dịch Vụ"
+            name="name"
+            rules={[{ required: true, message: "Vui lòng nhập tên dịch vụ!" }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit" // Chỉ cần sử dụng htmlType="submit"
+              loading={isLoading}
+              style={{ marginLeft: "70%" }}
+            >
+              Tạo Dịch Vụ
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
 
       {/* Modal thêm dịch vụ vào danh mục con */}
       <Modal
