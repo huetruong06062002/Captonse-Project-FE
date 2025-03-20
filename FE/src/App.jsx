@@ -10,13 +10,13 @@ import OrderBookingCustomer from "@pages/quan-li-giao-nhan-hang/quan-li-don-hang
 import ListAllOrders from "@pages/quan-li-giao-nhan-hang/danh-sach-tat-ca-don-hang";
 import Services from '@pages/service';
 import QuanLiDonHangDaNhan from '@pages/quan-li-giao-nhan-hang/quan-li-don-hang-da-nhan';
+import Users from '@pages/user';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to={endPoints.LOGIN} replace />} />
-
         {/* Định nghĩa PrivateRoute chỉ cho phép Admin & Staff truy cập */}
         <Route element={<PrivateRoute allowedRoles={["Admin", "Staff"]} />}>
           <Route path={endPoints.ADMIN} element={<AdminLayout />}>
@@ -36,6 +36,7 @@ function App() {
               element={<QuanLiDonHangDaNhan />}
             />
             <Route path={endPoints.SERVICES} element={<Services />} />
+            <Route path={endPoints.USERS} element={<Users />} />
           </Route>
         </Route>
 

@@ -141,7 +141,7 @@ const AdminLayout = () => {
       allowedRoles: ["Admin"],
     },
     {
-      key: endPoints.QUANLYNGUOIDUNG,
+      key: endPoints.USERS,
       icon: <UsergroupAddOutlined />,
       label: "Quản lý người dùng",
       allowedRoles: ["Admin"],

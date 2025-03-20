@@ -2,7 +2,7 @@ import React from "react";
 import { message, Popconfirm, Tooltip, Tree } from "antd";
 import { MdUpdate } from "react-icons/md";
 import { LuDelete } from "react-icons/lu";
-import { axiosClientVer2 } from '../../../config/axiosInterceptor';
+import { axiosClientVer2 } from "../../../config/axiosInterceptor";
 const TreeServicesDetail = ({
   serviceDetailFull,
   onSelectSubCategory,
@@ -10,7 +10,7 @@ const TreeServicesDetail = ({
   selectedSubCategoryId,
   getServiceDetail,
   setIsOpenUpdateServiceLevel1,
-  onSelectSubCategoryToUpdate
+  onSelectSubCategoryToUpdate,
 }) => {
   const handleDelete = async () => {
     try {
@@ -24,7 +24,6 @@ const TreeServicesDetail = ({
       message.error("Không thể xóa danh mục con");
     }
   };
-  
 
   const handleCancelDelete = (e) => {
     console.log(e);
@@ -48,7 +47,9 @@ const TreeServicesDetail = ({
                 setAddSubCategoryModalVisible(true);
               }}
             >
-              {subCategory.name}
+              <Tooltip placement="right" title={"Thêm dịch vụ"} style={{marginTop:"2rem"}}>
+                {subCategory.name}
+              </Tooltip>
             </p>
           </div>
           {/* Biểu tượng update chỉ có sự kiện onClick */}
@@ -61,7 +62,7 @@ const TreeServicesDetail = ({
               onClick={() => {
                 onSelectSubCategoryToUpdate([subCategory], {
                   selected: true,
-                  node: { item: subCategory},
+                  node: { item: subCategory },
                 });
               }}
             >
