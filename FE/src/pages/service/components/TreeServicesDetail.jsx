@@ -6,12 +6,11 @@ import { axiosClientVer2 } from '../../../config/axiosInterceptor';
 const TreeServicesDetail = ({
   serviceDetailFull,
   onSelectSubCategory,
-  onUpdateSubCategory,
-  handleCreateServiceLevel1,
   setAddSubCategoryModalVisible,
   selectedSubCategoryId,
   getServiceDetail,
-  setSelectedServicesUpdate
+  setIsOpenUpdateServiceLevel1,
+  onSelectSubCategoryToUpdate
 }) => {
   const handleDelete = async () => {
     try {
@@ -34,7 +33,7 @@ const TreeServicesDetail = ({
   const renderTreeData = (subCategories) => {
     return subCategories.map((subCategory) => ({
       title: (
-        <div style={{ display: "flex", gap: "0.25rem" }}>
+        <div style={{ display: "flex", gap: "0.25rem", fontSize: "1rem" }}>
           <div style={{ display: "flex", alignItems: "center" }}>
             <p
               style={{
@@ -60,14 +59,14 @@ const TreeServicesDetail = ({
                 cursor: "pointer",
               }}
               onClick={() => {
-                onSelectSubCategory([subCategory.subCategoryId], {
+                onSelectSubCategoryToUpdate([subCategory], {
                   selected: true,
-                  node: { subCategory: subCategory },      
-                });               
+                  node: { item: subCategory},
+                });
               }}
             >
               <Tooltip placement="topLeft" title={"Cập nhật dịch vụ"}>
-                <MdUpdate onClick={() => handleCreateServiceLevel1()} />
+                <MdUpdate onClick={() => setIsOpenUpdateServiceLevel1(true)} />
               </Tooltip>
             </p>
           </div>

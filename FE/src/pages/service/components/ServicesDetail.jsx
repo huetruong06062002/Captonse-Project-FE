@@ -8,10 +8,12 @@ import {
   Input,
   Drawer,
   Upload,
+  Tooltip,
 } from "antd";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import TreeServicesDetail from "./TreeServicesDetail";
 import { axiosClientVer2 } from "../../../config/axiosInterceptor";
+import { IoIosRefresh } from 'react-icons/io';
 
 export const ServicesDetail = (props) => {
   const { openDrawerDetail, setOpenDrawerDetail, servicesDetail } = props;
@@ -22,12 +24,17 @@ export const ServicesDetail = (props) => {
   const [isAddSubCategoryModalVisible, setAddSubCategoryModalVisible] =
     useState(false);
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(null);
-  const [selectedServicesUpdate, setSelectedServicesUpdate] = useState(null);
-  console.log("selectedServicesUpdate",selectedServicesUpdate);
+  const [selectedServicesUpdate, setSelectedServicesUpdate] = useState("");
+  const [selectedServicesUpdateId, setSelectedServicesUpdateId] = useState("");
+
+  const firstRender = useRef(true);
 
   const [form] = Form.useForm();
 
   const [isOpenCreateServiceLevel1, setIsOpenCreateServiceLevel1] =
+    useState(false);
+
+  const [isOpenUpdateServiceLevel1, setIsOpenUpdateServiceLevel1] =
     useState(false);
 
   const handleCreateServiceLevel1 = () => {
@@ -39,7 +46,6 @@ export const ServicesDetail = (props) => {
   const onClose = () => {
     setOpenDrawerDetail(false);
   };
- 
 
   // Hàm lấy dữ liệu chi tiết dịch vụ từ API
   const getServiceDetail = async () => {
@@ -62,21 +68,48 @@ export const ServicesDetail = (props) => {
     if (openDrawerDetail) {
       getServiceDetail();
     }
+    console.log("selectedServicesUpdate", selectedServicesUpdate);
   }, [openDrawerDetail]);
 
+  console.log("selectedServicesUpdate", selectedServicesUpdate);
   // Hàm xử lý khi người dùng chọn một subcategory trong Tree
- 
+
   const onSelectSubCategory = (selectedKeys, { selected, node }) => {
     if (selected) {
-      console.log("node subCategory", node.subCategory)
-      console.log("check node id ", node.key);
-      console.log("selected",selected)
-      setSelectedSubCategoryId(node.key); // Lưu ID của subcategory đã chọn
-      setSelectedServicesUpdate(node.subCategory);
+      console.log("node", node);
+      // console.log("node subCategory", node.subCategory)
+      // console.log("check node id ", node.key);
+      // console.log("selected",selected)
+      setSelectedSubCategoryId(node.key);
       console.log("servicesDetail", servicesDetail);
       // setAddSubCategoryModalVisible(true); // Mở modal để thêm thông tin dịch vụ cho danh mục con
     }
-   
+  };
+
+  useEffect(() => {
+    if (selectedServicesUpdate) {
+      form.setFieldsValue({ name: selectedServicesUpdate });
+    }
+  }, [selectedServicesUpdate, form]); // Update form mỗi khi selectedServicesUpdate thay đổi
+
+  const onSelectSubCategoryToUpdate = (selectedKeys, { selected, node }) => {
+    if (selected) {
+      console.log("node", node);
+      // console.log("node subCategory", node.subCategory)
+      // console.log("check node id ", node.key);
+      // console.log("selected",selected)
+      setSelectedServicesUpdate(node.item.name);
+      setSelectedServicesUpdateId(node.item.subCategoryId);
+      setIsOpenUpdateServiceLevel1(true); // Mở modal sau khi giá trị đã được set
+      console.log("servicesDetail", servicesDetail);
+      // setAddSubCategoryModalVisible(true); // Mở modal để thêm thông tin dịch vụ cho danh mục con
+    }
+  };
+
+  const handleCancelUpdate = () => {
+    setIsOpenUpdateServiceLevel1(false);
+    form.resetFields();
+    setSelectedServicesUpdate(""); // Reset selectedServicesUpdate sau khi đóng modal
   };
 
   // Hàm xử lý việc thêm dịch vụ mới cho danh mục con đã chọn
@@ -109,7 +142,7 @@ export const ServicesDetail = (props) => {
       );
       message.success("Dịch vụ đã được thêm thành công");
       setAddSubCategoryModalVisible(false); // Đóng modal sau khi thêm
-      getServiceDetail(); // Lấy lại thông tin chi tiết để cập nhật
+      await getServiceDetail(); // Lấy lại thông tin chi tiết để cập nhật
     } catch (err) {
       message.error("Không thể thêm dịch vụ");
     } finally {
@@ -126,10 +159,10 @@ export const ServicesDetail = (props) => {
         categoryId: servicesDetail.categoryId,
         name: name,
       });
-  
+
       message.success("Dịch vụ đã được tạo thành công!");
       console.log(response.data);
-  
+
       setIsOpenCreateServiceLevel1(false); // Đóng modal sau khi tạo dịch vụ
       getServiceDetail(); // Lấy lại chi tiết dịch vụ
     } catch (error) {
@@ -139,7 +172,38 @@ export const ServicesDetail = (props) => {
       setIsLoading(false);
     }
   };
-  
+
+  console.log("selectedServicesUpdateId", selectedServicesUpdateId);
+
+  const handleUpdateServices = (values) => {
+    const { name } = values;
+    console.log("values", values);
+    try {
+      setIsLoading(true);
+      const response = axiosClientVer2.put(
+        `/subcategories/${selectedServicesUpdateId}`,
+        {
+          name: name,
+        }
+      );
+
+      message.success("Dịch vụ đã được cập nhật thành công!");
+      console.log(response.data);
+
+      setIsOpenUpdateServiceLevel1(false); // Đóng modal sau khi tạo dịch vụ
+    } catch (error) {
+      message.error("Đã xảy ra lỗi khi cập nhật dịch vụ");
+      console.error(error);
+    } finally {
+      getServiceDetail(); // Lấy lại chi tiết dịch vụ// Lấy lại chi tiết dịch vụ
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // setSelectedServicesUpdate("");
+  }, [selectedServicesUpdate, form]);
+
   return (
     <>
       <Drawer
@@ -158,6 +222,11 @@ export const ServicesDetail = (props) => {
         width={1200}
         extra={
           <Space>
+            <Button type="primary" onClick={() => getServiceDetail()}>
+              <Tooltip placement="left" title="Refresh">
+                <IoIosRefresh />
+              </Tooltip>
+            </Button>
             <Button
               type="primary"
               onClick={() => setIsOpenCreateServiceLevel1(true)}
@@ -187,6 +256,8 @@ export const ServicesDetail = (props) => {
             selectedSubCategoryId={selectedSubCategoryId}
             getServiceDetail={getServiceDetail}
             setSelectedServicesUpdate={setSelectedServicesUpdate}
+            setIsOpenUpdateServiceLevel1={setIsOpenUpdateServiceLevel1}
+            onSelectSubCategoryToUpdate={onSelectSubCategoryToUpdate}
           />
         )}
       </Drawer>
@@ -221,6 +292,44 @@ export const ServicesDetail = (props) => {
               style={{ marginLeft: "70%" }}
             >
               Tạo Dịch Vụ
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/*Modal update services cấp 1  */}
+      <Modal
+        title="Cập Nhật Dịch Vụ"
+        open={isOpenUpdateServiceLevel1}
+        onCancel={handleCancelUpdate}
+        footer={null} // Ẩn footer mặc định
+      >
+        <Form
+          form={form} // Liên kết với form
+          name="service-form"
+          onFinish={handleUpdateServices} // Đảm bảo chỉ sử dụng onFinish
+          initialValues={{ name: selectedServicesUpdate }}
+        >
+          <Form.Item
+            label="Tên Dịch Vụ "
+            name="name"
+            rules={[{ required: true, message: "Vui lòng nhập tên dịch vụ!" }]}
+          >
+            <Input
+              value={selectedServicesUpdate}
+              onChange={(e) => setSelectedServicesUpdate(e.target.value)}
+              placeholder="Nhập tên dịch vụ"
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit" // Chỉ cần sử dụng htmlType="submit"
+              loading={isLoading}
+              style={{ marginLeft: "70%" }}
+            >
+              Cập nhật
             </Button>
           </Form.Item>
         </Form>
