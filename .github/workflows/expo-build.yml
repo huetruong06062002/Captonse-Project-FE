@@ -26,6 +26,10 @@ jobs:
       - name: Change directory to StaffApp
         run: cd StaffApp 
 
+      #Kiểm tra lại các tệp trong thư mục StaffApp sau khi di chuyển
+      - name: List files in StaffApp
+        run: ls  # Liệt kê các tệp trong thư mục StaffApp sau khi di chuyển  
+
    
   
 
