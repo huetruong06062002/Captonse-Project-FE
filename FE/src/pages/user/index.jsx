@@ -214,8 +214,8 @@ function Users() {
             </Select>
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit">
-              Update
+            <Button type="primary" htmlType="submit" isLoading={isLoading}>
+               {isLoading ? "Cập nhật" : "Đang cập nhật"}
             </Button>
           </Form.Item>
         </Form>
