@@ -15,12 +15,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Di chuyển vào thư mục StaffApp
-      - name: Change directory to StaffApp
-        run: cd Captonse-Project-FE/StaffApp  
+
+      - name: List files in the directory
+        run: ls  # Liệt kê các tệp trong thư mục hiện tại
 
       - name: Check current directory
         run: pwd
+
+      # Di chuyển vào thư mục StaffApp
+      - name: Change directory to StaffApp
+        run: cd Captonse-Project/StaffApp 
+
+   
   
 
       # Thiết lập Node.js với phiên bản 20
