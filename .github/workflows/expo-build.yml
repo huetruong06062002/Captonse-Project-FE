@@ -17,7 +17,7 @@ jobs:
 
       # Di chuyển vào thư mục StaffApp
       - name: Change directory to StaffApp
-        run: cd StaffApp
+        run: cd Captonse-Project-FE/StaffApp  
 
       - name: Check current directory
         run: pwd
