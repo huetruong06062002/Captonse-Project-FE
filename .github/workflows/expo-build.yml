@@ -1,0 +1,39 @@
+name: Expo Build and Deploy
+
+on:
+  push:
+    branches:
+      - main  # Chạy khi có thay đổi trên nhánh main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'  # Sử dụng Node.js phiên bản 20
+
+      - name: Install dependencies
+        run: |
+          npm install -g eas-cli
+          npm install
+
+      - name: Auto increment versionCode
+        run: |
+          VERSION_CODE=$(jq '.expo.android.versionCode + 1' app.json)
+          VERSION=$(jq '.expo.version' app.json)
+          jq --arg v "$VERSION" --argjson code "$VERSION_CODE" '.expo.versionCode = $code | .expo.version = $v' app.json > temp.json && mv temp.json app.json
+
+      - name: Login to Expo
+        run: eas login --token ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Android app
+        run: eas build -p android --non-interactive  # Tạo APK cho Android
+
+      - name: Build iOS app
+        run: eas build -p ios --non-interactive  # Tạo build cho iOS
