@@ -24,7 +24,7 @@ jobs:
 
       # Di chuyển vào thư mục StaffApp
       - name: Change directory to StaffApp
-        run: cd /StaffApp 
+        run: cd StaffApp 
 
    
   
@@ -54,8 +54,4 @@ jobs:
 
       # Build Android app (có thể thay thế thành APK hoặc AAB nếu cần)
       - name: Build Android app
-        run: eas build -p android --non-interactive
-
-      # Build iOS app (nếu cần)
-      - name: Build iOS app
-        run: eas build -p ios --non-interactive
+        run: eas build -p android --profile production
