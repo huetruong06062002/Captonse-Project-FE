@@ -10,30 +10,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout mã nguồn từ GitHub
       - name: Checkout code
         uses: actions/checkout@v2
 
+      # Di chuyển vào thư mục StaffApp
+      - name: Change directory to StaffApp
+        run: cd StaffApp
+
+      # Thiết lập Node.js với phiên bản 20
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '20'  # Sử dụng Node.js phiên bản 20
 
+      # Cài đặt các phụ thuộc cho dự án
       - name: Install dependencies
         run: |
           npm install -g eas-cli
           npm install
 
+      # Đăng nhập vào Expo bằng token (cần thêm token vào GitHub secrets)
+      - name: Login to Expo
+        run: eas login --token ${{ secrets.EXPO_TOKEN }}
+
+      # Tự động tăng versionCode trong app.json
       - name: Auto increment versionCode
         run: |
           VERSION_CODE=$(jq '.expo.android.versionCode + 1' app.json)
           VERSION=$(jq '.expo.version' app.json)
-          jq --arg v "$VERSION" --argjson code "$VERSION_CODE" '.expo.versionCode = $code | .expo.version = $v' app.json > temp.json && mv temp.json app.json
+          jq --argjson code "$VERSION_CODE" '.expo.android.versionCode = $code' app.json > temp.json && mv temp.json app.json
 
-      - name: Login to Expo
-        run: eas login --token ${{ secrets.EXPO_TOKEN }}
-
+      # Build Android app (có thể thay thế thành APK hoặc AAB nếu cần)
       - name: Build Android app
-        run: eas build -p android --non-interactive  # Tạo APK cho Android
+        run: eas build -p android --non-interactive
 
+      # Build iOS app (nếu cần)
       - name: Build iOS app
-        run: eas build -p ios --non-interactive  # Tạo build cho iOS
+        run: eas build -p ios --non-interactive
