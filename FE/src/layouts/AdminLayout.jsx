@@ -134,10 +134,17 @@ const AdminLayout = () => {
         },
       ],
     },
+
     {
       key: endPoints.SERVICES,
       icon: <UsergroupAddOutlined />,
       label: "Quản lý các dịch vụ",
+      allowedRoles: ["Admin"],
+    },
+    {
+      key: endPoints.EXTRACATEGORIES,
+      icon: <UsergroupAddOutlined />,
+      label: "Quản lý dịch vụ thêm",
       allowedRoles: ["Admin"],
     },
     {

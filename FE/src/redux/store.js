@@ -4,7 +4,7 @@ import authReducer from "./features/authReducer/authSlice.js";
 import sidebarReducer from "./features/sidebarMenuSlice.js";
 import orderReducer from "./features/orderReducer/orderSlice.js";
 import serviceReducer from "./features/serviceReducer/serviceSlice.js";
-
+import extraCategoriesReducer from "./features/extraCategoryReducer/extraCategoryReducer.js"; 
 
 import storage from "redux-persist/lib/storage";
 
@@ -19,6 +19,7 @@ const rootReducer = combineReducers({
   auth : authReducer,
   order: orderReducer ,
   service: serviceReducer, 
+  extraCategories: extraCategoriesReducer,
 });
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 

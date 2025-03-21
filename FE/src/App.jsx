@@ -11,6 +11,8 @@ import ListAllOrders from "@pages/quan-li-giao-nhan-hang/danh-sach-tat-ca-don-ha
 import Services from '@pages/service';
 import QuanLiDonHangDaNhan from '@pages/quan-li-giao-nhan-hang/quan-li-don-hang-da-nhan';
 import Users from '@pages/user';
+import ExtraService from '@pages/extra-categories';
+import ExtraCategories from '@pages/extra-categories';
 
 function App() {
   return (
@@ -36,6 +38,8 @@ function App() {
               element={<QuanLiDonHangDaNhan />}
             />
             <Route path={endPoints.SERVICES} element={<Services />} />
+            <Route path={endPoints.EXTRACATEGORIES} element={<ExtraCategories />} />
+
             <Route path={endPoints.USERS} element={<Users />} />
           </Route>
         </Route>

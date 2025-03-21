@@ -34,6 +34,9 @@ jobs:
       - name: Change directory to StaffApp
         run: cd StaffApp 
 
+      - name: Check if package.json exists in StaffApp
+        run: ls /home/runner/work/Captonse-Project-FE/StaffApp  # Kiểm tra lại thư mục
+
            #Kiểm tra lại các tệp trong thư mục StaffApp sau khi di chuyển
       - name: List files in StaffApp
         run: ls  # Liệt kê các tệp trong thư mục StaffApp sau khi di chuyển  
