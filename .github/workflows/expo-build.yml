@@ -10,9 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check current directory
-        run: pwd
-
+     
       # Checkout mã nguồn từ GitHub
       - name: Checkout code
         uses: actions/checkout@v2
@@ -20,6 +18,10 @@ jobs:
       # Di chuyển vào thư mục StaffApp
       - name: Change directory to StaffApp
         run: cd StaffApp
+
+      - name: Check current directory
+        run: pwd
+  
 
       # Thiết lập Node.js với phiên bản 20
       - name: Set up Node.js
