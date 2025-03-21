@@ -34,7 +34,7 @@ const Login = () => {
         <div className="login-logo-container">
           <img src={logo} style={{width:"10rem", height:"10rem"}} alt="Logo" className="login-logo" />
           <Title level={3} className="login-title">
-            Đăng nhập
+            Đăng nhập 123
           </Title>
         </div>
         <Form
