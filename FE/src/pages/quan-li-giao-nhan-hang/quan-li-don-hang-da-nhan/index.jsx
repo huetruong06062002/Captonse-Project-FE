@@ -25,7 +25,7 @@ function QuanLiDonHangDaNhan() {
     const dispatch = useDispatch();
     const orderedChoosenReceivered = useSelector((state) => state.order.orderedChoosenReceivered);
     const selectedStaff = useSelector((state) => state.order.selectedStaff); // Lấy tài xế đã chọn từ store Redux
-    console.log("current", current);
+  
   
     const steps = [
       {
@@ -160,7 +160,7 @@ function QuanLiDonHangDaNhan() {
       },
     ];
   
-    console.log("orderedChoosenReceivered", orderedChoosenReceivered);
+  
     const rowSelectionOrders = {
       selectedRowKeys: orderedChoosenReceivered.map((order) => order.ID), // Giữ các đơn hàng đã chọn
       onChange: (selectedRowKeys, selectedRows) => {

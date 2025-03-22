@@ -7,7 +7,7 @@ const PrivateRoute = ({ allowedRoles }) => {
   let { accessToken, role, redirectPath } = useSelector(
     (state) => state.auth
   );
-  console.log("accessToken", accessToken);
+
   const location = useLocation();
 
   if(redirectPath != "Admin" || redirectPath != "Staff"){

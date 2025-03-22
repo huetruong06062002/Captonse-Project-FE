@@ -5,6 +5,8 @@ import sidebarReducer from "./features/sidebarMenuSlice.js";
 import orderReducer from "./features/orderReducer/orderSlice.js";
 import serviceReducer from "./features/serviceReducer/serviceSlice.js";
 import extraCategoriesReducer from "./features/extraCategoryReducer/extraCategoryReducer.js"; 
+import extraReducer from "./features/extraCategoryReducer/extraReducer.js"; 
+
 
 import storage from "redux-persist/lib/storage";
 
@@ -20,6 +22,7 @@ const rootReducer = combineReducers({
   order: orderReducer ,
   service: serviceReducer, 
   extraCategories: extraCategoriesReducer,
+  extra : extraReducer
 });
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 

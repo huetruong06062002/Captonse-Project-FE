@@ -15,11 +15,11 @@ const Login = () => {
   const navigate = useNavigate();
   const { redirectPath, isLoading } = useSelector((state) => state.auth);
 
-  console.log("isloading", isLoading)
+
 
 
   const onFinish = async (values) => {
-    console.log(values);
+  
     try {
       await dispatch(login(values)).unwrap();
       

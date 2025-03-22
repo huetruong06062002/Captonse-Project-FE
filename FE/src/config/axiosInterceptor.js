@@ -30,7 +30,7 @@ async function refreshToken() {
       refreshToken: refreshToken,
     });
 
-    console.log("check response", response);
+ 
 
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } = response.data.data;
 
@@ -75,7 +75,7 @@ axiosClientVer2.interceptors.response.use(
 
     // 📌 Xử lý thông báo lỗi từ API
     const { status, data } = response;
-    const errorMessage = data?.errorMessage || "Lỗi không xác định";
+    const errorMessage = data?.errorMessage || "Có lỗi xảy ra";
     if ([400, 401, 403, 404, 405, 409].includes(status)) {
       message.error(errorMessage);
     }
