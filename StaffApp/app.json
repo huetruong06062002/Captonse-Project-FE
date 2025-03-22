@@ -1,23 +1,22 @@
 {
   "expo": {
-    "name": "StaffApp",
-    "slug": "StaffApp",
+    "name": "TestApp",
+    "slug": "ecoLaundry",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourname.staffapp",
-      "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "This app uses the camera for scanning."
+        "NSCameraUsageDescription": "This app uses the camera to let you take profile photos.",
+        "NSPhotoLibraryUsageDescription": "This app uses your photo library to let you select profile photos."
       }
     },
     "android": {
@@ -25,17 +24,45 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.yourname.staffapp",
-      "versionCode": 1,
-      "permissions": ["CAMERA", "ACCESS_FINE_LOCATION"]
+      "package": "com.thanhblue.ecoLaundry",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "21c9b22c-6a95-4f87-bca2-9cb458afc831"
+        "projectId": "6948105e-3efd-4ca9-abb3-ef61a774fadb"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow EcoLaundry to use your location.",
+          "locationWhenInUsePermission": "Show current location on map."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "This app requires access to your photos to set profile pictures.",
+          "cameraPermission": "This app requires camera access to take profile pictures."
+        }
+      ],
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsVersion": "11.8.0",
+          "RNMapboxMapsDownloadToken": "sk.eyJ1IjoidGhhbmhidCIsImEiOiJjbThndGMxZ2cwdXM3MnJxdHpiYzl4dHo1In0.uv1rxBJQA1KLrWW5VEe17Q"
+        }
+      ]
+    ]
   }
 }
