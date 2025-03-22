@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../redux/features/authReducer/authSlice';
+import axiosInstance from '../utils/axios';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
@@ -11,16 +13,34 @@ export default function LoginScreen({ navigation }) {
 
   const dispatch = useDispatch();
 
-  const handleLogin = () => {
-    if (username === 'admin' && password === '1234') {
+  const handleLogin = async () => {
+    try {
+      const response = await axiosInstance.post('/auth/login', {
+        phoneNumber: username,
+        password,
+      });
 
-      dispatch(setCredentials({ username }));
-      navigation.replace('Home'); // Nếu login đúng, chuyển sang Home
-    } else {
+      // Lưu trữ token và thông tin user vào Redux và AsyncStorage
+      const { token, refreshToken, userId, fullName, phoneNumber, role } = response.data;
+
+      dispatch(setCredentials({ token, userId, fullName, phoneNumber, role }));
+
+      // Lưu trữ dữ liệu vào AsyncStorage
+      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('userId', userId);
+      await AsyncStorage.setItem('fullName', fullName);
+      await AsyncStorage.setItem('phoneNumber', phoneNumber);
+      await AsyncStorage.setItem('role', role);
+
+      console.log('Login successful:', response.data);
+
+      // Chuyển hướng người dùng đến Home sau khi đăng nhập thành công
+      navigation.replace('Home');
+    } catch (error) {
+      console.error('Login failed:', error.response?.data || error.message);
       alert('Invalid credentials');
     }
   };
-
   return (
     <View style={styles.container}>
       <Text>Login Screen</Text>
