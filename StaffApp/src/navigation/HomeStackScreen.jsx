@@ -1,11 +1,11 @@
 // src/navigation/HomeStackScreen.js
 
 import React from "react";
-import { createNativeStackNavigator } from "@react-navigation/stack";
+import { createStackNavigator } from "@react-navigation/stack";
 import HomeScreen from "../screens/HomeScreen";
 import { TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from 'react-native-vector-icons';
-const HomeStack = createNativeStackNavigator();
+const HomeStack = createStackNavigator();
 
 export default function HomeStackScreen() {
   return (
