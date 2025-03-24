@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { message } from "antd";
 import { axiosClientVer2 } from "../../../config/axiosInterceptor";
-import { putRequestMultipartFormData } from '@services/api';
+import { postRequestMultipartFormData, putRequestMultipartFormData } from '@services/api';
 
 // Thunk để lấy thông tin chi tiết về một Extra
 export const getExtraDetails = createAsyncThunk(
@@ -46,12 +46,7 @@ export const createExtra = createAsyncThunk(
   "extras/createExtra",
   async (extraData, { rejectWithValue, getState }) => {
     try {
-      const { auth } = getState();
-      const response = await axiosClientVer2.post("/api/extras", extraData, {
-        headers: {
-          Authorization: `Bearer ${auth.accessToken}`,
-        },
-      });
+      const response = await postRequestMultipartFormData("/extras", extraData, {});
       message.success("Dịch vụ đã được tạo thành công");
       return response.data;
     } catch (error) {

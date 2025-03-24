@@ -1,18 +1,16 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { axiosClientVer2 } from "../../../config/axiosInterceptor";
 import { message } from "antd";
+import { getRequest } from '@services/api';
 
 // Thunk để lấy danh sách extra categories
 export const getExtraCategories = createAsyncThunk(
   "extraCategories/getExtraCategories",
   async (_, { rejectWithValue, getState }) => {
     try {
+      ///extra-categories
       const { auth } = getState();
-      const response = await axiosClientVer2.get("/extra-categories", {
-        headers: {
-          Authorization: `Bearer ${auth.accessToken}`,
-        },
-      });
+      const response = await getRequest("/extra-categories");
       return response.data; // Trả về dữ liệu
     } catch (error) {
       return rejectWithValue(error.response.data); // Trả về lỗi nếu có
@@ -61,7 +59,6 @@ export const deleteExtraCategory = createAsyncThunk(
           },
         }
       );
-      message.success("Dịch vụ đã được xóa thành công");
       return extraCategoryId; // Trả về ID của category đã xóa
     } catch (error) {
       return rejectWithValue(error.response.data); // Trả về lỗi nếu có
