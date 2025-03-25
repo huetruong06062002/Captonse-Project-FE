@@ -1,8 +1,23 @@
 import React from "react";
-import { message, Popconfirm, Tooltip, Tree } from "antd";
+import {
+  Dropdown,
+  Menu,
+  message,
+  Popconfirm,
+  Space,
+  Tooltip,
+  Tree,
+} from "antd";
 import { MdUpdate } from "react-icons/md";
 import { LuDelete } from "react-icons/lu";
 import { axiosClientVer2 } from "../../../config/axiosInterceptor";
+import {
+  DeleteOutlined,
+  DownOutlined,
+  EditOutlined,
+  EyeOutlined,
+  MoreOutlined,
+} from "@ant-design/icons";
 const TreeServicesDetail = ({
   serviceDetailFull,
   onSelectSubCategory,
@@ -47,7 +62,11 @@ const TreeServicesDetail = ({
                 setAddSubCategoryModalVisible(true);
               }}
             >
-              <Tooltip placement="right" title={"Thêm dịch vụ"} style={{marginTop:"2rem"}}>
+              <Tooltip
+                placement="right"
+                title={"Thêm dịch vụ"}
+                style={{ marginTop: "2rem" }}
+              >
                 {subCategory.name}
               </Tooltip>
             </p>
@@ -90,13 +109,63 @@ const TreeServicesDetail = ({
       key: subCategory.subCategoryId,
       children: subCategory.serviceDetails.map((service) => ({
         title: (
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <img
-              src={service.imageUrl}
-              alt={service.name}
-              style={{ width: 30, height: 30, marginRight: 10 }}
-            />
-            {`${service.name} - ${service.price.toLocaleString("de-DE")} VND`}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <img
+                src={service.imageUrl}
+                alt={service.name}
+                style={{ width: 30, height: 30, marginRight: 10 }}
+              />
+              {`${service.name} - ${service.price.toLocaleString("de-DE")} VND`}
+            </div>
+
+            <Dropdown
+              overlay={
+                <Menu>
+                  <Menu.Item
+                    key="view"
+                    icon={<EyeOutlined />}
+                    style={{ backgroundColor: "#e3f2fd", color: "#1890ff" }}
+                  >
+                    Xem chi tiết
+                  </Menu.Item>
+                  <Menu.Item
+                    key="update"
+                    icon={<EditOutlined />}
+                    style={{ backgroundColor: "#fff8e1", color: "#fa8c16" }}
+                  >
+                    Cập nhật
+                  </Menu.Item>
+                  <Menu.Item
+                    key="delete"
+                    icon={<DeleteOutlined />}
+                    danger
+                    style={{ backgroundColor: "#ffebee" }}
+                  >
+                    Xóa
+                  </Menu.Item>
+                </Menu>
+              }
+              trigger={["click"]}
+              onClick={(e) => e.stopPropagation()} // Ngăn Tree bắt sự kiện click
+            >
+              <MoreOutlined
+                style={{
+                  cursor: "pointer",
+                  backgroundColor: "#ecf0f1",
+                  marginLeft: "1rem",
+                  padding: "0.25rem",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </Dropdown>
           </div>
         ),
         key: service.serviceId,
