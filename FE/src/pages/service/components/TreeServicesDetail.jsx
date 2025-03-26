@@ -88,38 +88,44 @@ const TreeServicesDetail = ({
   console.log("check editingService", editingService);
   const handleUpdateService = async (values) => {
     try {
-        // Tạo FormData để gửi dữ liệu
-        const formData = new FormData();
-        const { name, price, description, imageUrl } = values;
-        
-        // Thêm các trường dữ liệu vào FormData
-        formData.append("ServiceId", editingService.serviceId);
-        formData.append("Name", name);
-        formData.append("Price", price);
-        formData.append("Description", description || "");
-        formData.append("Image", imageUrl);
-        
+      // Tạo FormData để gửi dữ liệu
+      const formData = new FormData();
+      const { name, price, description, imageUrl } = values;
 
-        // Gửi request với FormData
-        const response = await axiosClientVer2.put(
-          `/service-details`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-        
-        message.success("Cập nhật dịch vụ thành công");
-        setIsEditModalVisible(false); // Đóng modal
-        setUploadedFile(null); // Reset file đã upload
-        getServiceDetail(); // Làm mới dữ liệu
+      // Thêm các trường dữ liệu vào FormData
+      formData.append("ServiceId", editingService.serviceId);
+      formData.append("Name", name);
+      formData.append("Price", price);
+      formData.append("Description", description || "");
+      formData.append("Image", imageUrl);
+
+      // Gửi request với FormData
+      const response = await axiosClientVer2.put(`/service-details`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      message.success("Cập nhật dịch vụ thành công");
+      setIsEditModalVisible(false); // Đóng modal
+      setUploadedFile(null); // Reset file đã upload
+      getServiceDetail(); // Làm mới dữ liệu
     } catch (err) {
       // console.error("Error during update:", err);
       // message.error("Không thể cập nhật dịch vụ");
     }
   };
+
+  const handleDeleteServiceInServiceDetail = async (serviceId) => {
+    try {
+      const response = await axiosClientVer2.delete(`/service-details/${serviceId}`);
+      message.success("Xóa dịch vụ thành công");
+      getServiceDetail(); // Lấy lại thông tin sau khi xóa
+    } catch (err) {
+      console.error("Error during delete:", err);
+      message.error("Không thể xóa dịch vụ");
+    }
+  }
 
   const renderTreeData = (subCategories) => {
     return subCategories.map((subCategory) => ({
@@ -228,9 +234,10 @@ const TreeServicesDetail = ({
                     icon={<DeleteOutlined />}
                     danger
                     style={{ backgroundColor: "#ffebee" }}
-                    onClick={() =>
-                      onSelectSubCategoryToUpdate(subCategory.subCategoryId)
-                    }
+                    onClick={() => {
+                      console.log("check serviceId", service.serviceId);
+                      handleDeleteServiceInServiceDetail(service.serviceId);
+                    }}
                   >
                     Xóa
                   </Menu.Item>
