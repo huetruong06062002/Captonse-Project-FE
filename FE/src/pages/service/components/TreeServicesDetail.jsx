@@ -1,23 +1,27 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Button,
+  message,
+  Tree,
   Dropdown,
   Menu,
-  message,
-  Popconfirm,
-  Space,
   Tooltip,
-  Tree,
+  Popconfirm,
+  Upload,
 } from "antd";
-import { MdUpdate } from "react-icons/md";
-import { LuDelete } from "react-icons/lu";
 import { axiosClientVer2 } from "../../../config/axiosInterceptor";
 import {
   DeleteOutlined,
-  DownOutlined,
   EditOutlined,
   EyeOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
+import { MdUpdate } from "react-icons/md";
+import { LuDelete } from "react-icons/lu";
 const TreeServicesDetail = ({
   serviceDetailFull,
   onSelectSubCategory,
@@ -27,6 +31,22 @@ const TreeServicesDetail = ({
   setIsOpenUpdateServiceLevel1,
   onSelectSubCategoryToUpdate,
 }) => {
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editingService, setEditingService] = useState({});
+  const [form] = Form.useForm(); // Thêm hook useForm
+
+  // Thêm useEffect để cập nhật form khi editingService thay đổi
+  useEffect(() => {
+    if (editingService && Object.keys(editingService).length > 0) {
+      form.setFieldsValue({
+        name: editingService.name,
+        price: editingService.price,
+        description: editingService.description,
+        imageUrl: editingService.imageUrl,
+      });
+    }
+  }, [editingService, form]);
+
   const handleDelete = async () => {
     try {
       const response = await axiosClientVer2.delete(
@@ -40,10 +60,67 @@ const TreeServicesDetail = ({
     }
   };
 
+  const getSetviceInServiceDetail = async (serviceId) => {
+    try {
+      const response = await axiosClientVer2.get(
+        `/service-details/${serviceId}`
+      );
+      console.log("check response", response.data);
+      return response.data;
+    } catch (err) {
+      console.error("Error during get service in service detail:", err);
+    }
+  };
+
   const handleCancelDelete = (e) => {
     console.log(e);
     message.error("Click on No");
   };
+  const handleEditServicesInServiceDetail = async (serviceId) => {
+    console.log("check serviceId", serviceId);
+    const serviceToEdit = await getSetviceInServiceDetail(serviceId);
+
+    console.log("check serviceToEdit", serviceToEdit);
+    setEditingService(serviceToEdit);
+    setIsEditModalVisible(true); // Show the modal
+  };
+
+  console.log("check editingService", editingService);
+  const handleUpdateService = async (values) => {
+    try {
+        // Tạo FormData để gửi dữ liệu
+        const formData = new FormData();
+        const { name, price, description, imageUrl } = values;
+        
+        // Thêm các trường dữ liệu vào FormData
+        formData.append("ServiceId", editingService.serviceId);
+        formData.append("Name", name);
+        formData.append("Price", price);
+        formData.append("Description", description || "");
+        formData.append("Image", imageUrl);
+        
+
+        // Gửi request với FormData
+        const response = await axiosClientVer2.put(
+          `/service-details`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        
+        message.success("Cập nhật dịch vụ thành công");
+        setIsEditModalVisible(false); // Đóng modal
+        setUploadedFile(null); // Reset file đã upload
+        getServiceDetail(); // Làm mới dữ liệu
+    } catch (err) {
+      // console.error("Error during update:", err);
+      // message.error("Không thể cập nhật dịch vụ");
+    }
+  };
+
   const renderTreeData = (subCategories) => {
     return subCategories.map((subCategory) => ({
       title: (
@@ -114,7 +191,6 @@ const TreeServicesDetail = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              width: "100%",
             }}
           >
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -125,36 +201,41 @@ const TreeServicesDetail = ({
               />
               {`${service.name} - ${service.price.toLocaleString("de-DE")} VND`}
             </div>
-
             <Dropdown
               overlay={
                 <Menu>
                   <Menu.Item
-                    key="view"
+                    key="update"
                     icon={<EyeOutlined />}
-                    style={{ backgroundColor: "#e3f2fd", color: "#1890ff" }}
+                    style={{ backgroundColor: "#fff8e1", color: "#fa8c16" }}
+                    onClick={() => setIsEditModalVisible(true)}
                   >
                     Xem chi tiết
                   </Menu.Item>
                   <Menu.Item
-                    key="update"
+                    key="view"
                     icon={<EditOutlined />}
-                    style={{ backgroundColor: "#fff8e1", color: "#fa8c16" }}
+                    style={{ backgroundColor: "#e3f2fd", color: "#1890ff" }}
+                    onClick={() =>
+                      handleEditServicesInServiceDetail(service.serviceId)
+                    }
                   >
-                    Cập nhật
+                    Chỉnh sửa
                   </Menu.Item>
+
                   <Menu.Item
                     key="delete"
                     icon={<DeleteOutlined />}
                     danger
                     style={{ backgroundColor: "#ffebee" }}
+                    onClick={() =>
+                      onSelectSubCategoryToUpdate(subCategory.subCategoryId)
+                    }
                   >
                     Xóa
                   </Menu.Item>
                 </Menu>
               }
-              trigger={["click"]}
-              onClick={(e) => e.stopPropagation()} // Ngăn Tree bắt sự kiện click
             >
               <MoreOutlined
                 style={{
@@ -169,8 +250,6 @@ const TreeServicesDetail = ({
           </div>
         ),
         key: service.serviceId,
-        description: service.description || "No description",
-        imageUrl: service.imageUrl,
       })),
     }));
   };
@@ -178,12 +257,134 @@ const TreeServicesDetail = ({
   const treeData = renderTreeData(serviceDetailFull?.subCategories || []);
 
   return (
-    <Tree
-      treeData={treeData}
-      showLine
-      defaultExpandAll
-      onSelect={onSelectSubCategory}
-    />
+    <div>
+      <Tree
+        treeData={treeData}
+        showLine
+        defaultExpandAll
+        onSelect={onSelectSubCategory}
+      />
+
+      {/* Modal for editing service */}
+      <Modal
+        title="Chỉnh sửa dịch vụ"
+        visible={isEditModalVisible}
+        onCancel={() => setIsEditModalVisible(false)}
+        footer={null}
+      >
+        <Form
+          form={form}
+          initialValues={{
+            name: editingService?.name,
+            price: editingService?.price,
+            description: editingService?.description,
+            imageUrl: editingService?.imageUrl,
+          }}
+          onFinish={handleUpdateService}
+        >
+          <Form.Item
+            label="Tên dịch vụ"
+            name="name"
+            rules={[{ required: true, message: "Vui lòng nhập tên dịch vụ!" }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="Giá"
+            name="price"
+            rules={[{ required: true, message: "Vui lòng nhập giá dịch vụ!" }]}
+          >
+            <InputNumber style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item label="Mô tả" name="description">
+            <Input.TextArea />
+          </Form.Item>
+
+          <Form.Item label="URL hình ảnh" name="imageUrl">
+            <Input />
+          </Form.Item>
+          {/* Thêm chức năng upload ảnh */}
+          <Form.Item label="Upload ảnh mới">
+            <Upload
+              name="file"
+              listType="picture-card"
+              showUploadList={false}
+              beforeUpload={(file) => {
+                // Kiểm tra loại file
+                const isImage = file.type.startsWith("image/");
+                if (!isImage) {
+                  message.error("Bạn chỉ có thể upload file hình ảnh!");
+                  return Upload.LIST_IGNORE;
+                }
+
+                // Giới hạn kích thước file (2MB)
+                const isLt2M = file.size / 1024 / 1024 < 2;
+                if (!isLt2M) {
+                  message.error("Hình ảnh phải nhỏ hơn 2MB!");
+                  return Upload.LIST_IGNORE;
+                }
+
+                // Xử lý upload
+                const formData = new FormData();
+                formData.append("file", file);
+
+                // Thực hiện upload và cập nhật URL
+                axiosClientVer2
+                  .post("/upload", formData)
+                  .then((response) => {
+                    const imageUrl = response.data.url; // URL từ server sau khi upload
+                    form.setFieldsValue({ imageUrl });
+                    message.success("Upload ảnh thành công");
+                  })
+                  .catch((error) => {
+                    console.error("Upload failed:", error);
+                    message.error("Upload ảnh thất bại");
+                  });
+
+                return false; // Ngăn upload tự động của antd
+              }}
+            >
+              <div>
+                <div style={{ marginTop: 8 }}>
+                  <Button>Upload ảnh</Button>
+                </div>
+              </div>
+            </Upload>
+          </Form.Item>
+
+          {/* Thêm phần xem trước hình ảnh */}
+          <Form.Item label="Xem trước hình ảnh">
+            {editingService?.imageUrl && (
+              <div style={{ marginTop: "10px" }}>
+                <img
+                  src={
+                    form.getFieldValue("imageUrl") || editingService?.imageUrl
+                  }
+                  alt="Xem trước"
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "200px",
+                    display: "block",
+                    margin: "0 auto",
+                    border: "1px solid #d9d9d9",
+                    borderRadius: "2px",
+                    padding: "5px",
+                  }}
+                />
+              </div>
+            )}
+          </Form.Item>
+
+          <Form.Item>
+            <Button type="primary" htmlType="submit" style={{ width: "100%" }}>
+              Cập nhật dịch vụ
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
   );
 };
 
