@@ -38,6 +38,7 @@ import { logout } from "@redux/features/authReducer/authSlice";
 
 import endPoints from "../routers/router";
 import { imageBaseUrl } from "@utils/imageUtils";
+import DashBoard from '@pages/dashboard';
 
 const { Header, Sider, Content } = Layout;
 
@@ -278,7 +279,7 @@ const AdminLayout = () => {
             borderRadius: 20,
           }}
         >
-          {location.pathname === "/" ? <WelcomeMessage /> : <Outlet />}
+          {location.pathname === "/" ? <DashBoard /> : <Outlet />}
         </Content>
       </Layout>
     </Layout>

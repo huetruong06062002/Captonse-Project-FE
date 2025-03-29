@@ -23,7 +23,7 @@ function App() {
 
         {/* PrivateRoute cho Admin và Staff */}
         <Route element={<PrivateRoute allowedRoles={["Admin", "Staff"]} />}>
-          <Route path={endPoints.ADMIN} element={<AdminLayout />}>
+          <Route path={endPoints.ALL} element={<AdminLayout />}>
             <Route index element={<DashBoard />} />
             <Route path={endPoints.DASHBOARD} element={<DashBoard />} />
             <Route
@@ -44,7 +44,7 @@ function App() {
 
         {/* PrivateRoute chỉ dành cho Admin */}
         <Route element={<PrivateRoute allowedRoles={["Admin"]} />}>
-          <Route path={endPoints.ADMIN} element={<AdminLayout />}>
+          <Route path={endPoints.ALL} element={<AdminLayout />}>
             <Route path={endPoints.SERVICES} element={<Services />} />
             <Route
               path={endPoints.EXTRACATEGORIES}

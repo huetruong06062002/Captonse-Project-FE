@@ -67,7 +67,7 @@ const authSlice = createSlice({
         // Set redirectPath based on role
         switch (data.role) {
           case "Admin":
-            state.redirectPath = endPoints.ADMIN;
+            state.redirectPath = endPoints.ALL;
             break;
           case "Hr":
             state.redirectPath = `${endPoints.QUANLYINTERN}/${endPoints.DANHSACHINTERN}`;

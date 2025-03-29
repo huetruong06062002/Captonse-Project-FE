@@ -24,7 +24,7 @@ const Login = () => {
       await dispatch(login(values)).unwrap();
       
       message.success("Đăng nhập thành công");
-      navigate(redirectPath || "/admin");
+      navigate(redirectPath || "/");
     } catch (error) {}
   };
 
