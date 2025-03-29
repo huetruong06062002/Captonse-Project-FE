@@ -8,22 +8,23 @@ import ForbiddenPage from "@components/ForbiddenPage";
 import DashBoard from "@pages/dashboard";
 import OrderBookingCustomer from "@pages/quan-li-giao-nhan-hang/quan-li-don-hang-khach-vua-dat";
 import ListAllOrders from "@pages/quan-li-giao-nhan-hang/danh-sach-tat-ca-don-hang";
-import Services from '@pages/service';
-import QuanLiDonHangDaNhan from '@pages/quan-li-giao-nhan-hang/quan-li-don-hang-da-nhan';
-import Users from '@pages/user';
-import ExtraService from '@pages/extra-categories';
-import ExtraCategories from '@pages/extra-categories';
+import Services from "@pages/service";
+import QuanLiDonHangDaNhan from "@pages/quan-li-giao-nhan-hang/quan-li-don-hang-da-nhan";
+import Users from "@pages/user";
+import ExtraService from "@pages/extra-categories";
+import ExtraCategories from "@pages/extra-categories";
+import Order from "@pages/order";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to={endPoints.LOGIN} replace />} />
-        {/* Định nghĩa PrivateRoute chỉ cho phép Admin & Staff truy cập */}
+
+        {/* PrivateRoute cho Admin và Staff */}
         <Route element={<PrivateRoute allowedRoles={["Admin", "Staff"]} />}>
           <Route path={endPoints.ADMIN} element={<AdminLayout />}>
-            <Route index element={<DashBoard />} />{" "}
-            {/* Khi vào /admin thì tự động vào Dashboard */}
+            <Route index element={<DashBoard />} />
             <Route path={endPoints.DASHBOARD} element={<DashBoard />} />
             <Route
               path={endPoints.DANH_SACH_TAT_CA_DON_HANG}
@@ -33,13 +34,22 @@ function App() {
               path={endPoints.DANH_SACH_DON_HANG_KHACH_VUA_DAT}
               element={<OrderBookingCustomer />}
             />
-             <Route
+            <Route
               path={endPoints.DANH_SACH_DON_HANG_DA_NHAN}
               element={<QuanLiDonHangDaNhan />}
-            />
-            <Route path={endPoints.SERVICES} element={<Services />} />
-            <Route path={endPoints.EXTRACATEGORIES} element={<ExtraCategories />} />
+            />       
+            <Route path={endPoints.ORDER} element={<Order />} />
+          </Route>
+        </Route>
 
+        {/* PrivateRoute chỉ dành cho Admin */}
+        <Route element={<PrivateRoute allowedRoles={["Admin"]} />}>
+          <Route path={endPoints.ADMIN} element={<AdminLayout />}>
+            <Route path={endPoints.SERVICES} element={<Services />} />
+            <Route
+              path={endPoints.EXTRACATEGORIES}
+              element={<ExtraCategories />}
+            />
             <Route path={endPoints.USERS} element={<Users />} />
           </Route>
         </Route>

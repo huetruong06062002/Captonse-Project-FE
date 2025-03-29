@@ -78,7 +78,7 @@ const AdminLayout = () => {
       key: endPoints.DASHBOARD,
       icon: <DashboardOutlined />,
       label: "Dashboard",
-      allowedRoles: ["Admin"],
+      allowedRoles: ["Admin", "Staff"],
     },
     {
       key: endPoints.QuanLyGiaoNhanHang,
@@ -90,7 +90,7 @@ const AdminLayout = () => {
           key: `${endPoints.DANH_SACH_TAT_CA_DON_HANG}`,
           icon: <UsergroupAddOutlined />,
           label: "Danh sách tất cả đơn hàng",
-          allowedRoles: ["Admin", "Hr"],
+          allowedRoles: ["Admin", "Staff"],
         },
         {
           key: `${endPoints.DANH_SACH_DON_HANG_KHACH_VUA_DAT}`,
@@ -100,7 +100,7 @@ const AdminLayout = () => {
               Danh sách đơn hàng khách hàng vừa đặt
             </Tooltip>
           ),
-          allowedRoles: ["Admin"],
+          allowedRoles: ["Admin", "Staff"],
         },
         {
           key: `${endPoints.DANH_SACH_DON_HANG_DA_NHAN}`,
@@ -110,7 +110,7 @@ const AdminLayout = () => {
               Danh sách đơn hàng đã nhận
             </Tooltip>
           ),
-          allowedRoles: ["Admin"],
+          allowedRoles: ["Admin", "Staff"],
         },
         {
           key: `${endPoints.QUANLYINTERN}/${endPoints.KYTHUCTAP}`,
@@ -120,7 +120,7 @@ const AdminLayout = () => {
               Danh sách đơn hàng đã giặt xong
             </Tooltip>
           ),
-          allowedRoles: ["Admin", "Hr"],
+          allowedRoles: ["Admin", "Staff"],
         },
         {
           key: `${endPoints.QUANLYINTERN}/${endPoints.KYTHUCTAP}`,
@@ -130,7 +130,7 @@ const AdminLayout = () => {
               Danh sách đơn hàng đã hoàn thành
             </Tooltip>
           ),
-          allowedRoles: ["Admin", "Hr"],
+          allowedRoles: ["Admin", "Staff"],
         },
       ],
     },
@@ -146,6 +146,12 @@ const AdminLayout = () => {
       icon: <UsergroupAddOutlined />,
       label: "Quản lý dịch vụ thêm",
       allowedRoles: ["Admin"],
+    },
+    {
+      key: endPoints.ORDER,
+      icon: <UsergroupAddOutlined />,
+      label: "Quản lý đơn hàng",
+      allowedRoles: ["Admin", "Staff"],
     },
     {
       key: endPoints.USERS,
