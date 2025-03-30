@@ -34,7 +34,7 @@ function Chat() {
   // Kết nối SignalR khi component được mount
   useEffect(() => {
     const newConnection = new HubConnectionBuilder()
-      .withUrl("http://localhost:5239/chatHub", {
+      .withUrl("https://laundryserviceapi.azurewebsites.net/chatHub", {
         withCredentials: false, // Tắt gửi thông tin xác thực
       }) // Không cần `withCredentials`
       .build();
@@ -61,7 +61,7 @@ function Chat() {
       // Chỉ gọi API khi conversationId đã có giá trị
       const fetchMessages = async () => {
         const messagesResponse = await fetch(
-          `http://localhost:5239/api/Conversations/messages/${conversationId}`
+          `https://laundryserviceapi.azurewebsites.net/api/Conversations/messages/${conversationId}`
         );
         const messagesData = await messagesResponse.json();
 
@@ -79,7 +79,7 @@ function Chat() {
   const startConversation = async (receiverId) => {
     console.log("receiverId", receiverId);
     const response = await fetch(
-      `http://localhost:5239/api/Conversations/${receiverId}?currentUserId=${user.userId}`
+      `https://laundryserviceapi.azurewebsites.net/api/Conversations/${receiverId}?currentUserId=${user.userId}`
     );
     const data = await response.json();
 
@@ -89,7 +89,7 @@ function Chat() {
         userTwoId: receiverId,
       });
       const createResponse = await fetch(
-        "http://localhost:5239/api/Conversations",
+        "https://laundryserviceapi.azurewebsites.net/api/Conversations",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -144,7 +144,7 @@ function Chat() {
     const fetchUsers = async () => {
       try {
         const accessToken = localStorage.getItem("accessToken"); // Lấy accessToken từ localStorage
-        const response = await fetch("http://localhost:5239/api/users", {
+        const response = await fetch("https://laundryserviceapi.azurewebsites.net/api/users", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${accessToken}`, // Thêm Bearer Token vào header
