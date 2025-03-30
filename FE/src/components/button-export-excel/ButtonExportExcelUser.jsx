@@ -3,7 +3,9 @@ import { Button } from "antd";
 import * as XLSX from "xlsx";
 
 const ButtonExportExcelUser = () => {
+  const [loading, setLoading] = useState(false);
   const downloadExcel = async () => {
+    setLoading(true);
     try {
       const response = await fetch("https://laundryserviceapi.azurewebsites.net/api/Excels/export", {
         method: "GET",
@@ -60,11 +62,13 @@ const ButtonExportExcelUser = () => {
       XLSX.writeFile(workbook, "Users.xlsx");
     } catch (error) {
       console.error("Lỗi khi tải file Excel:", error);
+    } finally {
+      setLoading(false); // Kết thúc loading
     }
   };
 
   return (
-    <Button onClick={downloadExcel} type="primary">
+    <Button onClick={downloadExcel} type="primary" loading={loading}>
       Xuất Excel
     </Button>
   );
