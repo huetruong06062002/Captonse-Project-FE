@@ -18,6 +18,7 @@ import { axiosClientVer2 } from "../../config/axiosInterceptor";
 import { GrDocumentUpdate } from "react-icons/gr";
 import { MdAutoDelete } from "react-icons/md";
 import moment from "moment";
+import ButtonExportExcelUser from '@components/button-export-excel/ButtonExportExcelUser';
 
 function Users() {
   const [users, setUsers] = useState([]);
@@ -226,6 +227,7 @@ function Users() {
 
   return (
     <div>
+      <ButtonExportExcelUser/>
       <Button style={{display:"float", float:"right", marginBottom:"1rem"}} type="primary" onClick={() => setIsCreateUserModalVisible(true)}>
         Tạo Người dùng
       </Button>
