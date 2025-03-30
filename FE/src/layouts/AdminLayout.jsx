@@ -160,6 +160,12 @@ const AdminLayout = () => {
       label: "Quản lý người dùng",
       allowedRoles: ["Admin"],
     },
+    {
+      key: endPoints.CHAT,
+      icon: <UsergroupAddOutlined />,
+      label: "Chat",
+      allowedRoles: ["Admin", "Staff"],
+    },
   ];
 
   const filteredMenuItems = menuItems

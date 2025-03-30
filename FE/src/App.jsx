@@ -14,6 +14,7 @@ import Users from "@pages/user";
 import ExtraService from "@pages/extra-categories";
 import ExtraCategories from "@pages/extra-categories";
 import Order from "@pages/order";
+import Chat from '@pages/chat';
 
 function App() {
   return (
@@ -39,6 +40,8 @@ function App() {
               element={<QuanLiDonHangDaNhan />}
             />       
             <Route path={endPoints.ORDER} element={<Order />} />
+            <Route path={endPoints.CHAT} element={<Chat />} />
+
           </Route>
         </Route>
 

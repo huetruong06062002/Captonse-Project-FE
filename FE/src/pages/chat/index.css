@@ -1,0 +1,33 @@
+/* Căn chỉnh tin nhắn bên trái cho người chat */
+.ant-list-item {
+  margin-bottom: 10px; /* Khoảng cách giữa các tin nhắn */
+}
+
+.ant-list-item .ant-space {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start; /* Tin nhắn người khác ở bên trái */
+}
+
+.ant-list-item .ant-avatar {
+  margin-right: 10px;
+}
+
+/* Căn chỉnh tin nhắn bên phải cho người dùng */
+.ant-list-item-right {
+  display: flex;
+  flex-direction: row-reverse; /* Tin nhắn của bạn ở bên phải */
+}
+
+.ant-list-item-right .ant-space {
+  flex-direction: row-reverse;
+}
+
+.ant-list-item-right .ant-avatar {
+  margin-left: 10px;
+}
+
+.active-item {
+  background-color: #e6f7ff; /* Màu nền khi active */
+  border-left: 4px solid #1890ff; /* Đường viền bên trái */
+}
