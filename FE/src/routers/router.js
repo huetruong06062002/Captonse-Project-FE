@@ -14,6 +14,7 @@ const endPoints = {
   LOGIN: "/login",
   REGISTER: "/register",
   FORBIDDEN:"/forbidden",
+  CHATWIITHAI: "/chat-with-ai",
   DASHBOARD: "dashboard",
 };
 

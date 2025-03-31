@@ -15,6 +15,7 @@ import ExtraService from "@pages/extra-categories";
 import ExtraCategories from "@pages/extra-categories";
 import Order from "@pages/order";
 import Chat from '@pages/chat';
+import ChatWithAi from '@pages/chat-with-ai';
 
 function App() {
   return (
@@ -54,9 +55,10 @@ function App() {
               element={<ExtraCategories />}
             />
             <Route path={endPoints.USERS} element={<Users />} />
+            <Route path={endPoints.CHATWIITHAI} element={<ChatWithAi />} /> 
+            
           </Route>
         </Route>
-
         <Route path={endPoints.LOGIN} element={<Login />} />
         <Route path={endPoints.FORBIDDEN} element={<ForbiddenPage />} />
       </Routes>

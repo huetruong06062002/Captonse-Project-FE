@@ -166,6 +166,12 @@ const AdminLayout = () => {
       label: "Chat",
       allowedRoles: ["Admin", "Staff"],
     },
+    {
+      key: endPoints.CHATWIITHAI,
+      icon: <UsergroupAddOutlined />,
+      label: "Chat Với AI Support",
+      allowedRoles: ["Admin"],
+    },
   ];
 
   const filteredMenuItems = menuItems
