@@ -8,6 +8,7 @@ import {
   Space,
   List,
   Typography,
+  Tooltip,
 } from "antd";
 
 const { Search } = Input;
@@ -20,6 +21,7 @@ const { Text } = Typography;
 import "./index.css";
 import { HubConnectionBuilder } from "@microsoft/signalr";
 import { useSelector } from "react-redux";
+import moment from "moment";
 
 function Chat() {
   const [messages, setMessages] = useState([]);
@@ -144,13 +146,16 @@ function Chat() {
     const fetchUsers = async () => {
       try {
         const accessToken = localStorage.getItem("accessToken"); // Lấy accessToken từ localStorage
-        const response = await fetch("https://laundryserviceapi.azurewebsites.net/api/users", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`, // Thêm Bearer Token vào header
-            "Content-Type": "application/json",
-          },
-        });
+        const response = await fetch(
+          "https://laundryserviceapi.azurewebsites.net/api/users",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`, // Thêm Bearer Token vào header
+              "Content-Type": "application/json",
+            },
+          }
+        );
         const data = await response.json();
         console.log(data);
         setUsers(data.data); // Lưu dữ liệu người dùng vào state
@@ -246,8 +251,21 @@ function Chat() {
                   <Avatar src={item.avatar} />
                   <div>
                     <Text strong>{item.fullname} </Text>
-                    { item.userid === user.userId ? "(Tôi)" : ""}
-                    <div>{item.message1}</div>
+                    {item.userid === user.userId ? "(Tôi)" : ""}
+
+                    <Tooltip
+                      placement="topLeft"
+                      title={
+                        <>
+                          <p style={{ fontSize: "0.8rem", color: "#95a5a6" }}>
+                            {" "}
+                            {moment(item.creationdate).fromNow()}
+                          </p>
+                        </>
+                      }
+                    >
+                      <div>{item.message1}</div>
+                    </Tooltip>
                   </div>
                 </Space>
               </List.Item>
