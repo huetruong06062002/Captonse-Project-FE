@@ -54,6 +54,7 @@ const AdminLayout = () => {
   } = theme.useToken();
   const { user, role } = useSelector((state) => state.auth);
 
+  console.log("check user", user);
   useEffect(() => {
     const currentPath = location.pathname;
     let activeKey = currentPath;

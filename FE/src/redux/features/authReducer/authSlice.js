@@ -28,6 +28,7 @@ const authSlice = createSlice({
     phoneNumber: null,
     rewardpoints: null,
     role: false,
+    image: null,
     refreshToken: null,
     isLoading: false,
   },
@@ -38,6 +39,7 @@ const authSlice = createSlice({
       state.phoneNumber = null;
       state.rewardpoints = null;
       state.role = null;
+      state.image = null;
       state.accessToken = null;
       state.refreshToken = null;
       localStorage.clear();
@@ -60,6 +62,7 @@ const authSlice = createSlice({
         state.accessToken = data.token;
         state.refreshToken = data.refreshToken;
         state.role = data.role;
+        state.image = data.image;
         localStorage.setItem("accessToken", data.token);
         localStorage.setItem("refreshToken", data.refreshToken);
         state.isLoading = false;
