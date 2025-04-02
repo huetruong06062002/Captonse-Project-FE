@@ -49,7 +49,7 @@ function ChatWithAi() {
   };
   return (
     <div style={{ padding: "20px" }}>
-      <Card title="Chat với AI hỗ trợ" bordered={false} style={{ width: 600 }}>
+      <Card title="Chat với AI hỗ trợ" bordered={false} style={{ width: "100%" }}>
         <TextArea
           rows={4}
           placeholder="Ask something..."
