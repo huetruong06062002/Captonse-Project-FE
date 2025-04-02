@@ -43,7 +43,7 @@ function ExtraCategories() {
   const [loading, setLoading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(3);
+  const [pageSize] = useState(5);
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
@@ -325,16 +325,16 @@ function ExtraCategories() {
             </div>
           </div>
         ))}
-      </div>
 
-      <Pagination
-        current={currentPage}
-        total={categories.length}
-        pageSize={pageSize}
-        onChange={handlePaginationChange}
-        showSizeChanger={false}
-        style={{ marginTop: "1rem", float: "right" }}
-      />
+        <Pagination
+          current={currentPage}
+          total={categories.length}
+          pageSize={pageSize}
+          onChange={handlePaginationChange}
+          showSizeChanger={false}
+          style={{ marginTop: "1rem", float: "right", position: "absolute", bottom: "1.5rem", right: "1rem", zIndex:1 }}
+        />
+      </div>
 
       <Modal
         title="Tạo dịch vụ thêm"

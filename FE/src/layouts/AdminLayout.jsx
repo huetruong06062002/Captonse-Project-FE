@@ -290,6 +290,7 @@ const AdminLayout = () => {
             minHeight: 280,
             background: colorBgContainer,
             borderRadius: 20,
+            overflow: "hidden", // Ẩn nội dung tràn
           }}
         >
           {location.pathname === "/" ? <DashBoard /> : <Outlet />}

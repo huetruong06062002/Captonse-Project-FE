@@ -4,6 +4,8 @@ import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
+  PointElement, // Đăng ký PointElement
+  LineElement, // Đăng ký LineElement
   BarElement,
   Title,
   Tooltip,
@@ -20,6 +22,8 @@ import customerImage from "../../assets/image/customer.png";
 import serviesImage from "../../assets/image/service.png";
 import extraImage from "../../assets/image/services-extra.png";
 import CountUp from "react-countup";
+import { Line } from "react-chartjs-2";
+
 // Đăng ký các thành phần cần thiết
 ChartJS.register(
   CategoryScale,
@@ -28,16 +32,38 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
+  CategoryScale,
+  LinearScale,
+  PointElement, // Đăng ký PointElement
+  LineElement, // Đăng ký LineElement
   ArcElement // Đăng ký ArcElement để sử dụng Pie Chart
 );
 
 function DashBoard() {
+  // Tạo một mảng 14 màu sắc
+  const colors = [
+    "#FF6384",
+    "#36A2EB",
+    "#FFCE56",
+    "#4BC0C0",
+    "#9966FF",
+    "#FF9F40",
+    "#C9CBCF",
+    "#E74C3C",
+    "#3498DB",
+    "#F1C40F",
+    "#2ECC71",
+    "#9B59B6",
+    "#34495E",
+    "#1ABC9C",
+  ];
+
   //fetch api customer
   const [numberOfCustomer, setNumberOfCustomer] = useState(0);
   const [numberOfOrder, setNumberOfOrder] = useState(0);
   const [numberOfService, setNumberOfService] = useState(0);
   const [numberOfExtra, setNumberOfExtra] = useState(0);
-
+  const [orderStats, setOrderStats] = useState(null);
   useEffect(() => {
     const fetchNumberOfCustomer = async () => {
       try {
@@ -79,31 +105,20 @@ function DashBoard() {
       }
     };
 
+    const fetchNumberOfOrderStatistics = async () => {
+      const response = await getRequest("DashBoard/get-order-statistics");
+
+      setOrderStats(response.data);
+    };
+
     fetchNumberOfCustomer();
     fetchNumberOfOrders();
     fetchNumberOfServices();
     fetchNumberOfExtras();
+    fetchNumberOfOrderStatistics();
   }, []);
 
-  console.log("numberOfExtra", numberOfExtra);
-
-  const [orderStats, setOrderStats] = useState(null);
-
-  useEffect(() => {
-    // Giả sử bạn lấy dữ liệu từ API
-    const response = {
-      statusStatistics: [
-        { status: "PENDING", count: 61 },
-        { status: "CONFIRMED", count: 1 },
-      ],
-      todayOrders: 0,
-      weeklyOrders: 1,
-      monthlyOrders: 0,
-      incompleteOrders: 62,
-    };
-
-    setOrderStats(response);
-  }, []);
+  console.log("orderStats", orderStats);
 
   if (!orderStats) return <div>Loading...</div>;
 
@@ -113,7 +128,9 @@ function DashBoard() {
     datasets: [
       {
         data: orderStats.statusStatistics.map((item) => item.count),
-        backgroundColor: ["#FF6384", "#36A2EB"], // Tùy chỉnh màu sắc
+        backgroundColor: orderStats.statusStatistics.map(
+          (_, index) => colors[index % colors.length] // Lấy màu theo chỉ số, lặp lại nếu hết màu
+        ),
         hoverOffset: 4,
       },
     ],
@@ -121,7 +138,12 @@ function DashBoard() {
 
   // ChartJS data cho orders in nhiều thời gian  (Bar Chart)
   const barData = {
-    labels: ["Today", "This Week", "This Month", "Incomplete"],
+    labels: [
+      "Hôm nay",
+      "Trong tuần này",
+      "Trong tháng này",
+      "số đơn hàng chưa được xử lý",
+    ],
     datasets: [
       {
         label: "Số lượng đơn hàng",
@@ -138,8 +160,26 @@ function DashBoard() {
     ],
   };
 
+  //line chart user
+  const lineData = {
+    labels: ["Hôm nay", "Tuần này", "Tháng này"],
+    datasets: [
+      {
+        label: "Khách hàng mới",
+        data: [5, 20, 50], // Dữ liệu khách hàng mới
+        borderColor: "#36A2EB", // Màu đường
+        backgroundColor: "rgba(54, 162, 235, 0.2)", // Màu nền dưới đường
+        tension: 0.4, // Độ cong của đường
+        fill: true, // Tô màu dưới đường
+      },
+    ],
+  };
+
   return (
-    <div style={{ width: "100%", margin: "0 auto" }}>
+    <div style={{ width: "100%",   margin: "0 auto", // Căn giữa nội dung
+      padding: "0 1rem", // Thêm khoảng cách hai bên
+      maxHeight: "90vh", // Giới hạn chiều cao tối đa (90% chiều cao màn hình)
+      overflowY: "auto",  }}>
       <Row display="flex" style={{ gap: "0.3rem", flexWrap: "nowrap" }}>
         <Col
           span={6}
@@ -300,7 +340,7 @@ function DashBoard() {
             <h3
               style={{ textAlign: "center", color: "#000", fontSize: "1.1rem" }}
             >
-             <CountUp
+              <CountUp
                 start={0} // Bắt đầu từ 0
                 end={numberOfService} // Kết thúc tại giá trị thực tế
                 duration={2} // Thời gian hiệu ứng (2 giây)
@@ -358,7 +398,7 @@ function DashBoard() {
             <h3
               style={{ textAlign: "center", color: "#000", fontSize: "1.1rem" }}
             >
-             <CountUp
+              <CountUp
                 start={0} // Bắt đầu từ 0
                 end={numberOfExtra} // Kết thúc tại giá trị thực tế
                 duration={2} // Thời gian hiệu ứng (2 giây)
@@ -370,7 +410,9 @@ function DashBoard() {
       </Row>
       <Row style={{ marginTop: "3rem", display: "flex" }}>
         <div style={{ width: "25%", float: "left" }}>
-          <h3>Order Statistics</h3>
+          <h1 style={{ marginLeft: "5rem", opacity: 0.5 }}>
+            Biểu đồ thống kê đơn hàng
+          </h1>
           <Pie
             data={pieData}
             options={{
@@ -380,7 +422,6 @@ function DashBoard() {
           />
         </div>
         <div style={{ width: "50%", float: "left" }}>
-          <h3>Số lượng đơn hàng</h3>
           <Bar
             data={barData}
             options={{
@@ -389,6 +430,16 @@ function DashBoard() {
             }}
           />
         </div>
+      </Row>
+      <Row>
+        <Line
+          data={lineData}
+          options={{
+            responsive: true,
+            plugins: { legend: { position: "top" } },
+          }}
+        />
+        ;
       </Row>
     </div>
   );
