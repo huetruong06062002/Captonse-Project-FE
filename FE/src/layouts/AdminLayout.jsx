@@ -39,6 +39,7 @@ import { logout } from "@redux/features/authReducer/authSlice";
 import endPoints from "../routers/router";
 import { imageBaseUrl } from "@utils/imageUtils";
 import DashBoard from '@pages/dashboard';
+import ConfirmOrderPending from '@pages/confirm-order-pending';
 
 const { Header, Sider, Content } = Layout;
 
@@ -80,7 +81,7 @@ const AdminLayout = () => {
       key: endPoints.DASHBOARD,
       icon: <DashboardOutlined />,
       label: "Dashboard",
-      allowedRoles: ["Admin", "Staff"],
+      allowedRoles: ["Admin"],
     },
     {
       key: endPoints.QuanLyGiaoNhanHang,
@@ -162,10 +163,16 @@ const AdminLayout = () => {
       allowedRoles: ["Admin"],
     },
     {
+      key: endPoints.CONFIRMCUSTOMERPENDING,
+      icon: <UsergroupAddOutlined />,
+      label: "Đơn hàng đang chờ xác nhận",
+      allowedRoles: ["CustomerStaff"],
+    },
+    {
       key: endPoints.CHAT,
       icon: <UsergroupAddOutlined />,
       label: "Chat",
-      allowedRoles: ["Admin", "Staff"],
+      allowedRoles: ["Admin", "Staff", "CustomerStaff"],
     },
     {
       key: endPoints.CHATWIITHAI,
@@ -293,7 +300,9 @@ const AdminLayout = () => {
             overflow: "hidden", // Ẩn nội dung tràn
           }}
         >
-          {location.pathname === "/" ? <DashBoard /> : <Outlet />}
+          {location.pathname === "/"  && role == "Admin" ? <DashBoard /> : <Outlet />}
+
+
         </Content>
       </Layout>
     </Layout>

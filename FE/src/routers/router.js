@@ -10,6 +10,7 @@ const endPoints = {
   EXTRACATEGORIES: "extra-categories",
   USERS: "users",
   CHAT: "chat",
+  CONFIRMCUSTOMERPENDING: "confirm-customer-pending",
   ADMIN: "/admin",
   LOGIN: "/login",
   REGISTER: "/register",

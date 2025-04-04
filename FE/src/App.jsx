@@ -14,8 +14,9 @@ import Users from "@pages/user";
 import ExtraService from "@pages/extra-categories";
 import ExtraCategories from "@pages/extra-categories";
 import Order from "@pages/order";
-import Chat from '@pages/chat';
-import ChatWithAi from '@pages/chat-with-ai';
+import Chat from "@pages/chat";
+import ChatWithAi from "@pages/chat-with-ai";
+import ConfirmOrderPending from "@pages/confirm-order-pending";
 
 function App() {
   return (
@@ -24,10 +25,13 @@ function App() {
         <Route path="/" element={<Navigate to={endPoints.LOGIN} replace />} />
 
         {/* PrivateRoute cho Admin và Staff */}
-        <Route element={<PrivateRoute allowedRoles={["Admin", "Staff"]} />}>
+        <Route
+          element={
+            <PrivateRoute allowedRoles={["Admin", "Staff", "CustomerStaff"]} />
+          }
+        >
           <Route path={endPoints.ALL} element={<AdminLayout />}>
-            <Route index element={<DashBoard />} />
-            <Route path={endPoints.DASHBOARD} element={<DashBoard />} />
+            <Route index element={<Chat />} />
             <Route
               path={endPoints.DANH_SACH_TAT_CA_DON_HANG}
               element={<ListAllOrders />}
@@ -39,24 +43,36 @@ function App() {
             <Route
               path={endPoints.DANH_SACH_DON_HANG_DA_NHAN}
               element={<QuanLiDonHangDaNhan />}
-            />       
+            />
             <Route path={endPoints.ORDER} element={<Order />} />
             <Route path={endPoints.CHAT} element={<Chat />} />
+          </Route>
+        </Route>
 
+        {/* PrivateRoute chỉ dành cho CustomerStaff */}
+        <Route element={<PrivateRoute allowedRoles={["CustomerStaff"]} />}>
+          <Route path={endPoints.ALL} element={<AdminLayout />}>
+            <Route index element={<ConfirmOrderPending />} />
+            <Route
+              path={endPoints.CONFIRMCUSTOMERPENDING}
+              element={<ConfirmOrderPending />}
+            />
+            <Route path={endPoints.CHAT} element={<Chat />} />
           </Route>
         </Route>
 
         {/* PrivateRoute chỉ dành cho Admin */}
         <Route element={<PrivateRoute allowedRoles={["Admin"]} />}>
           <Route path={endPoints.ALL} element={<AdminLayout />}>
+            <Route index element={<DashBoard />} />
+            <Route path={endPoints.DASHBOARD} element={<DashBoard />} />
             <Route path={endPoints.SERVICES} element={<Services />} />
             <Route
               path={endPoints.EXTRACATEGORIES}
               element={<ExtraCategories />}
             />
             <Route path={endPoints.USERS} element={<Users />} />
-            <Route path={endPoints.CHATWIITHAI} element={<ChatWithAi />} /> 
-            
+            <Route path={endPoints.CHATWIITHAI} element={<ChatWithAi />} />
           </Route>
         </Route>
         <Route path={endPoints.LOGIN} element={<Login />} />
