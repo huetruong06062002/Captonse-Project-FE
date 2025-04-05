@@ -1,13 +1,37 @@
-import { getRequestParams } from '@services/api';
+import { getRequestParams, postRequest } from "@services/api";
 import React, { useEffect, useRef, useState } from "react";
-import OrderDetailDrawer from './OrderDetailDrawer';
+import OrderDetailDrawer from "./component/OrderDetailDrawer";
+import { axiosClientVer2 } from "../../config/axiosInterceptor";
+import { Input, message, Modal } from "antd";
+import TextArea from "antd/es/input/TextArea";
 
 function ConfirmOrderPending() {
   const [orders, setOrders] = useState([]); // Danh sách đơn hàng
   const [currentPage, setCurrentPage] = useState(1); // Trang hiện tại
   const [pageSize, setPageSize] = useState(10); // Số bản ghi trên mỗi trang
   const [totalRecords, setTotalRecords] = useState(0); // Tổng số bản ghi
-  const [orderId, setOrderId] = useState(null); // ID đơn hàng được chọn
+  const [orderId, setOrderId] = useState(null); // ID đơn hàng được chọn để xem
+  const [dropdownVisible, setDropdownVisible] = useState(null); // Quản lý dropdown hiển thị
+  const dropdownRef = useRef(null); // Tham chiếu đến dropdown
+  const [assignmentId, setAssignmentId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [note, setNote] = useState(""); // Trạng thái để lưu ghi chú
+
+  console.log("note", note);
+
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
+  const handleOk = () => {
+    handleConfirmOrderSuccess(orderId);
+    setIsModalOpen(false);
+  };
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    setNote(""); // Đặt lại ghi chú khi đóng modal
+  };
+
   useEffect(() => {
     fetchPendingOrder();
   }, [currentPage, pageSize]); // Gọi lại khi currentPage hoặc pageSize thay đổi
@@ -17,8 +41,11 @@ function ConfirmOrderPending() {
       const params = {
         page: currentPage,
         pageSize: pageSize,
-      }
-      const response = await  getRequestParams("/customer-staff/pending-orders", params)
+      };
+      const response = await getRequestParams(
+        "/customer-staff/pending-orders",
+        params
+      );
       console.log("Response:", response); // Kiểm tra phản hồi từ API
       if (!response.data) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -30,8 +57,19 @@ function ConfirmOrderPending() {
     }
   };
 
-  const [dropdownVisible, setDropdownVisible] = useState(null); // Quản lý dropdown hiển thị
-  const dropdownRef = useRef(null); // Tham chiếu đến dropdown
+  const postProcessOrder = async (orderId) => {
+    const response = await axiosClientVer2.post(
+      `/customer-staff/process-order/${orderId}`
+    );
+    console.log("Response:", response); // Kiểm tra phản hồi từ API
+
+    if (response.data) {
+      setAssignmentId(response.data.assignmentId); // Lưu assignmentId để xử lý sau này
+      message.success(response.data.message);
+    }
+  };
+
+  console.log("Assignment ID:", assignmentId); // Kiểm tra giá trị của assignmentId
 
   const handleClickOutside = (event) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -58,16 +96,23 @@ function ConfirmOrderPending() {
   };
 
   const handleAcceptOrder = (orderId) => {
+    postProcessOrder(orderId); // Gọi hàm xử lý đơn hàng
     console.log("Nhận xử lý đơn hàng:", orderId);
     // Thêm logic xử lý nhận đơn hàng ở đây
+  };
+
+  const handleConfirmOrderSuccess =  async (orderId) => {
+    const response = await postRequest(`/customer-staff/confirm-order?orderId=${orderId}&note=${note}`);
+    if(response.data){
+      message.success(response.data.message);
+    }
+    console.log("check response", response); // Kiểm tra phản hồi từ API
   };
 
   const handleUpdateOrder = (orderId) => {
     console.log("Cập nhật đơn hàng:", orderId);
     // Thêm logic xử lý cập nhật đơn hàng ở đây
   };
-
-  const [drawerVisible, setDrawerVisible] = useState(false);
 
   const showDrawer = () => {
     setDrawerVisible(true);
@@ -76,9 +121,6 @@ function ConfirmOrderPending() {
   const onClose = () => {
     setDrawerVisible(false);
   };
-
-  console.log(orderId, drawerVisible, orders); // Kiểm tra giá trị của orderId và drawerVisible
-
 
   return (
     <div style={{ overflow: "hidden" }}>
@@ -177,7 +219,7 @@ function ConfirmOrderPending() {
                           borderRadius: "5px",
                           boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
                           zIndex: 1000,
-                          width: "13rem",
+                          width: "15rem",
                         }}
                       >
                         <button
@@ -230,15 +272,56 @@ function ConfirmOrderPending() {
                             background: "none",
                             textAlign: "left",
                             cursor: "pointer",
-                            color: "#ffc107", // Màu chữ vàng
+                            color: "#28a745", // Màu chữ xanh lá
                             fontWeight: "bold", // Chữ đậm
                             fontSize: "14px", // Kích thước chữ
                           }}
-                          onClick={() => handleUpdateOrder(order.orderId)}
+                          onClick={() => {
+                            showModal();
+                            setOrderId(order.orderId);
+                          }}
                         >
-                          <span style={{ marginRight: "8px" }}>✏️</span>{" "}
+                          <span style={{ marginRight: "8px" }}>✔️</span>{" "}
+                          {/* Icon check */}
+                          Xác nhận đơn hàng thành công
+                        </button>
+                        <button
+                          style={{
+                            display: "flex", // Sử dụng flex để căn chỉnh icon và text
+                            alignItems: "center", // Căn giữa icon và text theo chiều dọc
+                            width: "100%",
+                            padding: "8px",
+                            border: "none",
+                            background: "none",
+                            textAlign: "left",
+                            cursor: "pointer",
+                            color: "#ff4d4f",
+                            fontWeight: "bold", // Chữ đậm
+                            fontSize: "14px", // Kích thước chữ
+                          }}
+                        >
+                          <span style={{ marginRight: "8px" }}>❌ </span>{" "}
                           {/* Icon chỉnh sửa */}
-                          Cập nhật
+                          Hủy nhận đơn hàng
+                        </button>
+                        <button
+                          style={{
+                            display: "flex", // Sử dụng flex để căn chỉnh icon và text
+                            alignItems: "center", // Căn giữa icon và text theo chiều dọc
+                            width: "100%",
+                            padding: "8px",
+                            border: "none",
+                            background: "none",
+                            textAlign: "left",
+                            cursor: "pointer",
+                            color: "#ff4d4f",// Màu chữ vàng
+                            fontWeight: "bold", // Chữ đậm
+                            fontSize: "14px", // Kích thước chữ
+                          }}
+                        >
+                          <span style={{ marginRight: "8px" }}>🚫</span>{" "}
+                          {/* Icon chỉnh sửa */}
+                         Xác nhận hủy đơn hàng thành công
                         </button>
                       </div>
                     )}
@@ -255,9 +338,54 @@ function ConfirmOrderPending() {
           onPageChange={(page) => setCurrentPage(page)}
           onPageSizeChange={(size) => setPageSize(size)}
         />
-          
       </div>
-      <OrderDetailDrawer orderId={orderId} visible={drawerVisible} onClose={onClose} />
+      <OrderDetailDrawer
+        orderId={orderId}
+        visible={drawerVisible}
+        onClose={onClose}
+      />
+      <Modal
+        title="Xác đơn hàng thành công"
+        open={isModalOpen}
+        footer={[
+          <button
+            key="Hủy"
+            onClick={handleCancel}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#f5f5f5",
+              border: "1px solid #d9d9d9",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Hủy
+          </button>,
+          <button
+            key="Xác nhận"
+            onClick={handleOk}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#28a745",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              marginLeft:"1rem"
+            }}
+          >
+            Xác nhận
+          </button>,
+        ]}
+      >
+        <label>Note</label>
+        <TextArea
+          value={note}
+          onChange={(e) => {
+            setNote(e.target.value);
+          }}
+        />
+      </Modal>
     </div>
   );
 }
