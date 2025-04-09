@@ -106,31 +106,11 @@ const AdminLayout = () => {
           allowedRoles: ["Admin", "Staff"],
         },
         {
-          key: `${endPoints.DANH_SACH_DON_HANG_DA_NHAN}`,
+          key: `${endPoints.DANH_SACH_DON_HANG_DA_KIEM_TRA_CHAT_LUONG}`,
           icon: <CalendarOutlined />,
           label: (
-            <Tooltip title="Danh sách đơn hàng đã nhận">
-              Danh sách đơn hàng đã nhận
-            </Tooltip>
-          ),
-          allowedRoles: ["Admin", "Staff"],
-        },
-        {
-          key: `${endPoints.QUANLYINTERN}/${endPoints.KYTHUCTAP}`,
-          icon: <CalendarOutlined />,
-          label: (
-            <Tooltip title="Danh sách đơn hàng đã giặt xong">
-              Danh sách đơn hàng đã giặt xong
-            </Tooltip>
-          ),
-          allowedRoles: ["Admin", "Staff"],
-        },
-        {
-          key: `${endPoints.QUANLYINTERN}/${endPoints.KYTHUCTAP}`,
-          icon: <CalendarOutlined />,
-          label: (
-            <Tooltip title="Danh sách đơn hàng đã hoàn thành">
-              Danh sách đơn hàng đã hoàn thành
+            <Tooltip title="Danh sách đơn hàng đã giặt xong và kiểm tra chất lượng">
+             Danh sách đơn hàng đã giặt xong và kiểm tra chất lượng
             </Tooltip>
           ),
           allowedRoles: ["Admin", "Staff"],
@@ -301,8 +281,6 @@ const AdminLayout = () => {
           }}
         >
           {location.pathname === "/"  && role == "Admin" ? <DashBoard /> : <Outlet />}
-
-
         </Content>
       </Layout>
     </Layout>

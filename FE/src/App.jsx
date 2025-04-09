@@ -9,7 +9,7 @@ import DashBoard from "@pages/dashboard";
 import OrderBookingCustomer from "@pages/quan-li-giao-nhan-hang/quan-li-don-hang-khach-vua-dat";
 import ListAllOrders from "@pages/quan-li-giao-nhan-hang/danh-sach-tat-ca-don-hang";
 import Services from "@pages/service";
-import QuanLiDonHangDaNhan from "@pages/quan-li-giao-nhan-hang/quan-li-don-hang-da-nhan";
+import QuanLiDonHangDaNhan from "@pages/quan-li-giao-nhan-hang/quan-li-don-hang-da-giat-xong-va-kiem-tra-chat-luong";
 import Users from "@pages/user";
 import ExtraService from "@pages/extra-categories";
 import ExtraCategories from "@pages/extra-categories";
@@ -17,6 +17,7 @@ import Order from "@pages/order";
 import Chat from "@pages/chat";
 import ChatWithAi from "@pages/chat-with-ai";
 import ConfirmOrderPending from "@pages/confirm-order-pending";
+import QuanLiDonHangDaKiemTraChatLuong from '@pages/quan-li-giao-nhan-hang/quan-li-don-hang-da-giat-xong-va-kiem-tra-chat-luong';
 
 function App() {
   return (
@@ -41,8 +42,8 @@ function App() {
               element={<OrderBookingCustomer />}
             />
             <Route
-              path={endPoints.DANH_SACH_DON_HANG_DA_NHAN}
-              element={<QuanLiDonHangDaNhan />}
+              path={endPoints.DANH_SACH_DON_HANG_DA_KIEM_TRA_CHAT_LUONG}
+              element={<QuanLiDonHangDaKiemTraChatLuong />}
             />
             <Route path={endPoints.ORDER} element={<Order />} />
             <Route path={endPoints.CHAT} element={<Chat />} />
