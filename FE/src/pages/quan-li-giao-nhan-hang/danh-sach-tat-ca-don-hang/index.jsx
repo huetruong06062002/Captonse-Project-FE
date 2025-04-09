@@ -1,84 +1,133 @@
-import { Table, Tag, Input } from 'antd';
-import data from "../../../FakeData/data";
-import React, { useState } from "react";
+import { Table, Tag, Input, Button } from "antd";
+import React, { useEffect, useState } from "react";
+import { getRequest, getRequestParams } from "@services/api";
 
 const { Search } = Input;
 
-function ListAllOrders() {
-  const {OrderCustomerBooking} = data;
-  const [filteredData, setFilteredData] = useState(OrderCustomerBooking);
+function ListAllOrders() { 
+  const [orders, setOrders] = useState([]); // Danh sách đơn hàng
+  const [currentPage, setCurrentPage] = useState(1); // Trang hiện tại
+  const [pageSize, setPageSize] = useState(10); // Số bản ghi trên mỗi trang
+  const [totalRecords, setTotalRecords] = useState(0); // Tổng số bản ghi
+  const [loading, setLoading] = useState(false); // Trạng thái loading
 
-  const statusColors = {
-    "Chờ xử lý": "orange",
-    "Đã nhận": "blue",
-    "Đã giặt xong": "green",
-    "Đã giao": "purple",
-  };
+  useEffect(() => {
+    fetchAllOrder();
+  }, [currentPage, pageSize]);
 
-  const handleSearch = (value) => {
-    const filtered = OrderCustomerBooking.filter(order =>
-      order["Mã đơn hàng"].toLowerCase().includes(value.toLowerCase()) ||
-      order["Tên khách hàng"].toLowerCase().includes(value.toLowerCase()) ||
-      order["Dịch vụ đã chọn"].toLowerCase().includes(value.toLowerCase()) ||
-      order["Trạng thái đơn hàng"].toLowerCase().includes(value.toLowerCase())
-    );
-    setFilteredData(filtered);
+  const fetchAllOrder = async () => {
+    setLoading(true); // Bật trạng thái loading
+    try {
+      const params = {
+        page: currentPage,
+        pageSize: pageSize,
+      };
+      const response = await getRequestParams("orders/all-orders", params);
+      console.log("check response: ", response);
+
+      if (response && response.data) {
+        setOrders(response.data.data); // Lưu danh sách đơn hàng vào state
+        setTotalRecords(response.data.totalRecords); // Lưu tổng số bản ghi để phân trang
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false); // Tắt trạng thái loading
+    }
   };
 
   const columns = [
     {
       title: "Mã đơn hàng",
-      dataIndex: "Mã đơn hàng",
-      key: "order_id",
-      sorter: (a, b) => a["Mã đơn hàng"].localeCompare(b["Mã đơn hàng"]),
+      dataIndex: "orderId",
+      key: "orderId",
+      sorter: (a, b) => a.orderId.localeCompare(b.orderId),
     },
     {
-      title: "Tên khách hàng",
-      dataIndex: "Tên khách hàng",
-      key: "customer_name",
-      sorter: (a, b) => a["Tên khách hàng"].localeCompare(b["Tên khách hàng"]),
+      title: "Tên đơn hàng",
+      dataIndex: "orderName",
+      key: "orderName",
+      sorter: (a, b) => a.orderName.localeCompare(b.orderName),
     },
     {
-      title: "Dịch vụ đã chọn",
-      dataIndex: "Dịch vụ đã chọn",
-      key: "service",
-      sorter: (a, b) => a["Dịch vụ đã chọn"].localeCompare(b["Dịch vụ đã chọn"]),
+      title: "Số lượng dịch vụ",
+      dataIndex: "serviceCount",
+      key: "serviceCount",
+      sorter: (a, b) => a.serviceCount - b.serviceCount,
     },
     {
-      title: "Trạng thái đơn hàng",
-      dataIndex: "Trạng thái đơn hàng",
-      key: "status",
-      sorter: (a, b) => a["Trạng thái đơn hàng"].localeCompare(b["Trạng thái đơn hàng"]),
-      render: (status) => <Tag color={statusColors[status]}>{status}</Tag>,
+      title: "Tổng giá",
+      dataIndex: "totalPrice",
+      key: "totalPrice",
+      sorter: (a, b) => a.totalPrice - b.totalPrice,
+      render: (price) => `${price?.toLocaleString()} VND`,
     },
     {
-      title: "Thời gian đặt hàng",
-      dataIndex: "Thời gian đặt hàng",
-      key: "order_time",
-      sorter: (a, b) => new Date(a["Thời gian đặt hàng"]) - new Date(b["Thời gian đặt hàng"]),
+      title: "Ngày đặt hàng",
+      dataIndex: "orderedDate",
+      key: "orderedDate",
+      sorter: (a, b) => new Date(a.orderedDate) - new Date(b.orderedDate),
+      render: (date) => new Date(date).toLocaleString("vi-VN"),
     },
     {
-      title: "Giá tiền",
-      dataIndex: "Giá tiền",
-      key: "price",
-      sorter: (a, b) => parseInt(a["Giá tiền"].replace(/[^0-9]/g, "")) - parseInt(b["Giá tiền"].replace(/[^0-9]/g, "")),
+      title: "Trạng thái",
+      dataIndex: "orderStatus",
+      key: "orderStatus",
+      render: (status) => {
+        const statusColors = {
+          SCHEDULED_PICKUP: "blue",
+          CANCELLED: "red",
+          PENDING: "orange",
+        };
+        return <Tag color={statusColors[status]}>{status}</Tag>;
+      },
     },
   ];
 
   return (
-    <div>
-      <Search
-        placeholder="Tìm kiếm đơn hàng..."
-        allowClear
-        enterButton="Tìm kiếm"
-        onSearch={handleSearch}
-        style={{ marginBottom: 16, width: 300 }}
-      />
+    <div
+      style={{
+        width: "100%",
+        maxHeight: "90vh", // Giới hạn chiều cao tối đa (90% chiều cao màn hình)
+        overflowY: "auto",
+        paddingBottom: "50px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 16,
+        }}
+      >
+        <Search
+          placeholder="Tìm kiếm đơn hàng..."
+          allowClear
+          enterButton="Tìm kiếm"
+          onSearch={(value) => console.log("Search:", value)}
+          style={{ width: 300 }}
+        />
+        <Button
+          type="primary"
+          onClick={fetchAllOrder} // Gọi lại hàm fetchAllOrder khi nhấn nút
+        >
+          Refresh
+        </Button>
+      </div>
       <Table
         columns={columns}
-        dataSource={filteredData}
-        rowKey={(record) => record["Mã đơn hàng"]}
-        pagination={{ pageSize: 8 }}
+        dataSource={orders}
+        rowKey={(record) => record.orderId}
+        loading={loading} // Hiển thị loading khi đang tải dữ liệu
+        pagination={{
+          current: currentPage,
+          pageSize: pageSize,
+          total: totalRecords,
+          onChange: (page, pageSize) => {
+            setCurrentPage(page);
+            setPageSize(pageSize);
+          },
+        }}
       />
     </div>
   );
