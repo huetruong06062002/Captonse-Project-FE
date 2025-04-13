@@ -11,8 +11,10 @@ dayjs.extend(weekday);
 
 // Function to format dates for display
 export const formatDateDisplay = (date) =>
-  dayjs(date).format("DD-MM-YYYY | HH:mm:ss");
+  dayjs(date).format("DD-MM-YYYY");
 
 // Function to format dates for API
 export const formatDateForAPI = (date) =>
   dayjs(date).format("YYYY-MM-DDTHH:mm:ss");
+
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Pie, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -23,6 +23,9 @@ import serviesImage from "../../assets/image/service.png";
 import extraImage from "../../assets/image/services-extra.png";
 import CountUp from "react-countup";
 import { Line } from "react-chartjs-2";
+import html2canvas from "html2canvas";
+import domtoimage from "dom-to-image";
+import exportToPNGImg from "../../assets/image/exportToPNG.png";
 
 // Đăng ký các thành phần cần thiết
 ChartJS.register(
@@ -64,6 +67,9 @@ function DashBoard() {
   const [numberOfService, setNumberOfService] = useState(0);
   const [numberOfExtra, setNumberOfExtra] = useState(0);
   const [orderStats, setOrderStats] = useState(null);
+  // Create a reference to the dashboard div
+  const dashboardRef = useRef();
+
   useEffect(() => {
     const fetchNumberOfCustomer = async () => {
       try {
@@ -175,11 +181,37 @@ function DashBoard() {
     ],
   };
 
+  //Export dashboard to PNG
+
+  const exportToPNG = () => {
+    if (dashboardRef.current) {
+      domtoimage
+        .toPng(dashboardRef.current)
+        .then((dataUrl) => {
+          const link = document.createElement("a");
+          link.download = "dashboard.png"; // Tên file xuất ra
+          link.href = dataUrl; // URL ảnh PNG
+          link.click(); // Kích hoạt tải xuống
+        })
+        .catch((error) => {
+          console.error("Lỗi khi xuất dashboard:", error);
+        });
+    } else {
+      console.error("dashboardRef is null");
+    }
+  };
+
   return (
-    <div style={{ width: "100%",   margin: "0 auto", // Căn giữa nội dung
-      padding: "0 1rem", // Thêm khoảng cách hai bên
-      maxHeight: "90vh", // Giới hạn chiều cao tối đa (90% chiều cao màn hình)
-      overflowY: "auto",  }}>
+    <div
+      style={{
+        width: "100%",
+        margin: "0 auto", // Căn giữa nội dung
+        padding: "0 1rem", // Thêm khoảng cách hai bên
+        maxHeight: "90vh", // Giới hạn chiều cao tối đa (90% chiều cao màn hình)
+        overflowY: "auto",
+      }}
+      ref={dashboardRef}
+    >
       <Row display="flex" style={{ gap: "0.3rem", flexWrap: "nowrap" }}>
         <Col
           span={6}
@@ -203,6 +235,7 @@ function DashBoard() {
             <img
               src={customerImage}
               alt="Order"
+              crossOrigin="anonymous"
               style={{
                 width: "100%", // Đảm bảo hình ảnh chiếm toàn bộ không gian div
                 height: "100%", // Đảm bảo hình ảnh chiếm toàn bộ không gian div
@@ -222,7 +255,11 @@ function DashBoard() {
               Tổng số khách hàng
             </p>
             <h3
-              style={{ textAlign: "center", color: "#000", fontSize: "1.1rem" }}
+              style={{
+                textAlign: "center",
+                color: "#000",
+                fontSize: "1.1rem",
+              }}
             >
               {/* Sử dụng CountUp để tạo hiệu ứng tăng số */}
               <CountUp
@@ -268,7 +305,11 @@ function DashBoard() {
             />
           </div>
           <div
-            style={{ marginLeft: "1rem", marginTop: "1rem", color: "#f1c40f" }}
+            style={{
+              marginLeft: "1rem",
+              marginTop: "1rem",
+              color: "#f1c40f",
+            }}
           >
             <p
               style={{
@@ -280,7 +321,11 @@ function DashBoard() {
               Tổng số đơn hàng
             </p>
             <h3
-              style={{ textAlign: "center", color: "#000", fontSize: "1.1rem" }}
+              style={{
+                textAlign: "center",
+                color: "#000",
+                fontSize: "1.1rem",
+              }}
             >
               <CountUp
                 start={0} // Bắt đầu từ 0
@@ -325,7 +370,11 @@ function DashBoard() {
             />
           </div>
           <div
-            style={{ marginLeft: "1rem", marginTop: "1rem", color: "#f1c40f" }}
+            style={{
+              marginLeft: "1rem",
+              marginTop: "1rem",
+              color: "#f1c40f",
+            }}
           >
             <p
               style={{
@@ -338,7 +387,11 @@ function DashBoard() {
               Tổng số lượng dịch vụ
             </p>
             <h3
-              style={{ textAlign: "center", color: "#000", fontSize: "1.1rem" }}
+              style={{
+                textAlign: "center",
+                color: "#000",
+                fontSize: "1.1rem",
+              }}
             >
               <CountUp
                 start={0} // Bắt đầu từ 0
@@ -396,7 +449,11 @@ function DashBoard() {
               Tổng số dịch vụ thêm
             </p>
             <h3
-              style={{ textAlign: "center", color: "#000", fontSize: "1.1rem" }}
+              style={{
+                textAlign: "center",
+                color: "#000",
+                fontSize: "1.1rem",
+              }}
             >
               <CountUp
                 start={0} // Bắt đầu từ 0
@@ -421,7 +478,7 @@ function DashBoard() {
             }}
           />
         </div>
-        <div style={{ width: "50%", float: "left" }}>
+        <div style={{ width: "50%", float: "left", position: "relative" }}>
           <Bar
             data={barData}
             options={{
@@ -430,6 +487,47 @@ function DashBoard() {
             }}
           />
         </div>
+        {/* Export Button */}
+        <button
+          onClick={exportToPNG}
+          style={{
+            cursor: "pointer",
+            position: "absolute",
+            right: "5rem",
+            top: "50%",
+            transform: "translateY(-50%)", // Center vertically
+            backgroundColor: "rgb(0, 216, 214)", // Button background color
+            border: "none", // Remove border
+            borderRadius: "8px", // Rounded corners
+            padding: "10px 20px", // Add padding
+            display: "flex", // Use flexbox for alignment
+            alignItems: "center", // Center items vertically
+            gap: "1rem", // Space between icon and text
+            boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)", // Add shadow
+            transition: "all 0.3s ease", // Smooth hover effect
+            width:"10rem"
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = "rgb(0, 180, 180)"; // Hover background color
+            e.currentTarget.style.boxShadow = "0px 6px 8px rgba(0, 0, 0, 0.2)"; // Hover shadow
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = "rgb(0, 216, 214)"; // Reset background color
+            e.currentTarget.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)"; // Reset shadow
+          }}
+        >
+          <img src={exportToPNGImg} width={30} alt="Export Icon" />
+          <p
+            style={{
+              margin: 0,
+              fontSize: "0.8rem",
+              fontWeight: "bold",
+              color: "#fff",
+            }}
+          >
+            Export Dashboard to PNG
+          </p>
+        </button>
       </Row>
       <Row>
         <Line
@@ -439,7 +537,6 @@ function DashBoard() {
             plugins: { legend: { position: "top" } },
           }}
         />
-        ;
       </Row>
     </div>
   );

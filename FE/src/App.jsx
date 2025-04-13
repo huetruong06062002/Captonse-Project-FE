@@ -18,6 +18,7 @@ import Chat from "@pages/chat";
 import ChatWithAi from "@pages/chat-with-ai";
 import ConfirmOrderPending from "@pages/confirm-order-pending";
 import QuanLiDonHangDaKiemTraChatLuong from '@pages/quan-li-giao-nhan-hang/quan-li-don-hang-da-giat-xong-va-kiem-tra-chat-luong';
+import Profile from '@pages/profile';
 
 function App() {
   return (
@@ -33,6 +34,10 @@ function App() {
         >
           <Route path={endPoints.ALL} element={<AdminLayout />}>
             <Route index element={<Chat />} />
+            <Route
+              path={endPoints.PROFILE}
+              element={<Profile/>}
+            />
             <Route
               path={endPoints.DANH_SACH_TAT_CA_DON_HANG}
               element={<ListAllOrders />}

@@ -11,6 +11,7 @@ const endPoints = {
   EXTRACATEGORIES: "extra-categories",
   USERS: "users",
   CHAT: "chat",
+  PROFILE: "profile",
   CONFIRMCUSTOMERPENDING: "confirm-customer-pending",
   ADMIN: "/admin",
   LOGIN: "/login",

@@ -14,7 +14,7 @@ function ListAllOrders() {
   useEffect(() => {
     fetchAllOrder();
   }, [currentPage, pageSize]);
-
+  
   const fetchAllOrder = async () => {
     setLoading(true); // Bật trạng thái loading
     try {
