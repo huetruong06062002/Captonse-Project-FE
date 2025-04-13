@@ -214,15 +214,15 @@ function Users() {
       children: [
         {
           title: <Space><PhoneOutlined /> Số điện thoại</Space>,
-          dataIndex: "phoneNumber",
-          key: "phoneNumber",
+      dataIndex: "phoneNumber",
+      key: "phoneNumber",
           ...getColumnSearchProps('phoneNumber'),
           width: 150,
-        },
-        {
+    },
+    {
           title: <Space><MailOutlined /> Email</Space>,
-          dataIndex: "email",
-          key: "email",
+      dataIndex: "email",
+      key: "email",
           ...getColumnSearchProps('email'),
           render: (email) => email || <Text type="secondary">Chưa cung cấp</Text>,
           width: 220,
@@ -284,10 +284,10 @@ function Users() {
             />
           </Tooltip>
           <Tooltip title="Chỉnh sửa">
-            <Button
+          <Button         
               className="action-btn action-btn-edit"
               icon={<EditOutlined />}
-              onClick={() => handleEditUser(record)}
+            onClick={() => handleEditUser(record)}
             />
           </Tooltip>
           <Tooltip title="Xóa">
@@ -298,7 +298,7 @@ function Users() {
               cancelText="Hủy"
               icon={<ExclamationCircleOutlined style={{ color: 'red' }} />}
             >
-              <Button
+          <Button
                 className="action-btn action-btn-delete"
                 icon={<DeleteOutlined />}
               />
@@ -491,7 +491,7 @@ function Users() {
               onClick={() => setIsCreateUserModalVisible(true)}
             >
               Tạo người dùng
-            </Button>
+      </Button>
           </div>
         </div>
         
@@ -504,12 +504,12 @@ function Users() {
             />
           </div>
           
-          <Table
+      <Table
             className="user-table"
-            columns={columns}
-            dataSource={users}
-            rowKey="userId"
-            loading={isLoading}
+        columns={columns}
+        dataSource={users}
+        rowKey="userId"
+        loading={isLoading}
             onChange={handleTableChange}
             pagination={{
               current: currentPage,
@@ -552,8 +552,8 @@ function Users() {
             className="user-form"
           >
             <Form.Item name="userId" hidden>
-              <Input />
-            </Form.Item>
+            <Input />
+          </Form.Item>
             
             <Row gutter={16}>
               <Col span={12}>
@@ -563,16 +563,16 @@ function Users() {
                   rules={[{ required: true, message: "Vui lòng nhập họ tên" }]}
                 >
                   <Input placeholder="Nhập họ tên" />
-                </Form.Item>
+          </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item
+          <Form.Item
                   name="email"
                   label="Email"
                   rules={[{ type: "email", message: "Email không hợp lệ" }]}
                 >
                   <Input placeholder="Nhập email" />
-                </Form.Item>
+          </Form.Item>
               </Col>
             </Row>
 
@@ -614,8 +614,8 @@ function Users() {
                     <Select.Option value="Male">Nam</Select.Option>
                     <Select.Option value="Female">Nữ</Select.Option>
                     <Select.Option value="Other">Khác</Select.Option>
-                  </Select>
-                </Form.Item>
+            </Select>
+          </Form.Item>
               </Col>
             </Row>
 
@@ -645,9 +645,9 @@ function Users() {
               <Button onClick={handleModalCancel}>Hủy</Button>
               <Button type="primary" htmlType="submit" loading={isLoading}>
                 Cập nhật
-              </Button>
+            </Button>
             </div>
-          </Form>
+        </Form>
         </Spin>
       </Modal>
 
@@ -670,13 +670,13 @@ function Users() {
           >
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item
-                  name="fullName"
-                  label="Họ và Tên"
+          <Form.Item
+            name="fullName"
+            label="Họ và Tên"
                   rules={[{ required: true, message: "Vui lòng nhập họ tên" }]}
-                >
+          >
                   <Input placeholder="Nhập họ tên" />
-                </Form.Item>
+          </Form.Item>
               </Col>
               <Col span={12}>
                 <Form.Item
@@ -688,21 +688,21 @@ function Users() {
                   ]}
                 >
                   <Input placeholder="Nhập email" />
-                </Form.Item>
+          </Form.Item>
               </Col>
             </Row>
 
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item
-                  name="password"
-                  label="Mật khẩu"
+          <Form.Item
+            name="password"
+            label="Mật khẩu"
                   rules={[
                     { required: true, message: "Vui lòng nhập mật khẩu" },
                   ]}
-                >
+          >
                   <Input.Password placeholder="Nhập mật khẩu" />
-                </Form.Item>
+          </Form.Item>
               </Col>
               <Col span={12}>
                 <Form.Item
@@ -711,13 +711,13 @@ function Users() {
                   rules={[{ required: true, message: "Vui lòng chọn vai trò" }]}
                 >
                   <Select placeholder="Chọn vai trò">
-                    <Select.Option value="Admin">Admin</Select.Option>
-                    <Select.Option value="User">User</Select.Option>
-                    <Select.Option value="Staff">Staff</Select.Option>
-                    <Select.Option value="Driver">Driver</Select.Option>
+              <Select.Option value="Admin">Admin</Select.Option>
+              <Select.Option value="User">User</Select.Option>
+              <Select.Option value="Staff">Staff</Select.Option>
+              <Select.Option value="Driver">Driver</Select.Option>
                     <Select.Option value="CustomerStaff">CustomerStaff</Select.Option>
-                  </Select>
-                </Form.Item>
+            </Select>
+          </Form.Item>
               </Col>
             </Row>
 
@@ -747,34 +747,34 @@ function Users() {
                 </div>
               </Col>
               <Col span={12}>
-                <Form.Item
-                  name="gender"
-                  label="Giới tính"
+          <Form.Item
+            name="gender"
+            label="Giới tính"
                   rules={[{ required: true, message: "Vui lòng chọn giới tính" }]}
-                >
+          >
                   <Select placeholder="Chọn giới tính">
-                    <Select.Option value="Male">Nam</Select.Option>
-                    <Select.Option value="Female">Nữ</Select.Option>
-                    <Select.Option value="Other">Khác</Select.Option>
-                  </Select>
-                </Form.Item>
+              <Select.Option value="Male">Nam</Select.Option>
+              <Select.Option value="Female">Nữ</Select.Option>
+              <Select.Option value="Other">Khác</Select.Option>
+            </Select>
+          </Form.Item>
               </Col>
             </Row>
 
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item
-                  name="phoneNumber"
-                  label="Số điện thoại"
+          <Form.Item
+            name="phoneNumber"
+            label="Số điện thoại"
                   rules={[{ required: true, message: "Vui lòng nhập số điện thoại" }]}
-                >
+          >
                   <Input placeholder="Nhập số điện thoại" />
-                </Form.Item>
+          </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item name="rewardPoints" label="Điểm thưởng">
+          <Form.Item name="rewardPoints" label="Điểm thưởng">
                   <Input type="number" min={0} placeholder="Nhập điểm thưởng" />
-                </Form.Item>
+          </Form.Item>
               </Col>
             </Row>
 
@@ -790,16 +790,16 @@ function Users() {
                   <UploadOutlined />
                   <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
                 </div>
-              </Upload>
-            </Form.Item>
+            </Upload>
+          </Form.Item>
 
             <div className="user-form-footer">
               <Button onClick={handleCreateModalCancel}>Hủy</Button>
               <Button type="primary" htmlType="submit" loading={isLoading}>
                 Tạo mới
-              </Button>
+            </Button>
             </div>
-          </Form>
+        </Form>
         </Spin>
       </Modal>
 

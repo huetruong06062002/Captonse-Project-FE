@@ -139,7 +139,7 @@ const AdminLayout = () => {
     {
       key: endPoints.EXTRACATEGORIES,
       icon: <AppstoreAddOutlined />,
-      label: "Quản lý dịch vụ thêm",
+      label: "Quản lý dịch vụ đi kèm",
       allowedRoles: ["Admin"],
     },
     {

@@ -38,7 +38,8 @@ import {
   DollarOutlined,
   FileTextOutlined,
   EyeOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  CalendarOutlined
 } from "@ant-design/icons";
 import {
   getExtraCategories,
@@ -55,6 +56,7 @@ import {
 
 import { useEffect, useState } from "react";
 import "./index.css";
+import TextArea from 'antd/es/input/TextArea';
 
 const { Panel } = Collapse;
 const { Title, Text, Paragraph } = Typography;
@@ -79,6 +81,8 @@ function ExtraCategories() {
     price: "",
     image: null,
   });
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedExtra, setSelectedExtra] = useState(null);
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
 
@@ -195,18 +199,30 @@ function ExtraCategories() {
               dropdownRender={() => (
                 <Menu>
                   <Menu.Item
-                    key="edit"
-                    icon={<EditOutlined />}
+                    key="view"
+                    icon={<EyeOutlined style={{ color: '#1890ff' }} />}
                     onClick={(e) => {
-                      e.stopPropagation();
+                      // e.stopPropagation();
+                      handleViewExtraDetail(extra.extraId);
+                    }}
+                    style={{ color: '#1890ff' }}
+                  >
+                    Xem chi tiết
+                  </Menu.Item>
+                  <Menu.Item
+                    key="edit"
+                    icon={<EditOutlined style={{ color: '#52c41a' }} />}
+                    onClick={(e) => {
+                      // e.stopPropagation();
                       handleEditExtra(extra);
                     }}
+                    style={{ color: '#52c41a' }}
                   >
                     Cập nhật dịch vụ
                   </Menu.Item>
                   <Menu.Item
                     key="delete"
-                    icon={<DeleteOutlined />}
+                    icon={<DeleteOutlined style={{ color: '#ff4d4f' }} />}
                     danger
                     onClick={(e) => {
                       e.stopPropagation();
@@ -297,6 +313,39 @@ function ExtraCategories() {
       message.error("Thêm dịch vụ thất bại!");
     } finally {
       setLoading(false);
+    }
+  };
+
+
+  console.log("check detail modal", detailModalVisible);
+  const handleViewExtraDetail = async (extraId) => {
+
+
+    try {
+      console.log("Viewing extra detail for ID:", extraId);
+      // Find the extra in the existing data to avoid an additional API call
+      let foundExtra = null;
+       setDetailModalVisible(true);
+      
+      for (const category of categories || []) {
+        const extra = category.extras?.find(e => e.extraId === extraId);
+        if (extra) {
+          foundExtra = {...extra, categoryName: category.name};
+          break;
+        }
+      }
+      
+      if (foundExtra) {
+        console.log("Found extra:", foundExtra);
+        setSelectedExtra(foundExtra);
+       
+      } else {
+        console.error("Extra not found with ID:", extraId);
+        message.error("Không tìm thấy thông tin dịch vụ!");
+      }
+    } catch (error) {
+      console.error("Error viewing extra detail:", error);
+      message.error("Có lỗi xảy ra khi xem chi tiết dịch vụ!");
     }
   };
 
@@ -441,6 +490,7 @@ function ExtraCategories() {
         onCancel={() => setIsModalVisible(false)}
         okText="Tạo danh mục"
         cancelText="Hủy"
+        cancelButtonProps={{ style: { display: 'inline-block' } }}
       >
         <Form layout="vertical">
           <Form.Item 
@@ -458,6 +508,99 @@ function ExtraCategories() {
         </Form>
       </Modal>
 
+
+       {/* Detail Modal */}
+      <Modal
+        title={
+          <Space>
+            <EyeOutlined />
+            <span>Chi tiết dịch vụ đi kèm</span>
+          </Space>
+        }
+        open={detailModalVisible}
+        onCancel={() => setDetailModalVisible(false)}
+        width={700}
+        footer={[
+          <Button 
+            key="close" 
+            onClick={() => setDetailModalVisible(false)}
+            type="primary"
+          >
+            Đóng
+          </Button>
+        ]}
+      >
+        {selectedExtra && (
+          <div>
+            <div className="detail-header">
+              <Space align="start">
+                <Avatar 
+                  src={selectedExtra.imageUrl}
+                  alt={selectedExtra.name}
+                  shape="square" 
+                  size={80}
+                  style={{ backgroundColor: '#f0f0f0' }}
+                />
+                <div>
+                  <Text strong style={{ fontSize: 18 }}>{selectedExtra.name}</Text>
+                  <div style={{ marginTop: 8 }}>
+                    <Tag color="blue" icon={<DollarOutlined />} style={{ fontSize: 14 }}>
+                      {selectedExtra.price.toLocaleString('vi-VN')} VND
+                    </Tag>
+                    <Tag color="green" style={{ marginLeft: 8 }}>
+                      {selectedExtra.categoryName}
+                    </Tag>
+                  </div>
+                </div>
+              </Space>
+            </div>
+            
+            <Divider style={{ margin: '16px 0' }}/>
+            
+            <div className="detail-section">
+              <Title level={5}>
+                <FileTextOutlined /> Mô tả dịch vụ
+              </Title>
+              <div className="description-content">
+                {selectedExtra.description || "Không có mô tả cho dịch vụ này."}
+              </div>
+            </div>
+            
+            <div className="detail-section">
+              <Title level={5}>
+                <InfoCircleOutlined /> Thông tin khác
+              </Title>
+              <div className="detail-meta">
+                <div className="detail-meta-item">
+                  <InfoCircleOutlined />
+                  <Text>ID: {selectedExtra.extraId}</Text>
+                </div>
+                {selectedExtra.createdAt && (
+                  <div className="detail-meta-item">
+                    <CalendarOutlined />
+                    <Text>Ngày tạo: {new Date(selectedExtra.createdAt).toLocaleDateString('vi-VN')}</Text>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {selectedExtra.imageUrl && (
+              <div className="detail-section">
+                <Title level={5}>
+                  <PictureOutlined /> Hình ảnh
+                </Title>
+                <Image 
+                  src={selectedExtra.imageUrl} 
+                  alt={selectedExtra.name}
+                  style={{ maxWidth: '100%', borderRadius: 8 }}
+                  fallback="error-image-placeholder.png"
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
       {/* Edit Service Modal */}
       <Modal
         title={
@@ -473,7 +616,7 @@ function ExtraCategories() {
           editForm.resetFields();
         }}
         okText="Cập nhật"
-        cancelText="Hủy"
+        cancelButtonProps={{ style: { display: 'none' } }}
         confirmLoading={loading}
         width={600}
       >
@@ -493,11 +636,17 @@ function ExtraCategories() {
             name="description"
             label="Mô tả"
           >
-            <Input.TextArea 
+            <Input 
               placeholder="Nhập mô tả dịch vụ" 
               rows={3}
               showCount
               maxLength={200}
+              style={{ 
+                border: "1px solid #d9d9d9", 
+                borderRadius: "2px", 
+                boxShadow: "none",
+                // background: "white"
+              }}
             />
           </Form.Item>
           
@@ -581,7 +730,7 @@ function ExtraCategories() {
           form.resetFields();
         }}
         okText="Tạo dịch vụ"
-        cancelText="Hủy"
+        cancelButtonProps={{ style: { display: 'none' } }}
         confirmLoading={loading}
         width={600}
       >
@@ -606,6 +755,12 @@ function ExtraCategories() {
               rows={3}
               showCount
               maxLength={200}
+              style={{ 
+                border: "1px solid #d9d9d9", 
+                borderRadius: "2px", 
+                boxShadow: "none",
+                background: "white"
+              }}
             />
           </Form.Item>
           
@@ -670,6 +825,8 @@ function ExtraCategories() {
           </Form.Item>
         </Form>
       </Modal>
+
+     
     </div>
   );
 }
