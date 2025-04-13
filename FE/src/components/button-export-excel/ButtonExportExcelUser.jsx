@@ -7,7 +7,7 @@ const ButtonExportExcelUser = () => {
   const downloadExcel = async () => {
     setLoading(true);
     try {
-      const response = await fetch("https://laundryserviceapi.azurewebsites.net/api/Excels/export", {
+      const response = await fetch("https://laundry.vuhai.me/api/Excels/export", {
         method: "GET",
         headers: {
           accept:

@@ -36,7 +36,7 @@ function Chat() {
   // Kết nối SignalR khi component được mount
   useEffect(() => {
     const newConnection = new HubConnectionBuilder()
-      .withUrl("https://laundryserviceapi.azurewebsites.net/chatHub", {
+      .withUrl("https://laundry.vuhai.me/chatHub", {
         withCredentials: false, // Tắt gửi thông tin xác thực
       }) // Không cần `withCredentials`
       .build();
@@ -63,7 +63,7 @@ function Chat() {
       // Chỉ gọi API khi conversationId đã có giá trị
       const fetchMessages = async () => {
         const messagesResponse = await fetch(
-          `https://laundryserviceapi.azurewebsites.net/api/Conversations/messages/${conversationId}`
+          `https://laundry.vuhai.me/api/Conversations/messages/${conversationId}`
         );
         const messagesData = await messagesResponse.json();
 
@@ -81,7 +81,7 @@ function Chat() {
   const startConversation = async (receiverId) => {
     console.log("receiverId", receiverId);
     const response = await fetch(
-      `https://laundryserviceapi.azurewebsites.net/api/Conversations/${receiverId}?currentUserId=${user.userId}`
+      `https://laundry.vuhai.me/api/Conversations/${receiverId}?currentUserId=${user.userId}`
     );
     const data = await response.json();
 
@@ -91,7 +91,7 @@ function Chat() {
         userTwoId: receiverId,
       });
       const createResponse = await fetch(
-        "https://laundryserviceapi.azurewebsites.net/api/Conversations",
+        "https://laundry.vuhai.me/api/Conversations",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -147,7 +147,7 @@ function Chat() {
       try {
         const accessToken = localStorage.getItem("accessToken"); // Lấy accessToken từ localStorage
         const response = await fetch(
-          "https://laundryserviceapi.azurewebsites.net/api/users",
+          "https://laundry.vuhai.me/api/users",
           {
             method: "GET",
             headers: {
