@@ -4,19 +4,18 @@ import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  PointElement, // Đăng ký PointElement
-  LineElement, // Đăng ký LineElement
+  PointElement,
+  LineElement,
   BarElement,
   Title,
   Tooltip,
   Legend,
-  ArcElement, // Thêm ArcElement
+  ArcElement,
 } from "chart.js";
 import { axiosClientVer2 } from "../../config/axiosInterceptor";
 import { getRequest } from "@services/api";
-import { Col, Image, Row } from "antd";
+import { Col, Row } from "antd";
 
-import { FaUserTie } from "react-icons/fa6";
 import orderImage from "../../assets/image/order.png";
 import customerImage from "../../assets/image/customer.png";
 import serviesImage from "../../assets/image/service.png";
@@ -34,11 +33,9 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  CategoryScale,
-  LinearScale,
-  PointElement, // Đăng ký PointElement
-  LineElement, // Đăng ký LineElement
-  ArcElement // Đăng ký ArcElement để sử dụng Pie Chart
+  PointElement,
+  LineElement,
+  ArcElement
 );
 
 function DashBoard() {
@@ -73,7 +70,6 @@ function DashBoard() {
     const fetchNumberOfCustomer = async () => {
       try {
         const response = await getRequest("DashBoard/get-customers-number");
-        console.log("response", response);
         setNumberOfCustomer(response.data.customersNumber);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -83,7 +79,6 @@ function DashBoard() {
     const fetchNumberOfOrders = async () => {
       try {
         const response = await getRequest("DashBoard/get-all-orders-numbers");
-        console.log("response", response);
         setNumberOfOrder(response.data.orderNumbers);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -93,7 +88,6 @@ function DashBoard() {
     const fetchNumberOfServices = async () => {
       try {
         const response = await getRequest("DashBoard/get-all-services-numbers");
-        console.log("response", response);
         setNumberOfService(response.data.servicesNumbers);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -103,7 +97,6 @@ function DashBoard() {
     const fetchNumberOfExtras = async () => {
       try {
         const response = await getRequest("DashBoard/get-all-extras-numbers");
-        console.log("response", response);
         setNumberOfExtra(response.data.extrasNumbers);
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -112,7 +105,6 @@ function DashBoard() {
 
     const fetchNumberOfOrderStatistics = async () => {
       const response = await getRequest("DashBoard/get-order-statistics");
-
       setOrderStats(response.data);
     };
 
@@ -123,8 +115,6 @@ function DashBoard() {
     fetchNumberOfOrderStatistics();
   }, []);
 
-  console.log("orderStats", orderStats);
-
   if (!orderStats) return <div>Loading...</div>;
 
   // ChartJS data for statusStatistics (Pie Chart)
@@ -134,7 +124,7 @@ function DashBoard() {
       {
         data: orderStats.statusStatistics.map((item) => item.count),
         backgroundColor: orderStats.statusStatistics.map(
-          (_, index) => colors[index % colors.length] // Lấy màu theo chỉ số, lặp lại nếu hết màu
+          (_, index) => colors[index % colors.length]
         ),
         hoverOffset: 4,
       },
@@ -158,7 +148,7 @@ function DashBoard() {
           orderStats.monthlyOrders,
           orderStats.incompleteOrders,
         ],
-        backgroundColor: ["#FF9F40", "#4BC0C0", "#FFCD56", "#FF6384"], // Tùy chỉnh màu sắc
+        backgroundColor: ["#FF9F40", "#4BC0C0", "#FFCD56", "#FF6384"],
         borderRadius: 5,
         borderSkipped: false,
       },
@@ -171,26 +161,25 @@ function DashBoard() {
     datasets: [
       {
         label: "Khách hàng mới",
-        data: [5, 20, 50], // Dữ liệu khách hàng mới
-        borderColor: "#36A2EB", // Màu đường
-        backgroundColor: "rgba(54, 162, 235, 0.2)", // Màu nền dưới đường
-        tension: 0.4, // Độ cong của đường
-        fill: true, // Tô màu dưới đường
+        data: [5, 20, 50],
+        borderColor: "#36A2EB",
+        backgroundColor: "rgba(54, 162, 235, 0.2)",
+        tension: 0.4,
+        fill: true,
       },
     ],
   };
 
   //Export dashboard to PNG
-
   const exportToPNG = () => {
     if (dashboardRef.current) {
       domtoimage
         .toPng(dashboardRef.current)
         .then((dataUrl) => {
           const link = document.createElement("a");
-          link.download = "dashboard.png"; // Tên file xuất ra
-          link.href = dataUrl; // URL ảnh PNG
-          link.click(); // Kích hoạt tải xuống
+          link.download = "dashboard.png";
+          link.href = dataUrl;
+          link.click();
         })
         .catch((error) => {
           console.error("Lỗi khi xuất dashboard:", error);
@@ -201,348 +190,366 @@ function DashBoard() {
   };
 
   return (
-    <div
-      style={{
-        width: "100%",
-        margin: "0 auto", // Căn giữa nội dung
-        padding: "0 1rem", // Thêm khoảng cách hai bên
-        maxHeight: "90vh", // Giới hạn chiều cao tối đa (90% chiều cao màn hình)
-        overflowY: "auto",
-      }}
-      ref={dashboardRef}
-    >
-      <Row display="flex" style={{ gap: "0.3rem", flexWrap: "nowrap" }}>
-        <Col
-          span={6}
-          style={{
-            borderRadius: "1rem",
-            backgroundColor: "#f0f0f0",
-            padding: "1rem",
+    <div ref={dashboardRef} style={{ padding: "20px", backgroundColor: "#f8f9fa" }}>
+      {/* Stats Cards Row */}
+      <Row gutter={[20, 20]}>
+        <Col xs={24} sm={12} md={6}>
+          <div style={{
+            backgroundColor: "white",
+            borderRadius: "10px",
+            padding: "20px",
             display: "flex",
-            color: "#2980b9",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#2980b9",
+            flexDirection: "column",
+            alignItems: "center",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            height: "100%"
+          }}>
+            <div style={{
+              backgroundColor: "rgba(52, 152, 219, 0.1)",
               borderRadius: "50%",
-              width: "5rem",
-              height: "5rem",
-              padding: "1rem",
-            }}
-          >
-            <img
-              src={customerImage}
-              alt="Order"
-              crossOrigin="anonymous"
-              style={{
-                width: "100%", // Đảm bảo hình ảnh chiếm toàn bộ không gian div
-                height: "100%", // Đảm bảo hình ảnh chiếm toàn bộ không gian div
-                objectFit: "contain", // Giữ tỷ lệ hình ảnh
-                borderRadius: "50%", // Bo tròn hình ảnh
-              }}
-            />
-          </div>
-          <div style={{ marginLeft: "1rem", marginTop: "1rem" }}>
-            <p
-              style={{
-                textAlign: "center",
-                fontSize: "1.2rem",
-                fontWeight: "600",
-              }}
-            >
+              width: "60px",
+              height: "60px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: "15px"
+            }}>
+              <img
+                src={customerImage}
+                alt="Customer"
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
+            <p style={{
+              fontSize: "16px",
+              fontWeight: "500",
+              color: "#3498db",
+              marginBottom: "10px",
+              textAlign: "center"
+            }}>
               Tổng số khách hàng
             </p>
-            <h3
-              style={{
-                textAlign: "center",
-                color: "#000",
-                fontSize: "1.1rem",
-              }}
-            >
-              {/* Sử dụng CountUp để tạo hiệu ứng tăng số */}
-              <CountUp
-                start={0} // Bắt đầu từ 0
-                end={numberOfCustomer} // Kết thúc tại giá trị thực tế
-                duration={2} // Thời gian hiệu ứng (2 giây)
-                separator="," // Thêm dấu phẩy phân cách số
-              />
+            <h3 style={{
+              fontSize: "24px",
+              fontWeight: "700",
+              margin: 0,
+              textAlign: "center"
+            }}>
+              <CountUp start={0} end={numberOfCustomer} duration={2} separator="," />
             </h3>
           </div>
         </Col>
-        <Col
-          span={6}
-          style={{
-            borderRadius: "1rem",
-            backgroundColor: "#f0f0f0",
-            padding: "1rem",
+        
+        <Col xs={24} sm={12} md={6}>
+          <div style={{
+            backgroundColor: "white",
+            borderRadius: "10px",
+            padding: "20px",
             display: "flex",
-            color: "#2980b9",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#f1c40f",
+            flexDirection: "column",
+            alignItems: "center",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            height: "100%"
+          }}>
+            <div style={{
+              backgroundColor: "rgba(241, 196, 15, 0.1)",
               borderRadius: "50%",
-              width: "5rem",
-              height: "5rem",
-              padding: "1rem",
-              display: "flex", // Sử dụng flexbox
-              justifyContent: "center", // Căn giữa theo chiều ngang
-              alignItems: "center", // Căn giữa theo chiều dọc
-            }}
-          >
-            <img
-              src={orderImage}
-              alt="Order"
-              style={{
-                width: "100%", // Đảm bảo hình ảnh chiếm toàn bộ không gian div
-                height: "100%", // Đảm bảo hình ảnh chiếm toàn bộ không gian div
-                objectFit: "contain", // Giữ tỷ lệ hình ảnh
-                borderRadius: "50%", // Bo tròn hình ảnh
-              }}
-            />
-          </div>
-          <div
-            style={{
-              marginLeft: "1rem",
-              marginTop: "1rem",
+              width: "60px",
+              height: "60px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: "15px"
+            }}>
+              <img
+                src={orderImage}
+                alt="Order"
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
+            <p style={{
+              fontSize: "16px",
+              fontWeight: "500",
               color: "#f1c40f",
-            }}
-          >
-            <p
-              style={{
-                textAlign: "center",
-                fontSize: "1.2rem",
-                fontWeight: "600",
-              }}
-            >
+              marginBottom: "10px",
+              textAlign: "center"
+            }}>
               Tổng số đơn hàng
             </p>
-            <h3
-              style={{
-                textAlign: "center",
-                color: "#000",
-                fontSize: "1.1rem",
-              }}
-            >
-              <CountUp
-                start={0} // Bắt đầu từ 0
-                end={numberOfOrder} // Kết thúc tại giá trị thực tế
-                duration={2} // Thời gian hiệu ứng (2 giây)
-                separator="," // Thêm dấu phẩy phân cách số
-              />
+            <h3 style={{
+              fontSize: "24px",
+              fontWeight: "700",
+              margin: 0,
+              textAlign: "center"
+            }}>
+              <CountUp start={0} end={numberOfOrder} duration={2} separator="," />
             </h3>
           </div>
         </Col>
-        <Col
-          span={6}
-          style={{
-            borderRadius: "1rem",
-            backgroundColor: "#f0f0f0",
-            padding: "1rem",
+        
+        <Col xs={24} sm={12} md={6}>
+          <div style={{
+            backgroundColor: "white",
+            borderRadius: "10px",
+            padding: "20px",
             display: "flex",
-            color: "#2980b9",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#2ecc71",
+            flexDirection: "column",
+            alignItems: "center",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            height: "100%"
+          }}>
+            <div style={{
+              backgroundColor: "rgba(46, 204, 113, 0.1)",
               borderRadius: "50%",
-              width: "5rem",
-              height: "5rem",
-              padding: "1rem",
-              display: "flex", // Sử dụng flexbox
-              justifyContent: "center", // Căn giữa theo chiều ngang
-              alignItems: "center", // Căn giữa theo chiều dọc
-            }}
-          >
-            <img
-              src={serviesImage}
-              alt="Serives"
-              style={{
-                width: "100%", // Đảm bảo hình ảnh chiếm toàn bộ không gian div
-                height: "100%", // Đảm bảo hình ảnh chiếm toàn bộ không gian div
-                objectFit: "contain", // Giữ tỷ lệ hình ảnh
-                borderRadius: "50%", // Bo tròn hình ảnh
-              }}
-            />
-          </div>
-          <div
-            style={{
-              marginLeft: "1rem",
-              marginTop: "1rem",
-              color: "#f1c40f",
-            }}
-          >
-            <p
-              style={{
-                textAlign: "center",
-                fontSize: "1.2rem",
-                fontWeight: "600",
-                color: "#2ecc71",
-              }}
-            >
+              width: "60px",
+              height: "60px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: "15px"
+            }}>
+              <img
+                src={serviesImage}
+                alt="Service"
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
+            <p style={{
+              fontSize: "16px",
+              fontWeight: "500",
+              color: "#2ecc71",
+              marginBottom: "10px",
+              textAlign: "center"
+            }}>
               Tổng số lượng dịch vụ
             </p>
-            <h3
-              style={{
-                textAlign: "center",
-                color: "#000",
-                fontSize: "1.1rem",
-              }}
-            >
-              <CountUp
-                start={0} // Bắt đầu từ 0
-                end={numberOfService} // Kết thúc tại giá trị thực tế
-                duration={2} // Thời gian hiệu ứng (2 giây)
-                separator="," // Thêm dấu phẩy phân cách số
-              />
+            <h3 style={{
+              fontSize: "24px",
+              fontWeight: "700",
+              margin: 0,
+              textAlign: "center"
+            }}>
+              <CountUp start={0} end={numberOfService} duration={2} separator="," />
             </h3>
           </div>
         </Col>
-        <Col
-          span={6}
-          style={{
-            borderRadius: "1rem",
-            backgroundColor: "#f0f0f0",
-            padding: "1rem",
+        
+        <Col xs={24} sm={12} md={6}>
+          <div style={{
+            backgroundColor: "white",
+            borderRadius: "10px",
+            padding: "20px",
             display: "flex",
-            color: "#2980b9",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#f1c40f",
+            flexDirection: "column",
+            alignItems: "center",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            height: "100%"
+          }}>
+            <div style={{
+              backgroundColor: "rgba(142, 68, 173, 0.1)",
               borderRadius: "50%",
-              width: "5rem",
-              height: "5rem",
-              padding: "1rem",
-              display: "flex", // Sử dụng flexbox
-              justifyContent: "center", // Căn giữa theo chiều ngang
-              alignItems: "center", // Căn giữa theo chiều dọc
-              backgroundColor: "#8e44ad",
-            }}
-          >
-            <img
-              src={extraImage}
-              alt="Order"
-              style={{
-                width: "100%", // Đảm bảo hình ảnh chiếm toàn bộ không gian div
-                height: "100%", // Đảm bảo hình ảnh chiếm toàn bộ không gian div
-                objectFit: "contain", // Giữ tỷ lệ hình ảnh
-                borderRadius: "50%", // Bo tròn hình ảnh
-                backgroundolor: "#8e44ad",
-              }}
-            />
-          </div>
-          <div style={{ marginLeft: "1rem", marginTop: "1rem" }}>
-            <p
-              style={{
-                textAlign: "center",
-                fontSize: "1.2rem",
-                fontWeight: "600",
-                color: "#8e44ad",
-              }}
-            >
+              width: "60px",
+              height: "60px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: "15px"
+            }}>
+              <img
+                src={extraImage}
+                alt="Extra Service"
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  objectFit: "contain",
+                }}
+              />
+            </div>
+            <p style={{
+              fontSize: "16px",
+              fontWeight: "500",
+              color: "#8e44ad",
+              marginBottom: "10px",
+              textAlign: "center"
+            }}>
               Tổng số dịch vụ thêm
             </p>
-            <h3
-              style={{
-                textAlign: "center",
-                color: "#000",
-                fontSize: "1.1rem",
-              }}
-            >
-              <CountUp
-                start={0} // Bắt đầu từ 0
-                end={numberOfExtra} // Kết thúc tại giá trị thực tế
-                duration={2} // Thời gian hiệu ứng (2 giây)
-                separator="," // Thêm dấu phẩy phân cách số
-              />
+            <h3 style={{
+              fontSize: "24px",
+              fontWeight: "700",
+              margin: 0,
+              textAlign: "center"
+            }}>
+              <CountUp start={0} end={numberOfExtra} duration={2} separator="," />
             </h3>
           </div>
         </Col>
       </Row>
-      <Row style={{ marginTop: "3rem", display: "flex" }}>
-        <div style={{ width: "25%", float: "left" }}>
-          <h1 style={{ marginLeft: "5rem", opacity: 0.5 }}>
-            Biểu đồ thống kê đơn hàng
-          </h1>
-          <Pie
-            data={pieData}
-            options={{
-              responsive: true,
-              plugins: { legend: { position: "top" } },
-            }}
-          />
-        </div>
-        <div style={{ width: "50%", float: "left", position: "relative" }}>
-          <Bar
-            data={barData}
-            options={{
-              responsive: true,
-              plugins: { legend: { position: "top" } },
-            }}
-          />
-        </div>
-        {/* Export Button */}
+
+      {/* Charts Row */}
+      <Row gutter={[20, 20]} style={{ marginTop: "20px" }}>
+        <Col xs={24} lg={12}>
+          <div style={{
+            position: "relative",
+            backgroundColor: "white",
+            borderRadius: "10px",
+            padding: "20px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+          }}>
+            <h2 style={{
+              fontSize: "18px",
+              fontWeight: "600",
+              marginBottom: "20px",
+              paddingBottom: "10px",
+              borderBottom: "1px solid #f0f0f0"
+            }}>
+              Biểu đồ thống kê đơn hàng
+            </h2>
+            <div style={{ height: "300px" }}>
+              <Pie
+                data={pieData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "bottom",
+                      labels: {
+                        boxWidth: 15,
+                        padding: 15,
+                        font: {
+                          size: 12
+                        }
+                      }
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <div style={{
+            position: "relative",
+            backgroundColor: "white",
+            borderRadius: "10px",
+            padding: "20px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+          }}>
+            <h2 style={{
+              fontSize: "18px",
+              fontWeight: "600",
+              marginBottom: "20px",
+              paddingBottom: "10px",
+              borderBottom: "1px solid #f0f0f0"
+            }}>
+              Thống kế đơn hàng theo tính theo ngày, tuần, tháng
+            </h2>
+            <div style={{ height: "300px" }}>
+              <Bar
+                data={barData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </Col>
+      </Row>
+
+      {/* Export Button */}
+      <div style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        marginTop: "20px",
+        marginBottom: "20px"
+      }}>
         <button
           onClick={exportToPNG}
           style={{
-            cursor: "pointer",
-            position: "absolute",
-            right: "5rem",
-            top: "50%",
-            transform: "translateY(-50%)",
-            backgroundColor: "#00B4B4",
-            border: "none",
-            borderRadius: "12px",
-            padding: "12px 24px",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            gap: "0.8rem",
-            boxShadow: "0 4px 15px rgba(0, 180, 180, 0.2)",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            width: "auto",
-            minWidth: "200px",
-            color: "#fff",
-            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = "#009999";
-            e.currentTarget.style.boxShadow = "0 6px 20px rgba(0, 180, 180, 0.4)";
-            e.currentTarget.style.transform = "translateY(-52%)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = "#00B4B4";
-            e.currentTarget.style.boxShadow = "0 4px 15px rgba(0, 180, 180, 0.2)";
-            e.currentTarget.style.transform = "translateY(-50%)";
+            gap: "8px",
+            backgroundColor: "#2563eb",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            padding: "10px 20px",
+            fontSize: "14px",
+            fontWeight: "500",
+            cursor: "pointer",
+            boxShadow: "0 2px 5px rgba(0,0,0,0.1)"
           }}
         >
-          <FaFileExport size={24} color="#fff" style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }} />
-          <p
-            style={{
-              margin: 0,
-              fontSize: "0.95rem",
-              fontWeight: "600",
-              letterSpacing: "0.5px",
-              textShadow: "0 2px 4px rgba(0,0,0,0.1)"
-            }}
-          >
-            Export Dashboard
-          </p>
+          <FaFileExport size={16} />
+          <span>Export Dashboard</span>
         </button>
-      </Row>
+      </div>
+
+      {/* Line Chart Row */}
       <Row>
-        <Line
-          data={lineData}
-          options={{
-            responsive: true,
-            plugins: { legend: { position: "top" } },
-          }}
-        />
+        <Col span={24}>
+          <div style={{
+            backgroundColor: "white",
+            borderRadius: "10px",
+            padding: "20px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+          }}>
+            <h2 style={{
+              fontSize: "18px",
+              fontWeight: "600",
+              marginBottom: "20px",
+              paddingBottom: "10px",
+              borderBottom: "1px solid #f0f0f0"
+            }}>
+              Khách hàng mới
+            </h2>
+            <div style={{ height: "300px" }}>
+              <Line
+                data={lineData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: true,
+                      position: "top"
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </Col>
       </Row>
     </div>
   );
