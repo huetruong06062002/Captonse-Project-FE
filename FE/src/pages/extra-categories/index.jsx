@@ -11,6 +11,19 @@ import {
   Dropdown,
   Menu,
   Upload,
+  Card,
+  Typography,
+  Space,
+  Row,
+  Col,
+  Divider,
+  Tooltip,
+  Tag,
+  Breadcrumb,
+  Avatar,
+  InputNumber,
+  Form,
+  Empty
 } from "antd";
 import {
   PlusOutlined,
@@ -18,6 +31,14 @@ import {
   MoreOutlined,
   EditOutlined,
   UploadOutlined,
+  ReloadOutlined,
+  HomeOutlined,
+  AppstoreOutlined,
+  PictureOutlined,
+  DollarOutlined,
+  FileTextOutlined,
+  EyeOutlined,
+  InfoCircleOutlined
 } from "@ant-design/icons";
 import {
   getExtraCategories,
@@ -33,33 +54,33 @@ import {
 } from "@redux/features/extraCategoryReducer/extraReducer";
 
 import { useEffect, useState } from "react";
+import "./index.css";
 
 const { Panel } = Collapse;
+const { Title, Text, Paragraph } = Typography;
 
 function ExtraCategories() {
   const dispatch = useDispatch();
   const { categories, error } = useSelector((state) => state.extraCategories);
 
   const [loading, setLoading] = useState(false);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(5);
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-
   const [newCategoryName, setNewCategoryName] = useState("");
-
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editingExtra, setEditingExtra] = useState(null);
-  const [imageFile, setImageFile] = useState(null); // State để lưu hình ảnh khi người dùng chọn
-  const [isAddServiceModalVisible, setIsAddServiceModalVisible] =
-    useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [isAddServiceModalVisible, setIsAddServiceModalVisible] = useState(false);
   const [newService, setNewService] = useState({
     name: "",
     description: "",
     price: "",
     image: null,
   });
+  const [form] = Form.useForm();
+  const [editForm] = Form.useForm();
 
   useEffect(() => {
     dispatch(getExtraCategories());
@@ -80,13 +101,27 @@ function ExtraCategories() {
   const handleDeleteCategory = (extraCategoryId) => {
     dispatch(deleteExtraCategory(extraCategoryId)).then(() =>
       dispatch(getExtraCategories())
-    ); // Gọi API xóa extra category
-    // Fetch lại danh sách sau khi xóa
+    );
   };
 
   const handleEditExtra = (extra) => {
-    setEditingExtra(extra); // Lưu thông tin của Extra đang được chỉnh sửa
-    setIsEditModalVisible(true); // Mở modal chỉnh sửa
+    console.log("Editing extra:", extra);
+    setEditingExtra({...extra});
+    
+    // Reset form first
+    editForm.resetFields();
+    
+    // Then set values
+    setTimeout(() => {
+      editForm.setFieldsValue({
+        name: extra.name,
+        description: extra.description || '',
+        price: extra.price
+      });
+      
+      // Show modal after form is set
+      setIsEditModalVisible(true);
+    }, 100);
   };
 
   const handleDeleteExtra = (extraId) => {
@@ -94,398 +129,546 @@ function ExtraCategories() {
       dispatch(getExtraCategories());
     });
   };
-  const handleUpdateExtra = async () => {
-    if (!editingExtra || !editingExtra.name) {
-      message.error("Please provide extra name!");
-      return;
-    }
 
-    setLoading(true); // Bật trạng thái loading
+  const handleUpdateExtra = async () => {
     try {
-      dispatch(updateExtra(editingExtra));
-      dispatch(getExtraCategories()); // Fetch lại danh sách sau khi cập nhật
+      const values = await editForm.validateFields();
+      
+      if (!values.name || !values.price) {
+        message.error("Vui lòng điền đầy đủ thông tin bắt buộc!");
+        return;
+      }
+
+      setLoading(true);
+      const updatedExtra = {
+        ...editingExtra,
+        name: values.name,
+        description: values.description || '',
+        price: values.price
+      };
+
+      await dispatch(updateExtra(updatedExtra));
+      await dispatch(getExtraCategories());
       message.success("Cập nhật thành công!");
-      setIsEditModalVisible(false); // Đóng modal sau khi cập nhật
+      setIsEditModalVisible(false);
+      editForm.resetFields();
     } catch (error) {
       message.error("Cập nhật thất bại!");
     } finally {
-      setLoading(false); // Tắt trạng thái loading
+      setLoading(false);
     }
   };
+
   const renderExtras = (extras) => {
-    return extras?.map((extra) => (
-      <Collapse key={extra.extraId}>
-        <Panel
-          header={
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <Image
+    if (!extras || extras.length === 0) {
+      return <Empty description="Chưa có dịch vụ nào" />;
+    }
+    
+    return extras.map((extra) => (
+      <Card 
+        key={extra.extraId}
+        className="extra-service-card"
+        hoverable
+        style={{ marginBottom: 16 }}
+      >
+        <div className="extra-service-content">
+          <div className="service-header">
+            <Space>
+              <Avatar 
                 src={extra.imageUrl}
                 alt={extra.name}
-                width={50}
-                height={50}
-                style={{ marginRight: "8px", borderRadius: "4px" }}
+                shape="square" 
+                size={60}
+                style={{ backgroundColor: '#f0f0f0' }}
               />
-              <p style={{ marginLeft: "1rem" }}>{extra.name}</p>
-              <Dropdown
-                overlay={
-                  <Menu>
-                    <Menu.Item
-                      key="edit"
-                      icon={<EditOutlined />}
-                      onClick={(e) => {
-                        handleEditExtra(extra);
-                      }} // Sửa dịch vụ
-                    >
-                      Cập nhật
-                    </Menu.Item>
-                    <Menu.Item
-                      key="delete"
-                      icon={<DeleteOutlined />}
-                      onClick={() => handleDeleteExtra(extra.extraId)} // Xóa dịch vụ
-                      style={{ color: "red" }}
-                    >
-                      Xóa
-                    </Menu.Item>
-                  </Menu>
-                }
-                trigger={["click"]}
-              >
-                <Button
-                  icon={<MoreOutlined />}
-                  style={{ marginLeft: "auto" }}
-                  onClick={(e) => e.stopPropagation()} // Ngừng sự kiện bùng phát
-                />
-              </Dropdown>
-            </div>
-          }
-          key={extra.extraId}
-        >
-          <p>{extra.description || "No description available."}</p>
-          <p>Price: {extra.price} VND</p>
-        </Panel>
-      </Collapse>
+              <div>
+                <Text strong style={{ fontSize: 16 }}>{extra.name}</Text>
+                <div>
+                  <Tag color="blue" icon={<DollarOutlined />}>
+                    {extra.price.toLocaleString('vi-VN')} VND
+                  </Tag>
+                </div>
+              </div>
+            </Space>
+            
+            <Dropdown
+              dropdownRender={() => (
+                <Menu>
+                  <Menu.Item
+                    key="edit"
+                    icon={<EditOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditExtra(extra);
+                    }}
+                  >
+                    Cập nhật dịch vụ
+                  </Menu.Item>
+                  <Menu.Item
+                    key="delete"
+                    icon={<DeleteOutlined />}
+                    danger
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteExtra(extra.extraId);
+                    }}
+                  >
+                    Xóa dịch vụ
+                  </Menu.Item>
+                </Menu>
+              )}
+              trigger={["click"]}
+              destroyPopupOnHide
+            >
+              <Button
+                type="text"
+                icon={<MoreOutlined />}
+                className="action-button"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </Dropdown>
+          </div>
+          
+          <Divider style={{ margin: '12px 0' }}/>
+          
+          <Paragraph 
+            ellipsis={{ rows: 2, expandable: true, symbol: 'Xem thêm' }}
+            type="secondary"
+          >
+            {extra.description || "Không có mô tả."}
+          </Paragraph>
+        </div>
+      </Card>
     ));
   };
 
-  const handleCreateExtraCategory = () => {
-    if (!newCategoryName) {
-      message.error("Please enter a category name");
+  const handleCreateExtraCategory = async () => {
+    if (!newCategoryName.trim()) {
+      message.error("Vui lòng nhập tên danh mục!");
       return;
     }
-    dispatch(createExtraCategory(newCategoryName)); // Gọi API tạo extra category
-    setIsModalVisible(false);
-    setNewCategoryName(""); // Reset input
-  };
-
-  // Dropdown menu for category actions (edit, delete, etc.)
-  const menu = (extraCategoryId) => (
-    <Menu>
-      <Menu.Item
-        key="add"
-        icon={<PlusOutlined />}
-        style={{
-          marginTop: "10px",
-          color: "white",
-          background: "blue",
-        }}
-        onClick={() => handleAddService(extraCategoryId)}
-      >
-        Thêm dịch vụ
-      </Menu.Item>
-      <Menu.Item
-        key="delete"
-        icon={<DeleteOutlined />}
-        onClick={() => handleDeleteCategory(extraCategoryId)}
-        style={{
-          marginTop: "2px",
-          color: "white",
-          background: "red",
-        }}
-      >
-        Xóa dịch vụ
-      </Menu.Item>
-    </Menu>
-  );
-
-  // Hàm xử lý khi người dùng chọn ảnh mới
-  const handleImageChange = (e) => {
-    const file = e.target.files[0]; // Lấy tệp người dùng chọn
-    if (file) {
-      setImageFile(file); // Lưu tệp vào state
-      setEditingExtra({ ...editingExtra, imageUrl: file }); // Cập nhật thông tin hình ảnh trong editingExtra
+    try {
+      await dispatch(createExtraCategory(newCategoryName));
+      setIsModalVisible(false);
+      setNewCategoryName("");
+      message.success("Tạo danh mục thành công!");
+      dispatch(getExtraCategories());
+    } catch (error) {
+      message.error("Tạo danh mục thất bại!");
     }
-  };
-
-  const handleOk = () => {
-    if (!editingExtra?.name || !editingExtra?.price) {
-      message.error("Please fill in all required fields.");
-      return;
-    }
-    handleUpdateExtra(); // Gọi hàm update khi nhấn OK
-    setIsEditModalVisible(false); // Đóng modal sau khi cập nhật
   };
 
   const handleAddService = (extraCategoryId) => {
-    // Hiển thị modal hoặc thực hiện logic thêm dịch vụ
-    console.log(`Thêm dịch vụ cho danh mục ID: ${extraCategoryId}`);
-
-    setNewService({ ...newService, extraCategoryId }); // Lưu ID của danh mục dịch vụ
-    setIsAddServiceModalVisible(true); // Hiển thị modal tạo dịch vụ
+    form.resetFields();
+    setNewService({ 
+      name: "",
+      description: "",
+      price: "",
+      image: null,
+      extraCategoryId 
+    });
+    setIsAddServiceModalVisible(true);
   };
 
   const handleCreateService = async () => {
-    if (!newService.name || !newService.price || !newService.image) {
-      message.error("Vui lòng điền đầy đủ thông tin!");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("ExtraCategoryId", newService.extraCategoryId);
-    formData.append("Name", newService.name);
-    formData.append("Description", newService.description || "");
-    formData.append("Price", newService.price);
-    formData.append("Image", newService.image);
-
     try {
-      await dispatch(createExtra(formData)); // Gọi API tạo dịch vụ
+      const values = await form.validateFields();
+      
+      if (!values.name || !values.price || !newService.image) {
+        message.error("Vui lòng điền đầy đủ thông tin và chọn ảnh!");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("ExtraCategoryId", newService.extraCategoryId);
+      formData.append("Name", values.name);
+      formData.append("Description", values.description || "");
+      formData.append("Price", values.price);
+      formData.append("Image", newService.image);
+
+      setLoading(true);
+      await dispatch(createExtra(formData));
       message.success("Thêm dịch vụ thành công!");
-      setIsAddServiceModalVisible(false); // Đóng modal
-      setNewService({ name: "", description: "", price: "", image: null }); // Reset form
-      dispatch(getExtraCategories()); // Fetch lại danh sách
+      setIsAddServiceModalVisible(false);
+      form.resetFields();
+      setNewService({ name: "", description: "", price: "", image: null });
+      dispatch(getExtraCategories());
     } catch (error) {
       message.error("Thêm dịch vụ thất bại!");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ margin: "20px" }}>
-      <div style={{ display: "flex", gap: "1rem" }}>
-        <Button
-          type="primary"
-          style={{ marginLeft: "80%" }}
-          onClick={() => {
-            dispatch(getExtraCategories());
-          }}
-        >
-          Refresh
-        </Button>
-        <Button type="primary" onClick={() => setIsModalVisible(true)}>
-          Tạo dịch vụ thêm
-        </Button>
-      </div>
-      <div
-        className="extra-categories-container"
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "16px",
-          overflowY: "auto",
-          maxHeight: "80vh",
-        }}
-      >
-        {filteredCategories?.map((category) => (
-          <div
-            key={category.extraCategoryId}
-            style={{
-              flex: "1 1 21%",
-              maxWidth: "300px",
-            }}
-          >
-            <div
-              className="category-card"
-              style={{
-                padding: "1rem",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                borderRadius: "8px",
-                backgroundColor: "#fff",
-              }}
-            >
-              <h3 style={{ display: "flex", justifyContent: "space-between" }}>
-                <p style={{ color: "#27ae60" }}>{category.name}</p>
-                <Dropdown
-                  overlay={menu(category.extraCategoryId)}
-                  trigger={["click"]}
-                >
-                  <Button
-                    icon={<MoreOutlined />}
-                    style={{
-                      marginTop: "10px",
-                      color: "white",
-                      background: "#b2bec3",
-                      border: "none",
-                    }}
-                  />
-                </Dropdown>
-              </h3>
-
-              <p style={{ margin: "1rem 0px" }}>
-                Ngày tạo: {new Date(category.createdAt).toLocaleString()}
-              </p>
-              {renderExtras(category.extras)}
-            </div>
+    <div className="extra-categories-page">
+      <Card className="extra-categories-card">
+        <div className="page-header">
+          <div>
+            <Breadcrumb style={{ marginBottom: 16 }}>
+              <Breadcrumb.Item href="/">
+                <HomeOutlined />
+                <span>Trang chủ</span>
+              </Breadcrumb.Item>
+              <Breadcrumb.Item>
+                <AppstoreOutlined />
+                <span>Dịch vụ đi kèm</span>
+              </Breadcrumb.Item>
+            </Breadcrumb>
+            
+            <Title level={4}>
+              <AppstoreOutlined /> Quản lý dịch vụ đi kèm
+            </Title>
           </div>
-        ))}
+          
+          <Space>
+            <Tooltip title="Làm mới danh sách">
+              <Button
+                type="primary"
+                icon={<ReloadOutlined />}
+                onClick={() => dispatch(getExtraCategories())}
+              >
+                Refresh
+              </Button>
+            </Tooltip>
+            <Tooltip title="Thêm danh mục dịch vụ mới">
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />}
+                onClick={() => setIsModalVisible(true)}
+              >
+                Tạo dịch vụ thêm
+              </Button>
+            </Tooltip>
+          </Space>
+        </div>
 
-        <Pagination
-          current={currentPage}
-          total={categories.length}
-          pageSize={pageSize}
-          onChange={handlePaginationChange}
-          showSizeChanger={false}
-          style={{ marginTop: "1rem", float: "right", position: "absolute", bottom: "1.5rem", right: "1rem", zIndex:1 }}
-        />
-      </div>
+        <Divider />
 
+        <Row gutter={[16, 16]} className="categories-grid">
+          {filteredCategories?.length > 0 ? (
+            filteredCategories.map((category) => (
+              <Col xs={24} sm={24} md={12} lg={8} key={category.extraCategoryId}>
+                <Card 
+                  className="category-card"
+                  title={
+                    <div className="category-header">
+                      <Space>
+                        <Tag color="success" className="category-tag">Danh mục</Tag>
+                        <Text strong>{category.name}</Text>
+                      </Space>
+                      <Dropdown
+                        dropdownRender={() => (
+                          <Menu>
+                            <Menu.Item
+                              key="add"
+                              icon={<PlusOutlined />}
+                              onClick={() => handleAddService(category.extraCategoryId)}
+                            >
+                              Thêm dịch vụ
+                            </Menu.Item>
+                            <Menu.Divider />
+                            <Menu.Item
+                              key="delete"
+                              danger
+                              icon={<DeleteOutlined />}
+                              onClick={() => handleDeleteCategory(category.extraCategoryId)}
+                            >
+                              Xóa danh mục
+                            </Menu.Item>
+                          </Menu>
+                        )}
+                        trigger={["click"]}
+                      >
+                        <Button
+                          type="text"
+                          icon={<MoreOutlined />}
+                          className="action-button"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </Dropdown>
+                    </div>
+                  }
+                  extra={
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {new Date(category.createdAt).toLocaleDateString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Text>
+                  }
+                >
+                  <div className="category-services">
+                    {renderExtras(category.extras)}
+                  </div>
+                </Card>
+              </Col>
+            ))
+          ) : (
+            <Col span={24}>
+              <Empty 
+                description="Không có dữ liệu dịch vụ đi kèm"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              />
+            </Col>
+          )}
+        </Row>
+
+        <div className="pagination-container">
+          <Pagination
+            current={currentPage}
+            total={categories?.length || 0}
+            pageSize={pageSize}
+            onChange={handlePaginationChange}
+            showSizeChanger={false}
+          />
+        </div>
+      </Card>
+
+      {/* Create Category Modal */}
       <Modal
-        title="Tạo dịch vụ thêm"
-        visible={isModalVisible}
+        title={
+          <Space>
+            <PlusOutlined />
+            <span>Tạo danh mục dịch vụ đi kèm</span>
+          </Space>
+        }
+        open={isModalVisible}
         onOk={handleCreateExtraCategory}
         onCancel={() => setIsModalVisible(false)}
+        okText="Tạo danh mục"
+        cancelText="Hủy"
       >
-        <Input
-          value={newCategoryName}
-          onChange={(e) => setNewCategoryName(e.target.value)}
-          placeholder="Enter category name"
-        />
+        <Form layout="vertical">
+          <Form.Item 
+            label="Tên danh mục"
+            required
+            tooltip="Tên danh mục dịch vụ đi kèm"
+          >
+            <Input
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              placeholder="Nhập tên danh mục dịch vụ"
+              prefix={<AppstoreOutlined style={{ color: 'rgba(0,0,0,.25)' }} />}
+            />
+          </Form.Item>
+        </Form>
       </Modal>
 
+      {/* Edit Service Modal */}
       <Modal
-        title="Chỉnh sửa dịch vụ"
-        visible={isEditModalVisible}
+        title={
+          <Space>
+            <EditOutlined />
+            <span>Chỉnh sửa dịch vụ đi kèm</span>
+          </Space>
+        }
+        open={isEditModalVisible}
         onOk={handleUpdateExtra}
-        onCancel={() => setIsEditModalVisible(false)}
+        onCancel={() => {
+          setIsEditModalVisible(false);
+          editForm.resetFields();
+        }}
         okText="Cập nhật"
         cancelText="Hủy"
         confirmLoading={loading}
+        width={600}
       >
-        <Input
-          value={editingExtra?.name || ""}
-          onChange={(e) =>
-            setEditingExtra({ ...editingExtra, name: e.target.value })
-          }
-          placeholder="Enter extra name"
-        />
-        <Input
-          value={editingExtra?.description || ""}
-          onChange={(e) =>
-            setEditingExtra({ ...editingExtra, description: e.target.value })
-          }
-          placeholder="Enter extra description"
-          style={{ marginTop: "10px" }}
-        />
-        <Input
-          value={editingExtra?.price || ""}
-          onChange={(e) =>
-            setEditingExtra({ ...editingExtra, price: e.target.value })
-          }
-          placeholder="Enter extra price"
-          type="number"
-          style={{ marginTop: "10px" }}
-        />
-
-        <Upload
-          customRequest={(options) => {
-            const { file, onSuccess, onError } = options;
-            try {
-              // Tạo đối tượng FormData để gửi file
-              const formData = new FormData();
-              formData.append("file", file); // Gửi file thực tế (binary)
-
-              // Cập nhật ảnh mới vào state (imageUrl sẽ là URL của ảnh khi upload thành công)
-              setEditingExtra({
-                ...editingExtra,
-                imageUrl: file, // Sử dụng URL tạm thời để hiển thị ảnh trên giao diện
-              });
-
-              setImageFile(file); // Lưu file vào state
-            } catch (error) {
-              onError(error); // Nếu có lỗi, thông báo lỗi
-            }
-          }}
-          beforeUpload={(file) => {
-            const isImage = file.type.startsWith("image/");
-            if (!isImage) {
-              message.error("Chỉ được chọn ảnh!");
-            }
-            return isImage; // Nếu là ảnh mới cho phép upload
-          }}
-          showUploadList={false} // Không hiển thị danh sách ảnh đã upload
+        <Form
+          form={editForm}
+          layout="vertical"
         >
-          <Button style={{ marginTop: "1rem" }} icon={<UploadOutlined />}>
-            Chọn ảnh
-          </Button>
-        </Upload>
-
-        {editingExtra?.imageUrl && (
-          <div style={{ marginTop: "10px" }}>
-            <p>Ảnh hiện tại:</p>
-            <Image
-              src={
-                editingExtra?.imageUrl instanceof File
-                  ? URL.createObjectURL(editingExtra?.imageUrl)
-                  : editingExtra?.imageUrl // Use the URL directly if it's not a File
-              }
-              width={50}
-              height={50}
-              preview={false}
+          <Form.Item
+            name="name"
+            label="Tên dịch vụ"
+            rules={[{ required: true, message: "Vui lòng nhập tên dịch vụ" }]}
+          >
+            <Input placeholder="Nhập tên dịch vụ" />
+          </Form.Item>
+          
+          <Form.Item
+            name="description"
+            label="Mô tả"
+          >
+            <Input.TextArea 
+              placeholder="Nhập mô tả dịch vụ" 
+              rows={3}
+              showCount
+              maxLength={200}
             />
-          </div>
-        )}
+          </Form.Item>
+          
+          <Form.Item
+            name="price"
+            label="Giá dịch vụ"
+            rules={[{ required: true, message: "Vui lòng nhập giá dịch vụ" }]}
+          >
+            <InputNumber
+              style={{ width: '100%' }}
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/\$\s?|(,*)/g, '')}
+              placeholder="Nhập giá dịch vụ"
+              addonAfter="VND"
+              min={0}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Hình ảnh dịch vụ"
+          >
+            <div className="upload-container">
+              <input 
+                type="file" 
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setImageFile(file);
+                    setEditingExtra({ ...editingExtra, imageUrl: file });
+                  }
+                }}
+                accept="image/*" 
+                id="edit-image-upload"
+                style={{ display: 'none' }}
+              />
+              <Button 
+                onClick={() => document.getElementById('edit-image-upload').click()}
+                icon={<UploadOutlined />} 
+                type="primary"
+                ghost
+              >
+                Chọn ảnh
+              </Button>
+              <Text type="secondary" style={{ marginLeft: 8 }}>
+                {imageFile ? imageFile.name : 'Giữ nguyên ảnh hiện tại'}
+              </Text>
+            </div>
+
+            {editingExtra?.imageUrl && (
+              <div className="image-preview">
+                <img
+                  src={
+                    editingExtra?.imageUrl instanceof File
+                      ? URL.createObjectURL(editingExtra?.imageUrl)
+                      : editingExtra?.imageUrl
+                  }
+                  alt="Preview"
+                  style={{ maxWidth: '100%', maxHeight: '150px' }}
+                />
+                <div style={{ marginTop: 8 }}>
+                  <Text type="secondary">Hình ảnh hiện tại</Text>
+                </div>
+              </div>
+            )}
+          </Form.Item>
+        </Form>
       </Modal>
 
+      {/* Add Service Modal */}
       <Modal
-        title="Thêm dịch vụ"
-        visible={isAddServiceModalVisible}
-        onOk={handleCreateService} // Gọi hàm tạo dịch vụ
-        onCancel={() => setIsAddServiceModalVisible(false)} // Đóng modal
-        okText="Tạo"
+        title={
+          <Space>
+            <PlusOutlined />
+            <span>Thêm dịch vụ đi kèm</span>
+          </Space>
+        }
+        open={isAddServiceModalVisible}
+        onOk={handleCreateService}
+        onCancel={() => {
+          setIsAddServiceModalVisible(false);
+          form.resetFields();
+        }}
+        okText="Tạo dịch vụ"
         cancelText="Hủy"
+        confirmLoading={loading}
+        width={600}
       >
-        <Input
-          value={newService.name}
-          onChange={(e) =>
-            setNewService({ ...newService, name: e.target.value })
-          }
-          placeholder="Tên dịch vụ"
-          style={{ marginBottom: "10px" }}
-        />
-        <Input
-          value={newService.description}
-          onChange={(e) =>
-            setNewService({ ...newService, description: e.target.value })
-          }
-          placeholder="Mô tả dịch vụ"
-          style={{ marginBottom: "10px" }}
-        />
-        <Input
-          value={newService.price}
-          onChange={(e) =>
-            setNewService({ ...newService, price: e.target.value })
-          }
-          placeholder="Giá dịch vụ"
-          type="number"
-          style={{ marginBottom: "10px" }}
-        />
-        <Upload
-          beforeUpload={(file) => {
-            setNewService({ ...newService, image: file }); // Lưu file vào state
-            return false; // Ngăn upload tự động
-          }}
-          showUploadList={false}
+        <Form
+          form={form}
+          layout="vertical"
         >
-          <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
-        </Upload>
-        {newService.image && (
-          <div style={{ marginTop: "10px" }}>
-            <p>Ảnh đã chọn:</p>
-            <Image
-              src={URL.createObjectURL(newService.image)}
-              width={100}
-              height={100}
-              preview={false}
+          <Form.Item
+            name="name"
+            label="Tên dịch vụ"
+            rules={[{ required: true, message: "Vui lòng nhập tên dịch vụ" }]}
+          >
+            <Input placeholder="Nhập tên dịch vụ" />
+          </Form.Item>
+          
+          <Form.Item
+            name="description"
+            label="Mô tả"
+          >
+            <Input.TextArea 
+              placeholder="Nhập mô tả dịch vụ" 
+              rows={3}
+              showCount
+              maxLength={200}
             />
-          </div>
-        )}
+          </Form.Item>
+          
+          <Form.Item
+            name="price"
+            label="Giá dịch vụ"
+            rules={[{ required: true, message: "Vui lòng nhập giá dịch vụ" }]}
+          >
+            <InputNumber
+              style={{ width: '100%' }}
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/\$\s?|(,*)/g, '')}
+              placeholder="Nhập giá dịch vụ"
+              addonAfter="VND"
+              min={0}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Hình ảnh dịch vụ"
+            required
+            tooltip="Hình ảnh đại diện cho dịch vụ"
+          >
+            <div className="upload-container">
+              <input 
+                type="file" 
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setNewService({ ...newService, image: file });
+                  }
+                }}
+                accept="image/*" 
+                id="add-image-upload"
+                style={{ display: 'none' }}
+              />
+              <Button 
+                onClick={() => document.getElementById('add-image-upload').click()}
+                icon={<UploadOutlined />} 
+                type="primary"
+                ghost
+              >
+                Chọn ảnh
+              </Button>
+              <Text type="secondary" style={{ marginLeft: 8 }}>
+                {newService.image ? newService.image.name : 'Chưa chọn ảnh'}
+              </Text>
+            </div>
+
+            {newService.image && (
+              <div className="image-preview">
+                <img
+                  src={URL.createObjectURL(newService.image)}
+                  alt="Preview"
+                  style={{ maxWidth: '100%', maxHeight: '150px' }}
+                />
+                <div style={{ marginTop: 8 }}>
+                  <Text type="secondary">Hình ảnh xem trước</Text>
+                </div>
+              </div>
+            )}
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

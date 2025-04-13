@@ -1,0 +1,155 @@
+.extra-categories-page {
+  padding: 16px;
+}
+
+.extra-categories-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 
+              0 2px 4px rgba(0, 0, 0, 0.03), 
+              0 4px 8px rgba(0, 0, 0, 0.03);
+  margin-bottom: 24px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.categories-grid {
+  margin-top: 16px;
+}
+
+.category-card {
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.category-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.category-tag {
+  margin-right: 8px;
+}
+
+.category-services {
+  margin-top: 8px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.category-services::-webkit-scrollbar {
+  width: 4px;
+}
+
+.category-services::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.extra-service-card {
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+}
+
+.extra-service-card:hover {
+  border-color: #d9d9d9;
+  transform: translateY(-2px);
+}
+
+.extra-service-content {
+  padding: 4px;
+}
+
+.service-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.action-button {
+  transition: all 0.3s;
+  border-radius: 4px;
+  z-index: 10;
+}
+
+.action-button:hover {
+  background-color: #f5f5f5;
+}
+
+/* Make dropdown have higher z-index than other elements */
+.ant-dropdown {
+  z-index: 1050 !important;
+}
+
+/* Make card buttons more clickable */
+.service-header .ant-btn,
+.category-header .ant-btn {
+  padding: 4px 8px;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.image-preview {
+  margin-top: 16px;
+  text-align: center; 
+  background-color: #f9f9f9;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.pagination-container {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+  }
+  
+  .page-header > div:first-child {
+    margin-bottom: 16px;
+  }
+  
+  .page-header > div:last-child {
+    align-self: flex-end;
+  }
+}
+
+/* Animation for cards */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.category-card {
+  animation: fadeIn 0.3s ease-out;
+}
