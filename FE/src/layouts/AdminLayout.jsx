@@ -12,6 +12,15 @@ import {
   SettingOutlined,
   SolutionOutlined,
   QuestionOutlined,
+  ShoppingCartOutlined,
+  ShoppingOutlined,
+  UserOutlined,
+  MessageOutlined,
+  CustomerServiceOutlined,
+  AppstoreAddOutlined,
+  RobotOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
 } from "@ant-design/icons";
 import {
   Avatar,
@@ -89,19 +98,19 @@ const AdminLayout = () => {
     },
     {
       key: endPoints.QuanLyGiaoNhanHang,
-      icon: <TeamOutlined />,
+      icon: <ShoppingCartOutlined />,
       label: "Quản lý giao nhận đơn hàng",
       allowedRoles: ["Admin"],
       children: [
         {
           key: `${endPoints.DANH_SACH_TAT_CA_DON_HANG}`,
-          icon: <UsergroupAddOutlined />,
+          icon: <ShoppingOutlined />,
           label: "Danh sách tất cả đơn hàng",
           allowedRoles: ["Admin", "Staff"],
         },
         {
           key: `${endPoints.DANH_SACH_DON_HANG_KHACH_VUA_DAT}`,
-          icon: <UsergroupAddOutlined />,
+          icon: <ClockCircleOutlined />,
           label: (
             <Tooltip title="Danh sách đơn hàng khách hàng vừa đặt">
               Danh sách đơn hàng khách hàng vừa đặt
@@ -111,7 +120,7 @@ const AdminLayout = () => {
         },
         {
           key: `${endPoints.DANH_SACH_DON_HANG_DA_KIEM_TRA_CHAT_LUONG}`,
-          icon: <CalendarOutlined />,
+          icon: <CheckCircleOutlined />,
           label: (
             <Tooltip title="Danh sách đơn hàng đã giặt xong và kiểm tra chất lượng">
               Danh sách đơn hàng đã giặt xong và kiểm tra chất lượng
@@ -121,46 +130,45 @@ const AdminLayout = () => {
         },
       ],
     },
-
     {
       key: endPoints.SERVICES,
-      icon: <UsergroupAddOutlined />,
+      icon: <CustomerServiceOutlined />,
       label: "Quản lý các dịch vụ",
       allowedRoles: ["Admin"],
     },
     {
       key: endPoints.EXTRACATEGORIES,
-      icon: <UsergroupAddOutlined />,
+      icon: <AppstoreAddOutlined />,
       label: "Quản lý dịch vụ thêm",
       allowedRoles: ["Admin"],
     },
     {
       key: endPoints.ORDER,
-      icon: <UsergroupAddOutlined />,
+      icon: <ShoppingCartOutlined />,
       label: "Quản lý đơn hàng",
       allowedRoles: ["Admin", "Staff"],
     },
     {
       key: endPoints.USERS,
-      icon: <UsergroupAddOutlined />,
+      icon: <TeamOutlined />,
       label: "Quản lý người dùng",
       allowedRoles: ["Admin"],
     },
     {
       key: endPoints.CONFIRMCUSTOMERPENDING,
-      icon: <UsergroupAddOutlined />,
+      icon: <ClockCircleOutlined />,
       label: "Đơn hàng đang chờ xác nhận",
       allowedRoles: ["CustomerStaff"],
     },
     {
       key: endPoints.CHAT,
-      icon: <UsergroupAddOutlined />,
+      icon: <MessageOutlined />,
       label: "Chat",
       allowedRoles: ["Admin", "Staff", "CustomerStaff"],
     },
     {
       key: endPoints.CHATWIITHAI,
-      icon: <UsergroupAddOutlined />,
+      icon: <RobotOutlined />,
       label: "Chat Với AI Support",
       allowedRoles: ["Admin"],
     },
@@ -205,7 +213,7 @@ const AdminLayout = () => {
   };
 
   return (
-    <Layout style={{ height: "100vh" }}>
+    <Layout style={{ minHeight: "100vh" }}>
       <Sider
         trigger={null}
         collapsible
@@ -213,18 +221,30 @@ const AdminLayout = () => {
         style={{
           overflow: "auto",
           height: "100vh",
-          borderRadius: 20,
-          marginRight: 10,
+          background: "#fff",
+          boxShadow: "2px 0 8px 0 rgba(29,35,41,.05)",
+          position: "sticky",
+          top: 0,
+          left: 0,
+          zIndex: 10
         }}
-        theme="light"
-        width={300}
+        width={280}
       >
-        <div style={{ textAlign: "center", padding: "16px" }}>
+        <div style={{ 
+          padding: "16px",
+          textAlign: "center",
+          borderBottom: "1px solid #f0f0f0",
+          marginBottom: "8px"
+        }}>
           <img
             src={collapsed ? logo2 : logo}
             alt="logo"
             className="primary-logo"
-            style={{ maxWidth: collapsed ? "32px" : "120px", height: "auto" }}
+            style={{ 
+              maxWidth: collapsed ? "32px" : "120px",
+              height: "auto",
+              transition: "all 0.3s"
+            }}
           />
         </div>
         <Menu
@@ -235,7 +255,21 @@ const AdminLayout = () => {
           onClick={handleMenuClick}
           onOpenChange={onOpenChange}
           items={filteredMenuItems}
-          style={{ whiteSpace: "normal" }} // Allow text to wrap
+          style={{ 
+            padding: "0 8px",
+            border: "none",
+            ".ant-menu-item": {
+              borderRadius: "4px",
+              margin: "4px 0"
+            },
+            ".ant-menu-submenu": {
+              borderRadius: "4px",
+              margin: "4px 0"
+            },
+            ".ant-menu-item-selected": {
+              backgroundColor: "#e6f7ff"
+            }
+          }}
         />
       </Sider>
       <Layout>
