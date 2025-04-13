@@ -1,7 +1,7 @@
-import { Table, Tag, Input, Button, Space, Tooltip, message, Modal, Descriptions, Typography, Timeline } from "antd";
+import { Table, Tag, Input, Button, Space, Tooltip, message, Modal, Descriptions, Typography, Timeline, Image } from "antd";
 import React, { useEffect, useState } from "react";
 import { getRequest, getRequestParams } from "@services/api";
-import { SearchOutlined, ReloadOutlined, EyeOutlined, FilterFilled, EnvironmentOutlined, HistoryOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, EyeOutlined, FilterFilled, EnvironmentOutlined, HistoryOutlined, CameraOutlined } from '@ant-design/icons';
 
 const { Search } = Input;
 const { Text } = Typography;
@@ -23,6 +23,9 @@ function ListAllOrders() {
   const [orderHistory, setOrderHistory] = useState(null);
   const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [selectedHistoryPhotos, setSelectedHistoryPhotos] = useState([]);
+  const [isPhotoModalVisible, setIsPhotoModalVisible] = useState(false);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
 
   useEffect(() => {
     fetchAllOrder();
@@ -211,6 +214,22 @@ function ListAllOrders() {
       DELIVERYFAILED: '#ff4d4f'
     };
     return statusColors[status] || '#000000';
+  };
+
+  const fetchHistoryPhotos = async (statusHistoryId) => {
+    setLoadingPhotos(true);
+    try {
+      const response = await getRequest(`photos?statusHistoryId=${statusHistoryId}`);
+      if (response && response.data) {
+        setSelectedHistoryPhotos(response.data);
+        setIsPhotoModalVisible(true);
+      }
+    } catch (error) {
+      console.error("Error fetching photos:", error);
+      message.error("Không thể tải hình ảnh");
+    } finally {
+      setLoadingPhotos(false);
+    }
   };
 
   const columns = [
@@ -605,13 +624,59 @@ function ListAllOrders() {
                       <Text italic>Ghi chú: {item.notes}</Text>
                     )}
                     {item.containMedia && (
-                      <Tag color="blue">Có hình ảnh đính kèm</Tag>
+                      <Tag 
+                        color="blue" 
+                        icon={<CameraOutlined />}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => fetchHistoryPhotos(item.statusHistoryId)}
+                      >
+                        Xem hình ảnh đính kèm
+                      </Tag>
                     )}
                   </Space>
                 </div>
               ),
             }))}
           />
+        )}
+      </Modal>
+
+      {/* Modal xem ảnh */}
+      <Modal
+        title={<Text strong>Hình ảnh đính kèm</Text>}
+        open={isPhotoModalVisible}
+        onCancel={() => setIsPhotoModalVisible(false)}
+        width={800}
+        footer={[
+          <Button key="back" onClick={() => setIsPhotoModalVisible(false)}>
+            Đóng
+          </Button>
+        ]}
+      >
+        {loadingPhotos ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>Đang tải ảnh...</div>
+        ) : (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+            {selectedHistoryPhotos.map((photo, index) => (
+              <div key={index} style={{ position: 'relative' }}>
+                <Image
+                  src={photo.photoUrl}
+                  alt={`Ảnh ${index + 1}`}
+                  style={{ objectFit: 'cover' }}
+                  width={200}
+                  height={200}
+                />
+                <Text type="secondary" style={{ 
+                  display: 'block', 
+                  textAlign: 'center',
+                  marginTop: '4px',
+                  fontSize: '0.9em' 
+                }}>
+                  {new Date(photo.createdAt).toLocaleString("vi-VN")}
+                </Text>
+              </div>
+            ))}
+          </div>
         )}
       </Modal>
     </>
