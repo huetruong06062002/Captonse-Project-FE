@@ -28,6 +28,68 @@
 }
 
 .active-item {
-  background-color: #e6f7ff; /* Màu nền khi active */
-  border-left: 4px solid #1890ff; /* Đường viền bên trái */
+  background-color: #e6f7ff !important;
+  border-left: 3px solid #1890ff !important;
+}
+
+.ant-list-item:hover {
+  background-color: #f5f5f5;
+}
+
+.ant-list-item {
+  transition: all 0.3s ease;
+}
+
+/* Add a subtle divider between user list items */
+.ant-list-item:not(:last-child) {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Enhance scrollbar appearance */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* Make the user's hover state more pleasing */
+.ant-list-item:hover {
+  transform: translateX(3px);
+}
+
+/* Style avatar to be more consistent */
+.ant-avatar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Override Sider styles */
+.chat-sider {
+  height: 80vh !important;
+  width: 315px !important;
+  min-width: 200px !important;
+  max-width: none !important;
+  overflow: auto !important;
+  border-right: 1px solid rgb(240, 240, 240) !important;
+  box-shadow: rgba(0, 0, 0, 0.05) 0px 2px 8px !important;
+  flex: 0 0 315px !important;
+}
+
+.chat-sider .ant-layout-sider-children {
+  height: 100%;
+  overflow-y: auto;
 }

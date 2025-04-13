@@ -175,24 +175,27 @@ function Chat() {
     <Layout style={{ display: "flex", flexDirection: "row", gap: "1rem" }}>
       <Sider
         theme="light"
-        style={{
-          height: "80vh",
-          width: "500px",
-          overflow: "auto",
-          overflowY: "auto",
-        }}
+        className="chat-sider"
       >
+        <div style={{ padding: "12px 16px", borderBottom: "1px solid #f0f0f0" }}>
+          <Text strong style={{ fontSize: "16px" }}>Tin nhắn</Text>
+        </div>
         <List
           style={{
-            marginTop: 10,
-            // width: "500px",
+            margin: 0,
+            padding: "8px 0",
           }}
           itemLayout="horizontal"
           dataSource={users}
           renderItem={(user, index) => (
             <List.Item
-              styles={{ width: "100%" }}
-              key={index}
+              style={{ 
+                padding: "10px 16px", 
+                cursor: "pointer",
+                transition: "background-color 0.3s",
+                backgroundColor: activeUserId === user.userId ? "#e6f7ff" : "transparent",
+                borderLeft: activeUserId === user.userId ? "3px solid #1890ff" : "3px solid transparent",
+              }}
               onClick={() => {
                 setActiveUserId(user.userId);
                 startConversation(user.userId);
@@ -200,19 +203,51 @@ function Chat() {
               className={activeUserId === user.userId ? "active-item" : ""}
             >
               <List.Item.Meta
-                avatar={<Avatar src={user.avatar} />}
-                title={<a href="">{user.fullName}</a>}
+                avatar={
+                  user.avatar ? 
+                  <Avatar src={user.avatar} size={42} /> : 
+                  <Avatar size={42} style={{ 
+                    backgroundColor: user.role === "Staff" ? "#1890ff" : 
+                                     user.role === "Driver" ? "#52c41a" : 
+                                     "#722ed1",
+                    fontSize: "16px",
+                    fontWeight: "bold"
+                  }}>
+                    {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
+                  </Avatar>
+                }
+                title={
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text strong style={{ fontSize: "14px" }}>{user.fullName}</Text>
+                    {user.role && (
+                      <div style={{ 
+                        fontSize: "11px", 
+                        padding: "2px 8px", 
+                        borderRadius: "10px",
+                        backgroundColor: user.role === "Staff" ? "#e6f7ff" : 
+                                        user.role === "Driver" ? "#f6ffed" : 
+                                        "#f9f0ff",
+                        color: user.role === "Staff" ? "#1890ff" : 
+                               user.role === "Driver" ? "#52c41a" : 
+                               "#722ed1",
+                        fontWeight: "bold"
+                      }}>
+                        {user.role}
+                      </div>
+                    )}
+                  </div>
+                }
                 description={
-                  <>
-                    email: {user.email != null ? user.email : "Không có"} <br />
-                    SĐT:{" "}
-                    {user.phoneNumber
-                      ? user.phoneNumber
-                      : "Chưa cập nhật số điện thoại"}
-                    <br />
-                    role: {""}
-                    {user.role ? user.role : "Chưa cập nhật vai trò"}
-                  </>
+                  <div style={{ fontSize: "12px", color: "rgba(0,0,0,0.45)" }}>
+                    <div style={{ marginBottom: "4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <span style={{ fontWeight: "500", marginRight: "4px" }}>email:</span> 
+                      {user.email != null ? user.email : "Không có"}
+                    </div>
+                    <div style={{ marginBottom: "4px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <span style={{ fontWeight: "500", marginRight: "4px" }}>SĐT:</span> 
+                      {user.phoneNumber ? user.phoneNumber : "Chưa cập nhật số điện thoại"}
+                    </div>
+                  </div>
                 }
               />
             </List.Item>
