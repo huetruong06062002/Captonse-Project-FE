@@ -37,7 +37,7 @@ function Chat() {
   useEffect(() => {
     const newConnection = new HubConnectionBuilder()
       .withUrl("https://laundry.vuhai.me/chatHub", {
-        withCredentials: false, // Tắt gửi thông tin xác thực
+        // withCredentials: false, // Tắt gửi thông tin xác thực
       }) // Không cần `withCredentials`
       .build();
 
