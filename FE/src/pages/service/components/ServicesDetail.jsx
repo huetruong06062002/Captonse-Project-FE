@@ -9,11 +9,29 @@ import {
   Drawer,
   Upload,
   Tooltip,
+  Divider,
+  Typography,
+  Tag,
+  Card,
+  Empty,
+  Badge,
+  InputNumber,
+  Alert
 } from "antd";
 import { useState, useEffect, useRef } from "react";
 import TreeServicesDetail from "./TreeServicesDetail";
 import { axiosClientVer2 } from "../../../config/axiosInterceptor";
 import { IoIosRefresh } from 'react-icons/io';
+import {
+  PlusOutlined,
+  UploadOutlined,
+  InfoCircleOutlined,
+  AppstoreOutlined,
+  PictureOutlined,
+  FileImageOutlined
+} from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 
 export const ServicesDetail = (props) => {
   const { openDrawerDetail, setOpenDrawerDetail, servicesDetail } = props;
@@ -68,21 +86,12 @@ export const ServicesDetail = (props) => {
     if (openDrawerDetail) {
       getServiceDetail();
     }
-    console.log("selectedServicesUpdate", selectedServicesUpdate);
   }, [openDrawerDetail]);
 
-  console.log("selectedServicesUpdate", selectedServicesUpdate);
   // Hàm xử lý khi người dùng chọn một subcategory trong Tree
-
   const onSelectSubCategory = (selectedKeys, { selected, node }) => {
     if (selected) {
-      console.log("node", node);
-      // console.log("node subCategory", node.subCategory)
-      // console.log("check node id ", node.key);
-      // console.log("selected",selected)
       setSelectedSubCategoryId(node.key);
-      console.log("servicesDetail", servicesDetail);
-      // setAddSubCategoryModalVisible(true); // Mở modal để thêm thông tin dịch vụ cho danh mục con
     }
   };
 
@@ -94,15 +103,9 @@ export const ServicesDetail = (props) => {
 
   const onSelectSubCategoryToUpdate = (selectedKeys, { selected, node }) => {
     if (selected) {
-      console.log("node", node);
-      // console.log("node subCategory", node.subCategory)
-      // console.log("check node id ", node.key);
-      // console.log("selected",selected)
       setSelectedServicesUpdate(node.item.name);
       setSelectedServicesUpdateId(node.item.subCategoryId);
       setIsOpenUpdateServiceLevel1(true); // Mở modal sau khi giá trị đã được set
-      console.log("servicesDetail", servicesDetail);
-      // setAddSubCategoryModalVisible(true); // Mở modal để thêm thông tin dịch vụ cho danh mục con
     }
   };
 
@@ -120,12 +123,12 @@ export const ServicesDetail = (props) => {
     // Thêm dữ liệu vào FormData
     formData.append("SubCategoryId", selectedSubCategoryId);
     formData.append("Name", Name);
-    formData.append("Description", Description);
+    formData.append("Description", Description || "");
     formData.append("Price", +Price);
 
-    // Kiểm tra nếu có ảnh được chọn
+    // Kiểm tra nếu có ảnh được chọn với cách xử lý mới
     if (Image && Image.file) {
-      formData.append("Image", Image.file); // Image là đối tượng file khi sử dụng Upload của Ant Design
+      formData.append("Image", Image.file);
     }
 
     try {
@@ -142,9 +145,11 @@ export const ServicesDetail = (props) => {
       );
       message.success("Dịch vụ đã được thêm thành công");
       setAddSubCategoryModalVisible(false); // Đóng modal sau khi thêm
+      form.resetFields(); // Reset form fields
       await getServiceDetail(); // Lấy lại thông tin chi tiết để cập nhật
     } catch (err) {
       message.error("Không thể thêm dịch vụ");
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +157,6 @@ export const ServicesDetail = (props) => {
 
   const handleCreateServies = async (values) => {
     const { name } = values;
-    console.log("values", values);
     try {
       setIsLoading(true);
       const response = await axiosClientVer2.post("/subcategories", {
@@ -161,8 +165,6 @@ export const ServicesDetail = (props) => {
       });
 
       message.success("Dịch vụ đã được tạo thành công!");
-      console.log(response.data);
-
       setIsOpenCreateServiceLevel1(false); // Đóng modal sau khi tạo dịch vụ
       getServiceDetail(); // Lấy lại chi tiết dịch vụ
     } catch (error) {
@@ -173,11 +175,8 @@ export const ServicesDetail = (props) => {
     }
   };
 
-  console.log("selectedServicesUpdateId", selectedServicesUpdateId);
-
   const handleUpdateServices = (values) => {
     const { name } = values;
-    console.log("values", values);
     try {
       setIsLoading(true);
       const response = axiosClientVer2.put(
@@ -188,8 +187,6 @@ export const ServicesDetail = (props) => {
       );
 
       message.success("Dịch vụ đã được cập nhật thành công!");
-      console.log(response.data);
-
       setIsOpenUpdateServiceLevel1(false); // Đóng modal sau khi tạo dịch vụ
     } catch (error) {
       message.error("Đã xảy ra lỗi khi cập nhật dịch vụ");
@@ -200,186 +197,327 @@ export const ServicesDetail = (props) => {
     }
   };
 
-  useEffect(() => {
-    // setSelectedServicesUpdate("");
-  }, [selectedServicesUpdate, form]);
-
   return (
     <>
       <Drawer
         title={
-          <div
-            style={{ display: "flex", justifyContent: "center", gap: "10px" }}
-          >
-            <strong>Xem chi tiết dịch vụ</strong>
-            <p style={{ color: "green" }}>{servicesDetail?.name}</p>
-            <img src={servicesDetail?.icon} width={25} alt="" />
-          </div>
+          <Space align="center">
+            <Badge color="#108ee9" dot={true} />
+            <Text strong style={{ fontSize: '16px' }}>Chi tiết dịch vụ: </Text>
+            <Tag color="green" style={{ fontSize: '14px' }}>{servicesDetail?.name}</Tag>
+            {servicesDetail?.icon && (
+              <img src={servicesDetail?.icon} style={{ width: 25, height: 25, borderRadius: '4px' }} alt="" />
+            )}
+          </Space>
         }
-        placement={"right"}
+        placement="right"
         onClose={onClose}
         open={openDrawerDetail}
         width={1200}
+        headerStyle={{ borderBottom: '1px solid #f0f0f0', padding: '16px 24px' }}
+        bodyStyle={{ padding: '24px', background: '#f9fafb' }}
+        footer={
+          <div style={{ textAlign: 'right' }}>
+            <Button onClick={onClose} style={{ marginRight: 8 }}>
+              Đóng
+            </Button>
+          </div>
+        }
         extra={
           <Space>
-            <Button type="primary" onClick={() => getServiceDetail()}>
-              <Tooltip placement="left" title="Refresh">
-                <IoIosRefresh />
-              </Tooltip>
+            <Button 
+              type="primary" 
+              onClick={() => getServiceDetail()}
+              icon={<IoIosRefresh />}
+            >
+              Làm mới
             </Button>
             <Button
               type="primary"
               onClick={() => setIsOpenCreateServiceLevel1(true)}
+              icon={<PlusOutlined />}
             >
-              Thêm dịch vụ con cho danh mục
-            </Button>
-            <Button
-              style={{ background: "red", color: "white" }}
-              onClick={onClose}
-            >
-              Đóng
+              Thêm dịch vụ con
             </Button>
           </Space>
         }
       >
         {isLoading ? (
-          <Spin tip="Đang xử lý dữ liệu" />
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+            <Spin tip="Đang xử lý dữ liệu..." size="large" />
+          </div>
         ) : error ? (
-          <p>{error}</p>
-        ) : (
-          <TreeServicesDetail
-            serviceDetailFull={serviceDetailFull}
-            onSelectSubCategory={onSelectSubCategory}
-            handleAddSubCategory={handleAddSubCategory}
-            handleCreateServiceLevel1={handleCreateServiceLevel1}
-            setAddSubCategoryModalVisible={setAddSubCategoryModalVisible}
-            selectedSubCategoryId={selectedSubCategoryId}
-            getServiceDetail={getServiceDetail}
-            setSelectedServicesUpdate={setSelectedServicesUpdate}
-            setIsOpenUpdateServiceLevel1={setIsOpenUpdateServiceLevel1}
-            onSelectSubCategoryToUpdate={onSelectSubCategoryToUpdate}
+          <Alert
+            message="Lỗi"
+            description={error}
+            type="error"
+            showIcon
           />
+        ) : (
+          <Card bordered={false} className="service-detail-card">
+            {serviceDetailFull && serviceDetailFull.subCategories && serviceDetailFull.subCategories.length > 0 ? (
+              <TreeServicesDetail
+                serviceDetailFull={serviceDetailFull}
+                onSelectSubCategory={onSelectSubCategory}
+                handleAddSubCategory={handleAddSubCategory}
+                handleCreateServiceLevel1={handleCreateServiceLevel1}
+                setAddSubCategoryModalVisible={setAddSubCategoryModalVisible}
+                selectedSubCategoryId={selectedSubCategoryId}
+                getServiceDetail={getServiceDetail}
+                setSelectedServicesUpdate={setSelectedServicesUpdate}
+                setIsOpenUpdateServiceLevel1={setIsOpenUpdateServiceLevel1}
+                onSelectSubCategoryToUpdate={onSelectSubCategoryToUpdate}
+              />
+            ) : (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={
+                  <Text type="secondary">Chưa có dịch vụ con nào trong danh mục này</Text>
+                }
+              >
+                <Button 
+                  type="primary" 
+                  icon={<PlusOutlined />} 
+                  onClick={() => setIsOpenCreateServiceLevel1(true)}
+                >
+                  Tạo dịch vụ con
+                </Button>
+              </Empty>
+            )}
+          </Card>
         )}
       </Drawer>
 
       {/*Modal tạo services cấp 1  */}
       <Modal
-        title="Tạo Dịch Vụ"
+        title={
+          <Space>
+            <AppstoreOutlined />
+            <span>Tạo Dịch Vụ Con</span>
+          </Space>
+        }
         open={isOpenCreateServiceLevel1}
         onCancel={() => {
           setIsOpenCreateServiceLevel1(false);
+          form.resetFields();
         }}
         footer={null} // Ẩn footer mặc định
+        centered
+        maskClosable={false}
+        destroyOnClose
       >
         <Form
           form={form} // Liên kết với form
           name="service-form"
           onFinish={handleCreateServies} // Đảm bảo chỉ sử dụng onFinish
+          layout="vertical"
+          initialValues={{ name: '' }}
         >
           <Form.Item
             label="Tên Dịch Vụ"
             name="name"
             rules={[{ required: true, message: "Vui lòng nhập tên dịch vụ!" }]}
+            tooltip="Tên dịch vụ con hiển thị cho khách hàng"
           >
-            <Input />
+            <Input placeholder="Nhập tên dịch vụ" prefix={<AppstoreOutlined style={{ color: 'rgba(0,0,0,.25)' }} />} />
           </Form.Item>
 
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit" // Chỉ cần sử dụng htmlType="submit"
-              loading={isLoading}
-              style={{ marginLeft: "70%" }}
-            >
-              Tạo Dịch Vụ
-            </Button>
+          <Divider />
+          
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => {
+                setIsOpenCreateServiceLevel1(false);
+                form.resetFields();
+              }}>
+                Hủy
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit" // Chỉ cần sử dụng htmlType="submit"
+                loading={isLoading}
+              >
+                Tạo Dịch Vụ
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
       </Modal>
 
       {/*Modal update services cấp 1  */}
       <Modal
-        title="Cập Nhật Dịch Vụ"
+        title={
+          <Space>
+            <AppstoreOutlined />
+            <span>Cập Nhật Dịch Vụ</span>
+          </Space>
+        }
         open={isOpenUpdateServiceLevel1}
         onCancel={handleCancelUpdate}
         footer={null} // Ẩn footer mặc định
+        centered
+        maskClosable={false}
+        destroyOnClose
       >
         <Form
           form={form} // Liên kết với form
-          name="service-form"
+          name="service-update-form"
           onFinish={handleUpdateServices} // Đảm bảo chỉ sử dụng onFinish
+          layout="vertical"
           initialValues={{ name: selectedServicesUpdate }}
         >
           <Form.Item
-            label="Tên Dịch Vụ "
+            label="Tên Dịch Vụ"
             name="name"
             rules={[{ required: true, message: "Vui lòng nhập tên dịch vụ!" }]}
+            tooltip="Tên dịch vụ hiển thị cho khách hàng"
           >
-            <Input
-              value={selectedServicesUpdate}
-              onChange={(e) => setSelectedServicesUpdate(e.target.value)}
-              placeholder="Nhập tên dịch vụ"
+            <Input 
+              placeholder="Nhập tên dịch vụ" 
+              prefix={<AppstoreOutlined style={{ color: 'rgba(0,0,0,.25)' }} />}
             />
           </Form.Item>
 
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit" // Chỉ cần sử dụng htmlType="submit"
-              loading={isLoading}
-              style={{ marginLeft: "70%" }}
-            >
-              Cập nhật
-            </Button>
+          <Divider />
+          
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Space>
+              <Button onClick={handleCancelUpdate}>
+                Hủy
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit" // Chỉ cần sử dụng htmlType="submit"
+                loading={isLoading}
+              >
+                Cập nhật
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
       </Modal>
 
       {/* Modal thêm dịch vụ vào danh mục con */}
       <Modal
-        title="Thêm dịch vụ cho danh mục con"
-        visible={isAddSubCategoryModalVisible}
-        onCancel={() => setAddSubCategoryModalVisible(false)}
+        title={
+          <Space>
+            <PictureOutlined />
+            <span>Thêm dịch vụ cho danh mục con</span>
+          </Space>
+        }
+        open={isAddSubCategoryModalVisible}
+        onCancel={() => {
+          setAddSubCategoryModalVisible(false);
+          form.resetFields();
+        }}
         footer={null}
         width={600}
+        centered
+        maskClosable={false}
+        destroyOnClose
       >
-        <Form form={form} onFinish={handleAddSubCategory}>
+        <Form 
+          form={form} 
+          onFinish={handleAddSubCategory}
+          layout="vertical"
+        >
           <Form.Item
             name="Name"
             label="Tên dịch vụ"
             rules={[{ required: true, message: "Vui lòng nhập tên dịch vụ" }]}
+            tooltip="Tên dịch vụ hiển thị cho khách hàng"
           >
-            <Input />
+            <Input placeholder="Nhập tên dịch vụ" />
           </Form.Item>
-          <Form.Item name="Description" label="Mô tả">
-            <Input.TextArea />
+          <Form.Item 
+            name="Description" 
+            label="Mô tả"
+            tooltip="Mô tả về dịch vụ, thông tin chi tiết"
+          >
+            <Input.TextArea 
+              placeholder="Nhập mô tả cho dịch vụ"
+              rows={4}
+              showCount
+              maxLength={500}
+            />
           </Form.Item>
           <Form.Item
             name="Price"
             label="Giá"
             rules={[{ required: true, message: "Vui lòng nhập giá dịch vụ" }]}
+            tooltip="Giá dịch vụ (VND)"
           >
-            <Input type="number" />
+            <InputNumber 
+              style={{ width: '100%' }} 
+              min={0} 
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/\$\s?|(,*)/g, '')}
+              placeholder="Nhập giá dịch vụ" 
+              addonAfter="VND"
+            />
           </Form.Item>
           <Form.Item
             name="Image"
             label="Hình ảnh"
             rules={[{ required: true, message: "Vui lòng tải hình ảnh" }]}
+            tooltip="Hình ảnh minh họa cho dịch vụ"
           >
-            <Upload
-              action="/upload" // API upload ảnh của bạn
-              listType="picture-card"
-              showUploadList={false}
-              beforeUpload={() => false} // Giới hạn không cho upload ngay
-              maxCount={1} // Giới hạn chỉ chọn 1 file
-            >
-              <Button>Chọn hình ảnh</Button>
-            </Upload>
+            <div className="upload-container">
+              <input 
+                type="file" 
+                id="subcategory-image-upload"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    // Set the file to form
+                    form.setFieldsValue({
+                      Image: { file: file, fileList: [{ originFileObj: file }] }
+                    });
+                  }
+                }}
+                accept="image/*" 
+                style={{ display: 'none' }}
+              />
+              <Button 
+                onClick={() => document.getElementById('subcategory-image-upload').click()}
+                icon={<FileImageOutlined />} 
+                type="primary"
+              >
+                Chọn ảnh
+              </Button>
+              <Text type="secondary" style={{ marginLeft: 8 }}>
+                {form.getFieldValue('Image')?.file?.name || 'Chưa chọn ảnh'}
+              </Text>
+            </div>
+            
+            {form.getFieldValue('Image')?.file && (
+              <div className="image-preview" style={{ marginTop: 16 }}>
+                <img 
+                  src={URL.createObjectURL(form.getFieldValue('Image').file)} 
+                  alt="Preview" 
+                  style={{ maxWidth: '100%', maxHeight: '200px' }}
+                />
+                <div style={{ marginTop: 8 }}>
+                  <Text type="secondary">Hình ảnh xem trước</Text>
+                </div>
+              </div>
+            )}
           </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={isLoading}>
-              Thêm
-            </Button>
+          
+          <Divider />
+          
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => {
+                setAddSubCategoryModalVisible(false);
+                form.resetFields();
+              }}>
+                Hủy
+              </Button>
+              <Button type="primary" htmlType="submit" loading={isLoading} icon={<UploadOutlined />}>
+                Thêm dịch vụ
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
       </Modal>

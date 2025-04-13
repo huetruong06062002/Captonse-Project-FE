@@ -19,12 +19,9 @@ export const fetchServices = createAsyncThunk(
 // Thunk cho việc thêm dịch vụ mới (POST)
 export const addService = createAsyncThunk(
   "services/addService",
-  async (newService, { dispatch, rejectWithValue }) => {
+  async (formData, { dispatch, rejectWithValue }) => {
     try {
-      const formData = new FormData();
-      formData.append("Name", newService.name);
-      formData.append("Icon", newService.icon);  // Icon phải là file (từ input file)
-      
+      // formData is already prepared in the component
       const response = await postRequestMultipartFormData("/categories", formData);
 
       // Thêm dịch vụ mới vào state mà không cần gọi lại API
@@ -32,7 +29,7 @@ export const addService = createAsyncThunk(
 
       return response.data;  // Trả về dữ liệu thành công
     } catch (error) {
-      return rejectWithValue(error.response.data);
+      return rejectWithValue(error.response?.data || { message: "Đã có lỗi xảy ra" });
     }
   }
 );
@@ -53,26 +50,11 @@ export const deleteService = createAsyncThunk(
 
 export const updateService = createAsyncThunk(
   "services/updateService",
-  async ({ id, updatedService }, { dispatch, rejectWithValue }) => {
+  async ({ id, data }, { dispatch, rejectWithValue }) => {
     try {
-      // Kiểm tra nếu updatedService không có dữ liệu gì
-      if (!updatedService || (!updatedService.name && !updatedService.icon)) {
-        return rejectWithValue({ message: "Dữ liệu cập nhật không hợp lệ" });
-      }
+      // data is already a FormData object prepared in the component
+      const response = await putRequestMultipartFormData(`/categories/${id}`, data);
 
-      // Tạo đối tượng FormData
-      const formData = new FormData();
-      
-      // Append các tham số vào FormData nếu có
-      console.log("check updatedService", updatedService);
-      formData.append("Name", updatedService.name);
-      formData.append("Icon", updatedService.icon);
-
-  
-      // Gọi API PUT với formData
-      const response = await putRequestMultipartFormData(`/categories/${id}`, formData, {}, null);
-
-      console.log("check response", response);
       // Cập nhật dữ liệu vào store
       dispatch(serviceSlice.actions.updateServiceInList(response));
 

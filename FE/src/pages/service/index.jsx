@@ -9,6 +9,15 @@ import {
   Form,
   Modal,
   Tooltip,
+  Card,
+  Typography,
+  Space,
+  Avatar,
+  Tag,
+  Row,
+  Col,
+  Divider,
+  Breadcrumb,
 } from "antd";
 import { IoIosRefresh } from "react-icons/io";
 import {
@@ -23,10 +32,12 @@ import { RxUpdate } from "react-icons/rx";
 import { FcViewDetails } from "react-icons/fc";
 import { MdOutlineDeleteOutline } from "react-icons/md";
 import { FaSearch } from "react-icons/fa";
+import { HomeOutlined, AppstoreOutlined, PictureOutlined, FileImageOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import "./index.css";
 import { ServicesDetail } from "./components/ServicesDetail";
 
 const { Search } = Input;
+const { Title, Text } = Typography;
 
 function Services() {
   const dispatch = useDispatch();
@@ -52,17 +63,18 @@ function Services() {
       return;
     }
 
-    const newService = {
-      name: name,
-      icon: icon,
-    };
+    // Create FormData to properly handle file uploads
+    const formData = new FormData();
+    formData.append("Name", name);
+    formData.append("Icon", icon);
 
-    dispatch(addService(newService)) // Gọi API POST để thêm dịch vụ
+    dispatch(addService(formData)) // Gọi API POST để thêm dịch vụ
       .then(() => {
         dispatch(fetchServices());
         setIsModalVisible(false); // Đóng Modal sau khi thêm dịch vụ
         setName(""); // Reset form
         setIcon(null); // Reset file input
+        message.success("Service added successfully");
       })
       .catch((error) => {
         message.error("Failed to add service");
@@ -91,12 +103,22 @@ function Services() {
       return;
     }
 
-    dispatch(updateService({ id: editingService.categoryId, updatedService }))
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append("Name", name);
+    
+    // Only append a new icon if it exists
+    if (icon) {
+      formData.append("Icon", icon);
+    }
+
+    dispatch(updateService({ id: editingService.categoryId, data: formData }))
       .then(() => {
         setIsModalVisible(false); // Đóng Modal sau khi cập nhật
         dispatch(fetchServices()); // Gọi lại API sau khi cập nhật thành công
         setName("");
         setIcon(null);
+        message.success("Service updated successfully");
       })
       .catch((error) => {
         message.error("Failed to update service");
@@ -106,9 +128,14 @@ function Services() {
   const handleDeleteService = (id) => {
     Modal.confirm({
       title: "Bạn có chắc chắn muốn xóa dịch vụ này?",
+      content: "Hành động này không thể hoàn tác",
+      okText: "Xóa",
+      okType: "danger",
+      cancelText: "Hủy",
       onOk: () => {
         dispatch(deleteService(id)).then(() => {
           dispatch(fetchServices());
+          message.success("Service deleted successfully");
         }); // Gọi API DELETE để xóa dịch vụ
       },
     });
@@ -117,16 +144,10 @@ function Services() {
   const handleViewDetail = (record) => {
     setServicesDetail(record);
     showDrawer();
-    console.log(record);
   };
 
   const showDrawer = () => {
     setOpenDrawerDetail(true);
-  };
-
-  var updatedService = {
-    name: name,
-    icon: icon || editingService?.icon, // Giữ nguyên icon cũ nếu không chọn mới
   };
 
   const columns = [
@@ -134,56 +155,78 @@ function Services() {
       title: "Tên Dịch Vụ",
       dataIndex: "name",
       key: "name",
+      render: (text) => <Text strong>{text}</Text>,
     },
     {
       title: "Hình Ảnh",
       dataIndex: "icon",
       key: "icon",
+      width: 100,
       render: (icon) => (
-        <img src={icon} alt="icon" style={{ width: 30, height: 30 }} />
+        <Avatar 
+          src={icon} 
+          alt="icon" 
+          size={40}
+          shape="square"
+          style={{ objectFit: 'cover' }} 
+        />
       ),
     },
     {
       title: "Ngày tạo",
       dataIndex: "createdat",
       key: "createdAt",
-      render: (text) => moment(text).format("HH:mm:ss | DD/MM/YYYY"),
+      render: (text) => (
+        <Tag color="blue">
+          {moment(text).format("HH:mm:ss | DD/MM/YYYY")}
+        </Tag>
+      ),
     },
     {
-      title: "Thao tác",
+      title: (
+        <span>
+          Thao tác
+          <Tooltip title="Cập nhật, xem chi tiết hoặc xóa dịch vụ">
+            <InfoCircleOutlined style={{ marginLeft: 8, cursor: 'pointer' }} />
+          </Tooltip>
+        </span>
+      ),
       key: "action",
+      width: 150,
       render: (_, record) => (
-        <div style={{ display: "flex" }}>
-          <Button
-            onClick={() => handleOpenModal(record)} // Chỉnh sửa dịch vụ
-            style={{ border: "none", background: "none" }}
-          >
-            <Tooltip placement="left" title="Cập nhập dịch vụ">
-              <RxUpdate
-                style={{ color: "orange", width: "20px", height: "20px" }}
-              />
-            </Tooltip>
-          </Button>
-          <Button
-            style={{ border: "none", background: "none" }}
-            onClick={() => handleViewDetail(record)}
-          >
-            <Tooltip placement="top" title="Xem chi tiết dịch vụ">
-              <FcViewDetails style={{ width: "20px", height: "20px" }} />
-            </Tooltip>
-          </Button>
-          <Button
-            type="danger"
-            onClick={() => handleDeleteService(record.categoryId)} // Xóa dịch vụ
-            style={{ border: "none", background: "none" }}
-          >
-            <Tooltip placement="right" title="Xóa dịch vụ">
-              <MdOutlineDeleteOutline
-                style={{ color: "red", width: "20px", height: "20px" }}
-              />
-            </Tooltip>
-          </Button>
-        </div>
+        <Space size="middle">
+          <Tooltip title="Cập nhật dịch vụ">
+            <Button
+              onClick={() => handleOpenModal(record)}
+              type="primary"
+              icon={<RxUpdate />}
+              size="middle"
+              className="action-button-update"
+              aria-label="Cập nhật"
+            />
+          </Tooltip>
+          <Tooltip title="Xem chi tiết dịch vụ">
+            <Button
+              onClick={() => handleViewDetail(record)}
+              type="primary"
+              icon={<FcViewDetails style={{ color: "white" }} />}
+              size="middle"
+              className="action-button-view"
+              aria-label="Chi tiết"
+            />
+          </Tooltip>
+          <Tooltip title="Xóa dịch vụ">
+            <Button
+              onClick={() => handleDeleteService(record.categoryId)}
+              danger
+              type="primary"
+              icon={<MdOutlineDeleteOutline />}
+              size="middle"
+              className="action-button-delete"
+              aria-label="Xóa"
+            />
+          </Tooltip>
+        </Space>
       ),
     },
   ];
@@ -191,7 +234,7 @@ function Services() {
   if (isLoading)
     return (
       <div className="centered-spin">
-        <Spin tip="Loading services..." />
+        <Spin size="large" tip="Loading services..." />
       </div>
     );
 
@@ -200,71 +243,166 @@ function Services() {
   }
 
   return (
-    <div>
+    <div className="service-page-container">
       <ServicesDetail
         openDrawerDetail={openDrawerDetail}
         setOpenDrawerDetail={setOpenDrawerDetail}
         showDrawer={showDrawer}
         servicesDetail={servicesDetail}
       />
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <Search
-          placeholder="Tìm kiếm dịch vụ"
-          enterButton={<FaSearch />}
-          size="large"
-          style={{ width: "50%" }}
-        />
+      
+      <Card className="service-page-card">
+        <Breadcrumb style={{ marginBottom: 16 }}>
+          <Breadcrumb.Item href="/">
+            <HomeOutlined />
+            <span>Trang chủ</span>
+          </Breadcrumb.Item>
+          <Breadcrumb.Item>
+            <AppstoreOutlined />
+            <span>Quản lý dịch vụ</span>
+          </Breadcrumb.Item>
+        </Breadcrumb>
+      
+        <Title level={4} style={{ marginBottom: 24 }}>
+          <AppstoreOutlined /> Danh sách dịch vụ
+        </Title>
+        
+        <Row gutter={[16, 24]} align="middle" justify="space-between" style={{ marginBottom: 20 }}>
+          <Col xs={24} sm={12} md={12} lg={12}>
+            <Search
+              placeholder="Tìm kiếm dịch vụ"
+              allowClear
+              enterButton={<Button type="primary" icon={<FaSearch />}>Tìm kiếm</Button>}
+              size="large"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={12} lg={12} style={{ textAlign: 'right' }}>
+            <Space>
+              <Button
+                type="primary"
+                icon={<IoIosRefresh />}
+                onClick={() => dispatch(fetchServices())}
+                size="large"
+              >
+                Refresh
+              </Button>
+              <Button
+                type="primary"
+                icon={<IoIosAdd />}
+                onClick={() => handleOpenModal()}
+                size="large"
+              >
+                Thêm dịch vụ
+              </Button>
+            </Space>
+          </Col>
+        </Row>
 
-        <div style={{ display: "flex", gap: "10px" }}>
-          <Button
-            type="primary"
-            onClick={() => dispatch(fetchServices())}
-            style={{ marginLeft: 10 }}
-          >
-            <Tooltip placement="left" title="Refresh">
-              <IoIosRefresh />
-            </Tooltip>
-          </Button>
-          <Button type="primary" onClick={() => handleOpenModal()}>
-            <Tooltip placement="right" title="Thêm Dịch Vụ">
-              <IoIosAdd />
-            </Tooltip>
-          </Button>
+        <Divider />
+
+        <div className="action-buttons-legend" style={{ marginBottom: 16, display: 'flex', alignItems: 'center' }}>
+          <Text strong style={{ marginRight: 16 }}>Thao tác:</Text>
+          <Space>
+            <Button type="primary" size="small" className="action-button-update" icon={<RxUpdate />} disabled />
+            <Text>Cập nhật</Text>
+          </Space>
+          <Space style={{ marginLeft: 8 }}>
+            <Button type="primary" size="small" className="action-button-view" icon={<FcViewDetails style={{ color: "white" }} />} disabled />
+            <Text>Xem chi tiết</Text>
+          </Space>
+          <Space style={{ marginLeft: 8 }}>
+            <Button type="primary" size="small" className="action-button-delete" danger icon={<MdOutlineDeleteOutline />} disabled />
+            <Text>Xóa</Text>
+          </Space>
         </div>
-      </div>
-      <br />
+
+        <Table
+          columns={columns}
+          dataSource={services}
+          rowKey="categoryId"
+          pagination={{ 
+            pageSize: 5,
+            showTotal: (total) => `Tổng ${total} dịch vụ`,
+            showSizeChanger: true,
+            pageSizeOptions: ['5', '10', '20'],
+          }}
+          bordered
+          scroll={{ x: 800 }}
+        />
+      </Card>
 
       {/* Modal Form */}
       <Modal
-        title={editingService ? "Chỉnh sửa Dịch Vụ" : "Thêm Dịch Vụ"}
-        visible={isModalVisible}
+        title={
+          <div>
+            <PictureOutlined style={{ marginRight: 8 }} />
+            {editingService ? "Chỉnh sửa Dịch Vụ" : "Thêm Dịch Vụ"}
+          </div>
+        }
+        open={isModalVisible}
         onOk={editingService ? handleSaveService : handleSubmit}
         onCancel={handleCancelModal}
         okText={editingService ? "Lưu" : "Thêm"}
         cancelText="Hủy"
         maskClosable={false}
+        centered
       >
         <Form layout="vertical">
-          <Form.Item label="Tên Dịch Vụ">
+          <Form.Item 
+            label="Tên Dịch Vụ" 
+            required
+            tooltip="Tên dịch vụ được hiển thị cho khách hàng"
+          >
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Nhập tên dịch vụ"
+              prefix={<AppstoreOutlined style={{ color: 'rgba(0,0,0,.25)' }} />}
             />
           </Form.Item>
 
-          <Form.Item label="Hình Ảnh">
-            <input type="file" onChange={handleIconChange} accept="image/*" />
+          <Form.Item 
+            label="Hình Ảnh" 
+            required
+            tooltip="Hình ảnh đại diện cho dịch vụ"
+          >
+            <div className="upload-container">
+              <input 
+                type="file" 
+                onChange={handleIconChange} 
+                accept="image/*" 
+                id="icon-upload"
+                style={{ display: 'none' }}
+              />
+              <Button 
+                onClick={() => document.getElementById('icon-upload').click()}
+                icon={<FileImageOutlined />} 
+                style={{ marginRight: 8 }}
+                type="primary"
+              >
+                Chọn ảnh
+              </Button>
+              <Text type="secondary">
+                {icon ? icon.name : editingService?.icon ? 'Giữ nguyên ảnh hiện tại' : 'Chưa chọn ảnh'}
+              </Text>
+            </div>
+            
+            {(icon || editingService?.icon) && (
+              <div className="image-preview">
+                <Avatar 
+                  src={icon ? URL.createObjectURL(icon) : editingService?.icon} 
+                  alt="Preview" 
+                  shape="square"
+                  size={100} 
+                />
+                <div style={{ marginTop: 8 }}>
+                  <Text type="secondary">Hình ảnh xem trước</Text>
+                </div>
+              </div>
+            )}
           </Form.Item>
         </Form>
       </Modal>
-
-      <Table
-        columns={columns}
-        dataSource={services}
-        rowKey="categoryId"
-        pagination={{ pageSize: 5 }}
-      />
     </div>
   );
 }

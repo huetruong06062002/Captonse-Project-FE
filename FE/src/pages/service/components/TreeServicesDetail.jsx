@@ -12,6 +12,12 @@ import {
   Tooltip,
   Popconfirm,
   Upload,
+  Space,
+  Typography,
+  Card,
+  Divider,
+  Avatar,
+  Tag,
 } from "antd";
 import { axiosClientVer2 } from "../../../config/axiosInterceptor";
 import {
@@ -19,9 +25,15 @@ import {
   EditOutlined,
   EyeOutlined,
   MoreOutlined,
+  UploadOutlined,
+  InfoCircleOutlined,
+  FolderOpenOutlined,
 } from "@ant-design/icons";
 import { MdUpdate } from "react-icons/md";
 import { LuDelete } from "react-icons/lu";
+
+const { Title, Text } = Typography;
+
 const TreeServicesDetail = ({
   serviceDetailFull,
   onSelectSubCategory,
@@ -34,6 +46,7 @@ const TreeServicesDetail = ({
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editingService, setEditingService] = useState({});
   const [form] = Form.useForm(); // Thêm hook useForm
+  const [uploadedFile, setUploadedFile] = useState(null);
 
   // Thêm useEffect để cập nhật form khi editingService thay đổi
   useEffect(() => {
@@ -130,131 +143,136 @@ const TreeServicesDetail = ({
   const renderTreeData = (subCategories) => {
     return subCategories.map((subCategory) => ({
       title: (
-        <div style={{ display: "flex", gap: "0.25rem", fontSize: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <p
-              style={{
-                color: "#2ecc71",
-                cursor: "pointer", // Thêm con trỏ chuột để cho thấy đây là một phần có thể click
-              }}
-              onClick={() => {
-                onSelectSubCategory([subCategory.subCategoryId], {
-                  selected: true,
-                  node: { key: subCategory.subCategoryId },
-                });
-                setAddSubCategoryModalVisible(true);
-              }}
-            >
-              <Tooltip
-                placement="right"
-                title={"Thêm dịch vụ"}
-                style={{ marginTop: "2rem" }}
+        <Space className="tree-category-node">
+          <FolderOpenOutlined style={{ color: "#1890ff", fontSize: "16px" }} />
+          <Text strong className="category-name">{subCategory.name}</Text>
+          <Space size={4}>
+            <Tooltip title="Thêm dịch vụ">
+              <Tag 
+                color="success" 
+                style={{ cursor: "pointer" }}
+                onClick={() => {
+                  onSelectSubCategory([subCategory.subCategoryId], {
+                    selected: true,
+                    node: { key: subCategory.subCategoryId },
+                  });
+                  setAddSubCategoryModalVisible(true);
+                }}
               >
-                {subCategory.name}
-              </Tooltip>
-            </p>
-          </div>
-          {/* Biểu tượng update chỉ có sự kiện onClick */}
-          <div>
-            <p
-              style={{
-                color: "orange",
-                cursor: "pointer",
-              }}
-              onClick={() => {
-                onSelectSubCategoryToUpdate([subCategory], {
-                  selected: true,
-                  node: { item: subCategory },
-                });
-              }}
-            >
-              <Tooltip placement="topLeft" title={"Cập nhật dịch vụ"}>
-                <MdUpdate onClick={() => setIsOpenUpdateServiceLevel1(true)} />
-              </Tooltip>
-            </p>
-          </div>
-          <div>
-            <Tooltip placement="topLeft" title={"Xóa dịch vụ"}>
+                + Thêm
+              </Tag>
+            </Tooltip>
+            <Tooltip title="Cập nhật dịch vụ">
+              <Tag 
+                color="warning" 
+                style={{ cursor: "pointer" }}
+                onClick={() => {
+                  onSelectSubCategoryToUpdate([subCategory], {
+                    selected: true,
+                    node: { item: subCategory },
+                  });
+                  setIsOpenUpdateServiceLevel1(true);
+                }}
+              >
+                <MdUpdate />
+              </Tag>
+            </Tooltip>
+            <Tooltip title="Xóa dịch vụ">
               <Popconfirm
                 title="Xóa dịch vụ"
-                description="Bạn muốn xóa dịch vụ này"
+                description="Bạn muốn xóa dịch vụ này?"
                 onConfirm={handleDelete}
                 onCancel={handleCancelDelete}
                 okText="Đồng ý"
                 cancelText="Không"
               >
-                <LuDelete style={{ color: "red" }} />
+                <Tag color="error" style={{ cursor: "pointer" }}>
+                  <LuDelete />
+                </Tag>
               </Popconfirm>
             </Tooltip>
-          </div>
-        </div>
+          </Space>
+        </Space>
       ),
       key: subCategory.subCategoryId,
       children: subCategory.serviceDetails.map((service) => ({
         title: (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
+          <Card 
+            className="service-tree-item" 
+            size="small" 
+            style={{ marginBottom: "8px" }}
+            hoverable
           >
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <img
-                src={service.imageUrl}
-                alt={service.name}
-                style={{ width: 30, height: 30, marginRight: 10 }}
-              />
-              {`${service.name} - ${service.price.toLocaleString("de-DE")} VND`}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Space align="center">
+                <Avatar 
+                  src={service.imageUrl} 
+                  shape="square" 
+                  size={40} 
+                  alt={service.name} 
+                  style={{ objectFit: "contain", backgroundColor: "#f0f0f0" }}
+                />
+                <Space direction="vertical" size={0}>
+                  <Text strong>{service.name}</Text>
+                  <Text type="secondary" style={{ fontSize: "12px" }}>
+                    {service.price.toLocaleString("vi-VN")} VND
+                  </Text>
+                </Space>
+              </Space>
+              <Dropdown
+                overlay={
+                  <Menu>
+                    <Menu.Item
+                      key="update"
+                      icon={<EyeOutlined />}
+                      className="menu-item-view"
+                      onClick={() => setIsEditModalVisible(true)}
+                    >
+                      Xem chi tiết
+                    </Menu.Item>
+                    <Menu.Item
+                      key="view"
+                      icon={<EditOutlined />}
+                      className="menu-item-edit"
+                      onClick={() =>
+                        handleEditServicesInServiceDetail(service.serviceId)
+                      }
+                    >
+                      Chỉnh sửa
+                    </Menu.Item>
+                    <Menu.Item
+                      key="delete"
+                      icon={<DeleteOutlined />}
+                      danger
+                      className="menu-item-delete"
+                      onClick={() => {
+                        console.log("check serviceId", service.serviceId);
+                        handleDeleteServiceInServiceDetail(service.serviceId);
+                      }}
+                    >
+                      Xóa
+                    </Menu.Item>
+                  </Menu>
+                }
+                trigger={["click"]}
+              >
+                <Button 
+                  type="text" 
+                  icon={<MoreOutlined />} 
+                  size="small"
+                  className="action-button"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </Dropdown>
             </div>
-            <Dropdown
-              overlay={
-                <Menu>
-                  <Menu.Item
-                    key="update"
-                    icon={<EyeOutlined />}
-                    style={{ backgroundColor: "#fff8e1", color: "#fa8c16" }}
-                    onClick={() => setIsEditModalVisible(true)}
-                  >
-                    Xem chi tiết
-                  </Menu.Item>
-                  <Menu.Item
-                    key="view"
-                    icon={<EditOutlined />}
-                    style={{ backgroundColor: "#e3f2fd", color: "#1890ff" }}
-                    onClick={() =>
-                      handleEditServicesInServiceDetail(service.serviceId)
-                    }
-                  >
-                    Chỉnh sửa
-                  </Menu.Item>
-
-                  <Menu.Item
-                    key="delete"
-                    icon={<DeleteOutlined />}
-                    danger
-                    style={{ backgroundColor: "#ffebee" }}
-                    onClick={() => {
-                      console.log("check serviceId", service.serviceId);
-                      handleDeleteServiceInServiceDetail(service.serviceId);
-                    }}
-                  >
-                    Xóa
-                  </Menu.Item>
-                </Menu>
-              }
-            >
-              <MoreOutlined
-                style={{
-                  cursor: "pointer",
-                  backgroundColor: "#ecf0f1",
-                  marginLeft: "1rem",
-                  padding: "0.25rem",
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </Dropdown>
-          </div>
+            {service.description && (
+              <div style={{ marginTop: "8px" }}>
+                <Text type="secondary" ellipsis={{ rows: 2 }}>
+                  {service.description}
+                </Text>
+              </div>
+            )}
+          </Card>
         ),
         key: service.serviceId,
       })),
@@ -264,23 +282,36 @@ const TreeServicesDetail = ({
   const treeData = renderTreeData(serviceDetailFull?.subCategories || []);
 
   return (
-    <div>
-      <Tree
-        treeData={treeData}
-        showLine
-        defaultExpandAll
-        onSelect={onSelectSubCategory}
-      />
+    <div className="tree-services-container">
+      <Card bordered={false} className="tree-card">
+        <Tree
+          treeData={treeData}
+          showLine={{ showLeafIcon: false }}
+          defaultExpandAll
+          onSelect={onSelectSubCategory}
+          className="services-tree"
+        />
+      </Card>
 
       {/* Modal for editing service */}
       <Modal
-        title="Chỉnh sửa dịch vụ"
-        visible={isEditModalVisible}
+        title={
+          <Space>
+            <EditOutlined />
+            <span>Chỉnh sửa dịch vụ</span>
+          </Space>
+        }
+        open={isEditModalVisible}
         onCancel={() => setIsEditModalVisible(false)}
         footer={null}
+        className="edit-service-modal"
+        width={600}
+        centered
       >
+        <Divider style={{ margin: "12px 0" }} />
         <Form
           form={form}
+          layout="vertical"
           initialValues={{
             name: editingService?.name,
             price: editingService?.price,
@@ -294,81 +325,64 @@ const TreeServicesDetail = ({
             name="name"
             rules={[{ required: true, message: "Vui lòng nhập tên dịch vụ!" }]}
           >
-            <Input />
+            <Input placeholder="Nhập tên dịch vụ" />
           </Form.Item>
 
           <Form.Item
-            label="Giá"
+            label="Giá dịch vụ"
             name="price"
             rules={[{ required: true, message: "Vui lòng nhập giá dịch vụ!" }]}
           >
-            <InputNumber style={{ width: "100%" }} />
+            <InputNumber 
+              style={{ width: "100%" }} 
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={value => value.replace(/\$\s?|(,*)/g, '')}
+              placeholder="Nhập giá dịch vụ"
+              addonAfter="VND"
+            />
           </Form.Item>
 
           <Form.Item label="Mô tả" name="description">
-            <Input.TextArea />
+            <Input.TextArea rows={4} placeholder="Nhập mô tả dịch vụ" />
           </Form.Item>
 
-          <Form.Item label="URL hình ảnh" name="imageUrl">
-            <Input />
-          </Form.Item>
-          {/* Thêm chức năng upload ảnh */}
-          <Form.Item label="Upload ảnh mới">
+          <Form.Item
+            label="Hình ảnh"
+            name="imageUrl"
+            valuePropName="file"
+            tooltip={{ title: "Tải lên hình ảnh cho dịch vụ", icon: <InfoCircleOutlined /> }}
+          >
             <Upload
-              name="file"
-              listType="picture-card"
-              showUploadList={false}
+              accept="image/*"
+              maxCount={1}
               beforeUpload={(file) => {
-                // Kiểm tra loại file
-                const isImage = file.type.startsWith("image/");
-                if (!isImage) {
-                  message.error("Bạn chỉ có thể upload file hình ảnh!");
-                  return Upload.LIST_IGNORE;
-                }
-
-                // Giới hạn kích thước file (2MB)
-                const isLt2M = file.size / 1024 / 1024 < 2;
-                if (!isLt2M) {
-                  message.error("Hình ảnh phải nhỏ hơn 2MB!");
-                  return Upload.LIST_IGNORE;
-                }
-
-                // Xử lý upload
-                const formData = new FormData();
-                formData.append("file", file);
-
-                // Thực hiện upload và cập nhật URL
-                axiosClientVer2
-                  .post("/upload", formData)
-                  .then((response) => {
-                    const imageUrl = response.data.url; // URL từ server sau khi upload
-                    form.setFieldsValue({ imageUrl });
-                    message.success("Upload ảnh thành công");
-                  })
-                  .catch((error) => {
-                    console.error("Upload failed:", error);
-                    message.error("Upload ảnh thất bại");
-                  });
-
-                return false; // Ngăn upload tự động của antd
+                setUploadedFile(file);
+                return false;
+              }}
+              customRequest={({ file, onSuccess }) => {
+                setTimeout(() => {
+                  onSuccess("ok");
+                }, 0);
+              }}
+              listType="picture-card"
+              showUploadList={{
+                showPreviewIcon: true,
+                showRemoveIcon: true,
               }}
             >
               <div>
-                <div style={{ marginTop: 8 }}>
-                  <Button>Upload ảnh</Button>
-                </div>
+                <UploadOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+                <div style={{ marginTop: 8, color: '#666' }}>Tải ảnh</div>
               </div>
             </Upload>
           </Form.Item>
 
           {/* Thêm phần xem trước hình ảnh */}
-          <Form.Item label="Xem trước hình ảnh">
-            {editingService?.imageUrl && (
+          {(editingService?.imageUrl && !uploadedFile) && (
+            <Form.Item label="Hình ảnh hiện tại">
               <div style={{ marginTop: "10px" }}>
                 <img
-                  src={
-                    form.getFieldValue("imageUrl") || editingService?.imageUrl
-                  }
+                  src={editingService?.imageUrl}
                   alt="Xem trước"
                   style={{
                     maxWidth: "100%",
@@ -376,18 +390,25 @@ const TreeServicesDetail = ({
                     display: "block",
                     margin: "0 auto",
                     border: "1px solid #d9d9d9",
-                    borderRadius: "2px",
-                    padding: "5px",
+                    borderRadius: "4px",
+                    padding: "4px",
                   }}
                 />
               </div>
-            )}
-          </Form.Item>
+            </Form.Item>
+          )}
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit" style={{ width: "100%" }}>
-              Cập nhật dịch vụ
-            </Button>
+          <Divider style={{ margin: "12px 0 20px" }} />
+
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+              <Button onClick={() => setIsEditModalVisible(false)}>
+                Hủy bỏ
+              </Button>
+              <Button type="primary" htmlType="submit">
+                Cập nhật dịch vụ
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
       </Modal>
