@@ -23,9 +23,8 @@ import serviesImage from "../../assets/image/service.png";
 import extraImage from "../../assets/image/services-extra.png";
 import CountUp from "react-countup";
 import { Line } from "react-chartjs-2";
-import html2canvas from "html2canvas";
 import domtoimage from "dom-to-image";
-import exportToPNGImg from "../../assets/image/exportToPNG.png";
+import { FaFileExport } from "react-icons/fa6";
 
 // Đăng ký các thành phần cần thiết
 ChartJS.register(
@@ -516,7 +515,7 @@ function DashBoard() {
             e.currentTarget.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)"; // Reset shadow
           }}
         >
-          <img src={exportToPNGImg} width={30} alt="Export Icon" />
+          <FaFileExport size={30} color="#fff" />
           <p
             style={{
               margin: 0,
