@@ -494,37 +494,44 @@ function DashBoard() {
             position: "absolute",
             right: "5rem",
             top: "50%",
-            transform: "translateY(-50%)", // Center vertically
-            backgroundColor: "rgb(0, 216, 214)", // Button background color
-            border: "none", // Remove border
-            borderRadius: "8px", // Rounded corners
-            padding: "10px 20px", // Add padding
-            display: "flex", // Use flexbox for alignment
-            alignItems: "center", // Center items vertically
-            gap: "1rem", // Space between icon and text
-            boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)", // Add shadow
-            transition: "all 0.3s ease", // Smooth hover effect
-            width:"10rem"
+            transform: "translateY(-50%)",
+            backgroundColor: "#00B4B4",
+            border: "none",
+            borderRadius: "12px",
+            padding: "12px 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.8rem",
+            boxShadow: "0 4px 15px rgba(0, 180, 180, 0.2)",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            width: "auto",
+            minWidth: "200px",
+            color: "#fff",
+            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = "rgb(0, 180, 180)"; // Hover background color
-            e.currentTarget.style.boxShadow = "0px 6px 8px rgba(0, 0, 0, 0.2)"; // Hover shadow
+            e.currentTarget.style.backgroundColor = "#009999";
+            e.currentTarget.style.boxShadow = "0 6px 20px rgba(0, 180, 180, 0.4)";
+            e.currentTarget.style.transform = "translateY(-52%)";
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = "rgb(0, 216, 214)"; // Reset background color
-            e.currentTarget.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)"; // Reset shadow
+            e.currentTarget.style.backgroundColor = "#00B4B4";
+            e.currentTarget.style.boxShadow = "0 4px 15px rgba(0, 180, 180, 0.2)";
+            e.currentTarget.style.transform = "translateY(-50%)";
           }}
         >
-          <FaFileExport size={30} color="#fff" />
+          <FaFileExport size={24} color="#fff" style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }} />
           <p
             style={{
               margin: 0,
-              fontSize: "0.8rem",
-              fontWeight: "bold",
-              color: "#fff",
+              fontSize: "0.95rem",
+              fontWeight: "600",
+              letterSpacing: "0.5px",
+              textShadow: "0 2px 4px rgba(0,0,0,0.1)"
             }}
           >
-            Export Dashboard to PNG
+            Export Dashboard
           </p>
         </button>
       </Row>
