@@ -125,6 +125,21 @@
   text-align: center;
   margin-bottom: 20px;
   padding-top: 20px;
+  position: relative;
+}
+
+/* Add a circular glow effect behind the logo */
+.login-logo-container::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 130px;
+  height: 130px;
+  background: radial-gradient(circle, rgba(255,255,255,0.9) 30%, rgba(255,255,255,0) 70%);
+  border-radius: 50%;
+  z-index: -1;
 }
 
 .login-logo {
@@ -133,6 +148,9 @@
   object-fit: contain;
   margin-bottom: 10px;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+  background: transparent;
+  border-radius: 50%;
+  padding: 5px;
 }
 
 .login-title {

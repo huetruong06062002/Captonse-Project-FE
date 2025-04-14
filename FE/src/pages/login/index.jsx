@@ -159,6 +159,10 @@ const Login = () => {
               className="login-logo"
               variants={logoVariants}
               whileHover="hover"
+              style={{ 
+                mixBlendMode: 'multiply',
+                filter: 'contrast(1.1) brightness(1.1)'
+              }}
             />
             <motion.div variants={itemVariants}>
               <Title level={2} className="login-title">
