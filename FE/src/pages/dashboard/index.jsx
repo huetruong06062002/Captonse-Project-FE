@@ -15,6 +15,7 @@ import {
 import { axiosClientVer2 } from "../../config/axiosInterceptor";
 import { getRequest } from "@services/api";
 import { Col, Row } from "antd";
+import { motion } from "framer-motion";
 
 import orderImage from "../../assets/image/order.png";
 import customerImage from "../../assets/image/customer.png";
@@ -37,6 +38,64 @@ ChartJS.register(
   LineElement,
   ArcElement
 );
+
+// Hàm tạo hiệu ứng tuyết
+const generateSnowflakes = (count) => {
+  return Array.from({ length: count }).map((_, i) => ({
+    id: i,
+    x: Math.random() * 100, // vị trí x ngẫu nhiên (0-100%)
+    size: Math.random() * 10 + 5, // kích thước ngẫu nhiên (5-15px)
+    duration: Math.random() * 20 + 15, // thời gian rơi ngẫu nhiên (15-35s)
+    delay: Math.random() * 5, // độ trễ ngẫu nhiên (0-5s)
+    blur: Math.random() * 3, // độ mờ ngẫu nhiên (0-3px)
+    opacity: Math.random() * 0.5 + 0.3, // độ trong suốt ngẫu nhiên (0.3-0.8)
+    rotation: Math.random() * 360, // góc xoay ngẫu nhiên (0-360 độ)
+    symbol: i % 3 === 0 ? '❄' : i % 3 === 1 ? '❅' : '❆',
+  }));
+};
+
+// Các biến thể animation cho tuyết rơi
+const snowflakeVariant = {
+  animate: (custom) => ({
+    y: ["-10vh", "100vh"],
+    x: [
+      `${custom.x}vw`,
+      `${custom.x - 10 + Math.random() * 20}vw`,
+      `${custom.x - 5 + Math.random() * 10}vw`,
+      `${custom.x + 5 + Math.random() * 15}vw`,
+      `${custom.x - 5 + Math.random() * 10}vw`,
+    ],
+    rotate: [custom.rotation, custom.rotation + 360],
+    scale: [0.8, 1.2, 0.8],
+    transition: {
+      y: {
+        duration: custom.duration,
+        repeat: Infinity,
+        delay: custom.delay,
+        ease: "linear",
+      },
+      x: {
+        duration: custom.duration,
+        repeat: Infinity,
+        delay: custom.delay,
+        times: [0, 0.25, 0.5, 0.75, 1],
+        ease: "easeInOut",
+      },
+      rotate: {
+        duration: custom.duration / 2,
+        repeat: Infinity,
+        delay: custom.delay,
+        ease: "linear",
+      },
+      scale: {
+        duration: custom.duration / 3,
+        repeat: Infinity,
+        delay: custom.delay,
+        ease: "easeInOut",
+      }
+    }
+  })
+};
 
 function DashBoard() {
   // Tạo một mảng 14 màu sắc
@@ -65,6 +124,9 @@ function DashBoard() {
   const [orderStats, setOrderStats] = useState(null);
   // Create a reference to the dashboard div
   const dashboardRef = useRef();
+  
+  // Create snowflakes
+  const snowflakes = generateSnowflakes(50);
 
   useEffect(() => {
     const fetchNumberOfCustomer = async () => {
@@ -115,7 +177,35 @@ function DashBoard() {
     fetchNumberOfOrderStatistics();
   }, []);
 
-  if (!orderStats) return <div>Loading...</div>;
+  if (!orderStats) return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div>Loading...</div>
+      {/* Snowflake effect while loading */}
+      {snowflakes.slice(0, 20).map((flake) => (
+        <motion.div
+          key={flake.id}
+          variants={snowflakeVariant}
+          custom={flake}
+          animate="animate"
+          style={{
+            position: "fixed",
+            fontSize: `${flake.size}px`,
+            left: `${flake.x}vw`,
+            top: "-5vh",
+            color: "#3bb77e",
+            filter: `blur(${flake.blur}px)`,
+            opacity: flake.opacity,
+            zIndex: 1000,
+            textShadow: "0 0 5px white",
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        >
+          {flake.symbol}
+        </motion.div>
+      ))}
+    </div>
+  );
 
   // ChartJS data for statusStatistics (Pie Chart)
   const pieData = {
@@ -190,7 +280,32 @@ function DashBoard() {
   };
 
   return (
-    <div ref={dashboardRef} style={{ padding: "20px", backgroundColor: "#f8f9fa" }}>
+    <div ref={dashboardRef} style={{ padding: "20px", backgroundColor: "#f8f9fa", position: "relative" }}>
+      {/* Snowfall effect */}
+      {snowflakes.map((flake) => (
+        <motion.div
+          key={flake.id}
+          variants={snowflakeVariant}
+          custom={flake}
+          animate="animate"
+          style={{
+            position: "fixed",
+            fontSize: `${flake.size}px`,
+            left: `${flake.x}vw`,
+            top: "-5vh",
+            color: "#3bb77e",
+            filter: `blur(${flake.blur}px)`,
+            opacity: flake.opacity,
+            zIndex: 1000,
+            textShadow: "0 0 5px white",
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        >
+          {flake.symbol}
+        </motion.div>
+      ))}
+      
       {/* Stats Cards Row */}
       <Row gutter={[20, 20]}>
         <Col xs={24} sm={12} md={6}>
@@ -488,13 +603,15 @@ function DashBoard() {
         marginTop: "20px",
         marginBottom: "20px"
       }}>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05, boxShadow: "0 4px 8px rgba(0,0,0,0.2)" }}
+          whileTap={{ scale: 0.95 }}
           onClick={exportToPNG}
           style={{
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            backgroundColor: "#2563eb",
+            backgroundColor: "#3bb77e",
             color: "white",
             border: "none",
             borderRadius: "6px",
@@ -502,12 +619,13 @@ function DashBoard() {
             fontSize: "14px",
             fontWeight: "500",
             cursor: "pointer",
-            boxShadow: "0 2px 5px rgba(0,0,0,0.1)"
+            boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+            transition: "all 0.2s ease"
           }}
         >
           <FaFileExport size={16} />
           <span>Export Dashboard</span>
-        </button>
+        </motion.button>
       </div>
 
       {/* Line Chart Row */}
