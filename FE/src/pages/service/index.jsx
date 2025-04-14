@@ -343,7 +343,7 @@ function Services() {
         onOk={editingService ? handleSaveService : handleSubmit}
         onCancel={handleCancelModal}
         okText={editingService ? "Lưu" : "Thêm"}
-        cancelText="Hủy"
+        cancelButtonProps={{ style: { display: 'none' } }}
         maskClosable={false}
         centered
       >

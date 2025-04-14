@@ -215,25 +215,55 @@ const TreeServicesDetail = ({
           <Card 
             className="service-tree-item" 
             size="small" 
-            style={{ marginBottom: "8px" }}
+            style={{ 
+              marginBottom: "8px",
+              width: "100%",
+              maxWidth: "100%"
+            }}
             hoverable
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Space align="center">
+            <div style={{ 
+              display: "flex", 
+              justifyContent: "space-between", 
+              alignItems: "flex-start",
+              width: "100%"
+            }}>
+              <div style={{ 
+                display: "flex", 
+                alignItems: "flex-start", 
+                width: "calc(100% - 40px)",
+                overflow: "hidden"
+              }}>
                 <Avatar 
                   src={service.imageUrl} 
                   shape="square" 
                   size={40} 
                   alt={service.name} 
-                  style={{ objectFit: "contain", backgroundColor: "#f0f0f0" }}
+                  style={{ 
+                    objectFit: "contain", 
+                    backgroundColor: "#f0f0f0",
+                    flexShrink: 0,
+                    marginRight: "8px"
+                  }}
                 />
-                <Space direction="vertical" size={0}>
-                  <Text strong>{service.name}</Text>
+                <div style={{ 
+                  display: "flex", 
+                  flexDirection: "column",
+                  width: "calc(100% - 48px)",
+                  overflow: "hidden"
+                }}>
+                  <Text 
+                    strong 
+                    ellipsis={{ tooltip: service.name }}
+                    style={{ width: "100%" }}
+                  >
+                    {service.name}
+                  </Text>
                   <Text type="secondary" style={{ fontSize: "12px" }}>
                     {service.price.toLocaleString("vi-VN")} VND
                   </Text>
-                </Space>
-              </Space>
+                </div>
+              </div>
               <Dropdown
                 overlay={
                   <Menu>
@@ -288,13 +318,32 @@ const TreeServicesDetail = ({
                   size="small"
                   className="action-button"
                   onClick={(e) => e.stopPropagation()}
+                  style={{ flexShrink: 0 }}
                 />
               </Dropdown>
             </div>
             {service.description && (
-              <div style={{ marginTop: "8px" }}>
-                <Text type="secondary" ellipsis={{ rows: 2 }}>
-                  {service.description}
+              <div style={{ 
+                marginTop: "8px", 
+                width: "100%",
+                paddingRight: "24px"
+              }}>
+                <Text 
+                  type="secondary" 
+                  style={{ fontSize: "12px", width: "100%" }}
+                >
+                  {service.description.substring(0, 10)}
+                  {service.description.length > 10 && '...'}
+                  {service.description.length > 10 && (
+                    <Tooltip title={service.description}>
+                      <Text
+                        type="link"
+                        style={{ fontSize: "12px", cursor: "pointer", marginLeft: "4px" }}
+                      >
+                        xem thêm
+                      </Text>
+                    </Tooltip>
+                  )}
                 </Text>
               </div>
             )}
@@ -515,10 +564,10 @@ const TreeServicesDetail = ({
           <Form.Item style={{ marginBottom: 0 }}>
             <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
               <Button onClick={() => setIsEditModalVisible(false)}>
-                Hủy bỏ
+                Hủy
               </Button>
               <Button type="primary" htmlType="submit">
-                Cập nhật dịch vụ
+                Lưu
               </Button>
             </Space>
           </Form.Item>
