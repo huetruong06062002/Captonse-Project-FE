@@ -351,7 +351,7 @@ function ConfirmOrderPending() {
       sorter: (a, b) => a.totalPrice - b.totalPrice,
       sortOrder: sortedInfo.columnKey === 'totalPrice' && sortedInfo.order,
       render: (totalPrice) => (
-        <Text strong>{totalPrice.toLocaleString('vi-VN')} VND</Text>
+        <Text strong>{totalPrice?.toLocaleString('vi-VN')} VND</Text>
       ),
     },
     {
@@ -652,35 +652,14 @@ function ConfirmOrderPending() {
       <Modal
         title={modalConfig.title}
         open={isModalOpen}
+        onCancel={handleCancel}
         footer={[
-          <button
-            key="Hủy"
-            onClick={handleCancel}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: "#f5f5f5",
-              border: "1px solid #d9d9d9",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            Hủy
-          </button>,
-          <button
-            key="Xác nhận"
-            onClick={handleOk}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: "#1890ff",
-              color: "#fff",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              marginLeft: "1rem",
-            }}
-          >
+          // <Button key="cancel" onClick={handleCancel}>
+          //   Hủy
+          // </Button>,
+          <Button key="submit" type="primary" onClick={handleOk}>
             Xác nhận
-          </button>,
+          </Button>,
         ]}
       >
         <p>{modalConfig.content}</p>
