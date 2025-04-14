@@ -18,6 +18,8 @@ import {
   Divider,
   Avatar,
   Tag,
+  Spin,
+  Empty,
 } from "antd";
 import { axiosClientVer2 } from "../../../config/axiosInterceptor";
 import {
@@ -28,6 +30,9 @@ import {
   UploadOutlined,
   InfoCircleOutlined,
   FolderOpenOutlined,
+  PlusCircleOutlined,
+  CheckOutlined,
+  CloseOutlined,
 } from "@ant-design/icons";
 import { MdUpdate } from "react-icons/md";
 import { LuDelete } from "react-icons/lu";
@@ -44,11 +49,19 @@ const TreeServicesDetail = ({
   onSelectSubCategoryToUpdate,
 }) => {
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isViewModalVisible, setIsViewModalVisible] = useState(false);
+
   const [editingService, setEditingService] = useState({});
   const [form] = Form.useForm(); // Thêm hook useForm
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [viewServiceDetails, setViewServiceDetails] = useState(null);
 
-
+  const [extraCategories, setExtraCategories] = useState([]);
+  const [selectedExtraIds, setSelectedExtraIds] = useState([]);
+  const [isAddExtraModalVisible, setIsAddExtraModalVisible] = useState(false);
+  const [currentServiceId, setCurrentServiceId] = useState(null);
+  const [loadingExtras, setLoadingExtras] = useState(false);
+  const [submittingExtras, setSubmittingExtras] = useState(false);
 
   // Thêm useEffect để cập nhật form khi editingService thay đổi
   useEffect(() => {
@@ -226,21 +239,32 @@ const TreeServicesDetail = ({
                   <Menu>
                     <Menu.Item
                       key="update"
-                      icon={<EyeOutlined />}
+                      icon={<EyeOutlined style={{ color: '#1890ff' }} />}
                       className="menu-item-view"
-                      onClick={() => setIsEditModalVisible(true)}
+                      onClick={() => handleViewDetailService(service.serviceId)}
+                      style={{ color: '#1890ff' }}
                     >
                       Xem chi tiết
                     </Menu.Item>
                     <Menu.Item
                       key="view"
-                      icon={<EditOutlined />}
+                      icon={<EditOutlined style={{ color: '#52c41a' }} />}
                       className="menu-item-edit"
                       onClick={() =>
                         handleEditServicesInServiceDetail(service.serviceId)
                       }
+                      style={{ color: '#52c41a' }}
                     >
                       Chỉnh sửa
+                    </Menu.Item>
+                    <Menu.Item
+                      key="add-additional"
+                      icon={<PlusCircleOutlined style={{ color: '#722ed1' }} />}
+                      className="menu-item-add"
+                      onClick={() => handleAddAdditionalService(service.serviceId)}
+                      style={{ color: '#722ed1' }}
+                    >
+                      Thêm dịch vụ đi kèm
                     </Menu.Item>
                     <Menu.Item
                       key="delete"
@@ -283,6 +307,92 @@ const TreeServicesDetail = ({
 
   const treeData = renderTreeData(serviceDetailFull?.subCategories || []);
 
+  const handleViewDetailService = async (serviceId) => {
+    try {
+      // Set loading state
+      setIsViewModalVisible(true);
+      
+      // Fetch service details
+      const response = await axiosClientVer2.get(`/service-details/${serviceId}`);
+      const serviceDetails = response.data;
+      console.log("Service details:", serviceDetails);
+      
+      // Set the data for view modal
+      setViewServiceDetails(serviceDetails);
+    } catch (error) {
+      console.error("Error fetching service details:", error);
+      message.error("Không thể tải thông tin chi tiết dịch vụ");
+    }
+  };
+
+  const fetchExtraCategories = async () => {
+    try {
+      setLoadingExtras(true);
+      const response = await axiosClientVer2.get('/extra-categories');
+      setExtraCategories(response.data);
+      console.log("Extra categories:", response.data);
+    } catch (error) {
+      console.error("Error fetching extra categories:", error);
+      message.error("Không thể tải danh sách dịch vụ đi kèm");
+    } finally {
+      setLoadingExtras(false);
+    }
+  };
+
+  const handleAddAdditionalService = (serviceId) => {
+    console.log("Adding additional service for serviceId:", serviceId);
+    setCurrentServiceId(serviceId);
+    setSelectedExtraIds([]);
+    setIsAddExtraModalVisible(true);
+    fetchExtraCategories();
+  };
+
+  const handleExtraCheckboxChange = (extraId) => {
+    setSelectedExtraIds(prevSelected => {
+      if (prevSelected.includes(extraId)) {
+        return prevSelected.filter(id => id !== extraId);
+      } else {
+        return [...prevSelected, extraId];
+      }
+    });
+  };
+
+  const handleSubmitExtras = async () => {
+    if (selectedExtraIds.length === 0) {
+      message.warning("Vui lòng chọn ít nhất một dịch vụ đi kèm");
+      return;
+    }
+
+    try {
+      setSubmittingExtras(true);
+      const payload = {
+        serviceId: currentServiceId,
+        extraIds: selectedExtraIds
+      };
+
+      const response = await axiosClientVer2.post('/service-details/add-extras', payload);
+      console.log("Add extras response:", response.data);
+      
+      const { successCount, failedCount } = response.data;
+      
+      if (failedCount === 0) {
+        if (successCount > 0) {
+          message.success(`Đã thêm thành công ${successCount} dịch vụ đi kèm`);
+        }
+      } else {
+        message.error(`Thêm thất bại ${failedCount} dịch vụ đi kèm`);
+      }
+      
+      setIsAddExtraModalVisible(false);
+      getServiceDetail(); // Refresh service details
+    } catch (error) {
+      console.error("Error adding extras:", error);
+      message.error("Không thể thêm dịch vụ đi kèm");
+    } finally {
+      setSubmittingExtras(false);
+    }
+  };
+  
   return (
     <div className="tree-services-container">
       <Card bordered={false} className="tree-card">
@@ -413,6 +523,227 @@ const TreeServicesDetail = ({
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Modal for viewing service details */}
+      <Modal
+        title={
+          <Space>
+            <EyeOutlined style={{ color: '#1890ff' }} />
+            <span>Chi tiết dịch vụ</span>
+          </Space>
+        }
+        open={isViewModalVisible}
+        onCancel={() => {
+          setIsViewModalVisible(false);
+          setViewServiceDetails(null);
+        }}
+        footer={[
+          <Button 
+            key="close" 
+            onClick={() => {
+              setIsViewModalVisible(false);
+              setViewServiceDetails(null);
+            }}
+          >
+            Đóng
+          </Button>
+        ]}
+        width={700}
+        centered
+      >
+        {viewServiceDetails ? (
+          <div className="service-detail-container">
+            <Card bordered={false}>
+              <div style={{ display: 'flex', gap: '24px', marginBottom: '24px' }}>
+                <div style={{ flex: '0 0 200px' }}>
+                  <img 
+                    src={viewServiceDetails.imageUrl} 
+                    alt={viewServiceDetails.name}
+                    style={{ 
+                      width: '100%', 
+                      borderRadius: '8px', 
+                      objectFit: 'cover',
+                      border: '1px solid #f0f0f0'
+                    }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <Title level={4}>{viewServiceDetails.name}</Title>
+                  <Divider style={{ margin: '12px 0' }} />
+                  <p><strong>Giá:</strong> {viewServiceDetails.price.toLocaleString('vi-VN')} VND</p>
+                  {viewServiceDetails.description && (
+                    <p><strong>Mô tả:</strong> {viewServiceDetails.description}</p>
+                  )}
+                  <p><strong>Ngày tạo:</strong> {new Date(viewServiceDetails.createdAt).toLocaleDateString('vi-VN')}</p>
+                </div>
+              </div>
+
+              {viewServiceDetails.extraCategories && viewServiceDetails.extraCategories.length > 0 && (
+                <>
+                  <Divider orientation="left">Dịch vụ đi kèm</Divider>
+                  {viewServiceDetails.extraCategories.map(category => (
+                    <div key={category.extraCategoryId} style={{ marginBottom: '16px' }}>
+                      <Title level={5} style={{ color: '#722ed1' }}>
+                        {category.categoryName}
+                      </Title>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                        {category.extras.map(extra => (
+                          <Card 
+                            key={extra.extraId} 
+                            size="small" 
+                            style={{ 
+                              width: 200, 
+                              marginBottom: '8px',
+                              borderRadius: '8px' 
+                            }}
+                            hoverable
+                          >
+                            <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                              <img 
+                                src={extra.imageUrl} 
+                                alt={extra.name}
+                                style={{ 
+                                  height: '100px', 
+                                  maxWidth: '100%', 
+                                  objectFit: 'contain',
+                                  borderRadius: '4px'
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <Text strong>{extra.name}</Text>
+                              <div>
+                                <Tag color="green">{extra.price.toLocaleString('vi-VN')} VND</Tag>
+                              </div>
+                              {extra.description && (
+                                <Text type="secondary" ellipsis={{ rows: 2 }} style={{ fontSize: '12px' }}>
+                                  {extra.description}
+                                </Text>
+                              )}
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </Card>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <Spin tip="Đang tải thông tin..." />
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal for adding extras to a service */}
+      <Modal
+        title={
+          <Space>
+            <PlusCircleOutlined style={{ color: '#722ed1' }} />
+            <span>Thêm dịch vụ đi kèm</span>
+          </Space>
+        }
+        open={isAddExtraModalVisible}
+        onCancel={() => setIsAddExtraModalVisible(false)}
+        width={800}
+        centered
+        footer={[
+          <Button 
+            key="submit" 
+            type="primary"
+            onClick={handleSubmitExtras}
+            loading={submittingExtras}
+            disabled={selectedExtraIds.length === 0}
+          >
+            Thêm dịch vụ đi kèm ({selectedExtraIds.length})
+          </Button>
+        ]}
+      >
+        {loadingExtras ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Spin tip="Đang tải danh sách dịch vụ đi kèm..." />
+          </div>
+        ) : (
+          <div className="extra-categories-container" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+            {extraCategories.map(category => (
+              <div key={category.extraCategoryId} style={{ marginBottom: '24px' }}>
+                <Title level={4} style={{ color: '#722ed1', marginBottom: '16px' }}>
+                  {category.name}
+                </Title>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                  {category.extras && category.extras.length > 0 ? (
+                    category.extras.map(extra => (
+                      <Card
+                        key={extra.extraId}
+                        hoverable
+                        style={{ 
+                          width: 230, 
+                          marginBottom: '12px',
+                          position: 'relative',
+                          border: selectedExtraIds.includes(extra.extraId) 
+                            ? '2px solid #722ed1' 
+                            : '1px solid #f0f0f0'
+                        }}
+                        onClick={() => handleExtraCheckboxChange(extra.extraId)}
+                      >
+                        {selectedExtraIds.includes(extra.extraId) && (
+                          <div 
+                            style={{ 
+                              position: 'absolute', 
+                              top: '-10px', 
+                              right: '-10px', 
+                              backgroundColor: '#722ed1', 
+                              color: 'white',
+                              borderRadius: '50%',
+                              width: '24px',
+                              height: '24px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              zIndex: 1
+                            }}
+                          >
+                            <CheckOutlined />
+                          </div>
+                        )}
+                        <div style={{ padding: '8px', textAlign: 'center' }}>
+                          <img 
+                            src={extra.imageUrl} 
+                            alt={extra.name}
+                            style={{ 
+                              height: '120px', 
+                              maxWidth: '100%', 
+                              objectFit: 'contain',
+                              marginBottom: '8px'
+                            }}
+                          />
+                          <div style={{ marginTop: '8px' }}>
+                            <Text strong style={{ display: 'block', marginBottom: '4px' }}>
+                              {extra.name}
+                            </Text>
+                            <Tag color="green" style={{ marginBottom: '8px' }}>
+                              {extra.price.toLocaleString('vi-VN')} VND
+                            </Tag>
+                            {extra.description && (
+                              <Text type="secondary" ellipsis={{ rows: 2 }} style={{ fontSize: '12px', display: 'block' }}>
+                                {extra.description}
+                              </Text>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))
+                  ) : (
+                    <Empty description="Không có dịch vụ đi kèm trong danh mục này" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </Modal>
     </div>
   );

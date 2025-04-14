@@ -665,15 +665,15 @@ function ConfirmOrderPending() {
         <p>{modalConfig.content}</p>
         <div style={{ marginTop: "16px" }}>
           <label style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}>Ghi chú:</label>
-          <TextArea
-            value={note}
-            onChange={(e) => {
-              setNote(e.target.value);
-            }}
+        <TextArea
+          value={note}
+          onChange={(e) => {
+            setNote(e.target.value);
+          }}
             placeholder="Nhập ghi chú..."
             rows={4}
             style={{ width: "100%", borderRadius: "4px" }}
-          />
+        />
         </div>
       </Modal>
     </div>
