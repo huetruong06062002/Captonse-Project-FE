@@ -34,6 +34,7 @@ import {
   Tooltip,
 } from "antd";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { css } from '@emotion/css';
 
 import logo from "../assets/logo3.jpg";
 import logo2 from "../assets/logo3.jpg";
@@ -52,6 +53,88 @@ import ConfirmOrderPending from "@pages/confirm-order-pending";
 import { getRequestParams } from "@services/api";
 
 const { Header, Sider, Content } = Layout;
+
+const sidebarStyles = css`
+  .ant-menu-item, .ant-menu-submenu-title {
+    margin: 8px 0 !important;
+    height: auto !important;
+    min-height: 45px !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1) !important;
+    white-space: normal !important;
+    line-height: 1.4 !important;
+  }
+  
+  .ant-menu-item-icon {
+    margin-right: 12px !important;
+  }
+  
+  .ant-menu-title-content {
+    white-space: normal !important;
+    line-height: 1.4 !important;
+    display: inline-block !important;
+  }
+  
+  .ant-menu-item:hover, .ant-menu-submenu-title:hover {
+    background-color: rgba(59, 183, 126, 0.1) !important;
+    color: #3bb77e !important;
+    transform: translateX(5px) !important;
+  }
+  
+  .ant-menu-item-selected {
+    background: linear-gradient(90deg, #3bb77e 0%, #4CAF50 100%) !important;
+    color: white !important;
+    font-weight: 500 !important;
+    box-shadow: 0 3px 10px rgba(59, 183, 126, 0.4) !important;
+  }
+  
+  .ant-menu-item-selected .ant-menu-item-icon {
+    color: white !important;
+  }
+  
+  .ant-menu-submenu-selected > .ant-menu-submenu-title {
+    color: #3bb77e !important;
+    font-weight: 500 !important;
+  }
+  
+  .ant-menu-submenu-arrow {
+    transition: all 0.3s ease !important;
+  }
+  
+  .ant-menu-submenu-open > .ant-menu-submenu-title > .ant-menu-submenu-arrow {
+    transform: rotate(180deg) !important;
+    color: #3bb77e !important;
+  }
+  
+  .ant-menu-inline .ant-menu-item::after {
+    display: none !important;
+  }
+  
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar-logo img {
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar-logo span {
+    margin-left: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    white-space: nowrap;
+    color: #3bb77e;
+    opacity: 1;
+    transition: all 0.3s ease;
+  }
+`;
 
 const AdminLayout = () => {
   const dispatch = useDispatch();
@@ -93,39 +176,31 @@ const AdminLayout = () => {
     {
       key: endPoints.DASHBOARD,
       icon: <DashboardOutlined />,
-      label: "Dashboard",
+      label: <Tooltip title="Dashboard">Dashboard</Tooltip>,
       allowedRoles: ["Admin"],
     },
     {
       key: endPoints.QuanLyGiaoNhanHang,
       icon: <ShoppingCartOutlined />,
-      label: "Quản lý giao nhận đơn hàng",
+      label: <Tooltip title="Quản lý giao nhận đơn hàng">Quản lý giao nhận đơn hàng</Tooltip>,
       allowedRoles: ["Admin"],
       children: [
         {
           key: `${endPoints.DANH_SACH_TAT_CA_DON_HANG}`,
           icon: <ShoppingOutlined />,
-          label: "Danh sách tất cả đơn hàng",
+          label: <Tooltip title="Danh sách tất cả đơn hàng">Danh sách tất cả đơn hàng</Tooltip>,
           allowedRoles: ["Admin", "Staff"],
         },
         {
           key: `${endPoints.DANH_SACH_DON_HANG_KHACH_VUA_DAT}`,
           icon: <ClockCircleOutlined />,
-          label: (
-            <Tooltip title="Danh sách đơn hàng khách hàng vừa đặt">
-              Danh sách đơn hàng khách hàng vừa đặt
-            </Tooltip>
-          ),
+          label: <Tooltip title="Danh sách đơn hàng khách hàng vừa đặt">Danh sách đơn hàng khách hàng vừa đặt</Tooltip>,
           allowedRoles: ["Admin", "Staff"],
         },
         {
           key: `${endPoints.DANH_SACH_DON_HANG_DA_KIEM_TRA_CHAT_LUONG}`,
           icon: <CheckCircleOutlined />,
-          label: (
-            <Tooltip title="Danh sách đơn hàng đã giặt xong và kiểm tra chất lượng">
-              Danh sách đơn hàng đã giặt xong và kiểm tra chất lượng
-            </Tooltip>
-          ),
+          label: <Tooltip title="Danh sách đơn hàng đã giặt xong và kiểm tra chất lượng">Danh sách đơn hàng đã giặt xong và kiểm tra chất lượng</Tooltip>,
           allowedRoles: ["Admin", "Staff"],
         },
       ],
@@ -133,43 +208,43 @@ const AdminLayout = () => {
     {
       key: endPoints.SERVICES,
       icon: <CustomerServiceOutlined />,
-      label: "Quản lý các dịch vụ",
+      label: <Tooltip title="Quản lý các dịch vụ">Quản lý các dịch vụ</Tooltip>,
       allowedRoles: ["Admin"],
     },
     {
       key: endPoints.EXTRACATEGORIES,
       icon: <AppstoreAddOutlined />,
-      label: "Quản lý dịch vụ đi kèm",
+      label: <Tooltip title="Quản lý dịch vụ đi kèm">Quản lý dịch vụ đi kèm</Tooltip>,
       allowedRoles: ["Admin"],
     },
     {
       key: endPoints.ORDER,
       icon: <ShoppingCartOutlined />,
-      label: "Quản lý đơn hàng",
+      label: <Tooltip title="Quản lý đơn hàng">Quản lý đơn hàng</Tooltip>,
       allowedRoles: ["Admin", "Staff"],
     },
     {
       key: endPoints.USERS,
       icon: <TeamOutlined />,
-      label: "Quản lý người dùng",
+      label: <Tooltip title="Quản lý người dùng">Quản lý người dùng</Tooltip>,
       allowedRoles: ["Admin"],
     },
     {
       key: endPoints.CONFIRMCUSTOMERPENDING,
       icon: <ClockCircleOutlined />,
-      label: "Đơn hàng đang chờ xác nhận",
+      label: <Tooltip title="Đơn hàng đang chờ xác nhận">Đơn hàng đang chờ xác nhận</Tooltip>,
       allowedRoles: ["CustomerStaff"],
     },
     {
       key: endPoints.CHAT,
       icon: <MessageOutlined />,
-      label: "Chat",
+      label: <Tooltip title="Chat">Chat</Tooltip>,
       allowedRoles: ["Admin", "Staff", "CustomerStaff"],
     },
     {
       key: endPoints.CHATWIITHAI,
       icon: <RobotOutlined />,
-      label: "Chat Với AI Support",
+      label: <Tooltip title="Chat Với AI Support">Chat Với AI Support</Tooltip>,
       allowedRoles: ["Admin"],
     },
   ];
@@ -221,31 +296,43 @@ const AdminLayout = () => {
         style={{
           overflow: "auto",
           height: "100vh",
-          background: "#fff",
-          boxShadow: "2px 0 8px 0 rgba(29,35,41,.05)",
+          background: "linear-gradient(180deg, #ffffff 0%, #f9fdfb 100%)",
+          boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
           position: "sticky",
           top: 0,
           left: 0,
-          zIndex: 10
+          zIndex: 10,
+          transition: "all 0.3s cubic-bezier(0.2, 0, 0, 1)"
         }}
         width={280}
+        className={sidebarStyles}
       >
-        <div style={{ 
-          padding: "16px",
-          textAlign: "center",
-          borderBottom: "1px solid #f0f0f0",
-          marginBottom: "8px"
-        }}>
-          <img
-            src={collapsed ? logo2 : logo}
-            alt="logo"
-            className="primary-logo"
-            style={{ 
-              maxWidth: collapsed ? "32px" : "120px",
-              height: "auto",
-              transition: "all 0.3s"
-            }}
-          />
+        <div className="sidebar-logo"
+          style={{ 
+            textAlign: "center",
+            borderBottom: "1px solid #f0f0f0",
+            marginBottom: "8px",
+            height: collapsed ? "80px" : "90px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px 0 16px 0"
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <img
+              src={collapsed ? logo2 : logo}
+              alt="logo"
+              className="primary-logo"
+              style={{ 
+                maxWidth: collapsed ? "40px" : "60px",
+                height: "auto",
+                transition: "all 0.3s",
+                marginBottom: "8px"
+              }}
+            />
+            {!collapsed && <span style={{ fontSize: "16px", fontWeight: "600", color: "#3bb77e" }}>EcoLaundry</span>}
+          </div>
         </div>
         <Menu
           theme="light"
@@ -258,17 +345,8 @@ const AdminLayout = () => {
           style={{ 
             padding: "0 8px",
             border: "none",
-            ".ant-menu-item": {
-              borderRadius: "4px",
-              margin: "4px 0"
-            },
-            ".ant-menu-submenu": {
-              borderRadius: "4px",
-              margin: "4px 0"
-            },
-            ".ant-menu-item-selected": {
-              backgroundColor: "#e6f7ff"
-            }
+            background: "transparent",
+            fontSize: "14px",
           }}
         />
       </Sider>
