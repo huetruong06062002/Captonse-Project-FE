@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Form, Input, Button, message, Typography, Card } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 import logo from "@assets/logo3.jpg";
 import "./index.css";
@@ -15,11 +16,98 @@ const Login = () => {
   const navigate = useNavigate();
   const { redirectPath, isLoading } = useSelector((state) => state.auth);
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        duration: 0.8,
+        when: "beforeChildren",
+        staggerChildren: 0.3,
+        ease: "easeInOut"
+      }
+    }
+  };
 
-
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: { type: "spring", stiffness: 300, damping: 24 }
+    }
+  };
+  
+  const logoVariants = {
+    hidden: { scale: 0, rotate: -180 },
+    visible: { 
+      scale: 1, 
+      rotate: 0,
+      transition: { 
+        type: "spring",
+        stiffness: 260,
+        damping: 20,
+        delay: 0.2
+      }
+    },
+    hover: {
+      scale: 1.05,
+      rotate: [0, 5, -5, 0],
+      transition: {
+        duration: 0.5
+      }
+    }
+  };
+  
+  const buttonVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 24,
+        delay: 0.6
+      }
+    },
+    hover: { 
+      scale: 1.05,
+      boxShadow: "0 12px 20px rgba(59, 183, 126, 0.6)",
+      transition: {
+        duration: 0.3,
+        yoyo: Infinity,
+        ease: "easeOut"
+      }
+    },
+    tap: { scale: 0.95 }
+  };
+  
+  const backgroundVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { duration: 1 }
+    }
+  };
+  
+  const shapeVariants = {
+    animate: {
+      x: [0, 50, -50, 0],
+      y: [0, 30, -30, 0],
+      rotate: [0, 180, 360],
+      opacity: [0.5, 0.8, 0.5],
+      transition: {
+        duration: 20,
+        ease: "linear",
+        repeat: Infinity,
+        repeatType: "reverse"
+      }
+    }
+  };
 
   const onFinish = async (values) => {
-  
     try {
       await dispatch(login(values)).unwrap();
       
@@ -30,59 +118,125 @@ const Login = () => {
 
   return (
     <div className="login-container">
-      <Card className="login-card">
-        <div className="login-logo-container">
-          <img src={logo} style={{width:"10rem", height:"10rem"}} alt="Logo" className="login-logo" />
-          <Title level={3} className="login-title">
-            Đăng nhập
-          </Title>
-        </div>
-        <Form
-          name="normal_login"
-          className="login-form"
-          initialValues={{ remember: true }}
-          onFinish={onFinish}
+      <motion.div 
+        className="login-background"
+        variants={backgroundVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div 
+          className="shape" 
+          variants={shapeVariants}
+          animate="animate"
+          custom={1}
+        ></motion.div>
+        <motion.div 
+          className="shape" 
+          variants={shapeVariants}
+          animate="animate"
+          custom={2}
+        ></motion.div>
+      </motion.div>
+      
+      <motion.div
+        className="login-card-container"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        <motion.div
+          className="login-card"
+          whileHover={{ y: -5 }}
+          transition={{ type: "spring", stiffness: 300 }}
         >
-          <Form.Item
-            name="phoneNumber"
-            rules={[
-              { required: true, message: "Vui lòng nhập tên đăng nhập!" },
-            ]}
+          <motion.div 
+            className="login-logo-container"
+            variants={itemVariants}
           >
-            <Input
-              prefix={<UserOutlined className="site-form-item-icon" />}
-              placeholder="Số điện thoại"
-              size="large"
+            <motion.img 
+              src={logo} 
+              alt="Logo" 
+              className="login-logo"
+              variants={logoVariants}
+              whileHover="hover"
             />
-          </Form.Item>
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+            <motion.div variants={itemVariants}>
+              <Title level={2} className="login-title">
+                Đăng nhập
+              </Title>
+              <p className="login-subtitle">EcoLaundry - Dịch vụ giặt là hàng đầu</p>
+            </motion.div>
+          </motion.div>
+          
+          <Form
+            name="normal_login"
+            className="login-form"
+            initialValues={{ remember: true }}
+            onFinish={onFinish}
           >
-            <Input.Password
-              prefix={<LockOutlined className="site-form-item-icon" />}
-              type="password"
-              placeholder="Mật khẩu"
-              size="large"
-            />
-          </Form.Item>
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              className="login-form-button"
-              size="large"
-              loading={isLoading}
+            <motion.div variants={itemVariants}>
+              <Form.Item
+                name="phoneNumber"
+                rules={[
+                  { required: true, message: "Vui lòng nhập số điện thoại!" },
+                ]}
+              >
+                <Input
+                  prefix={<UserOutlined className="site-form-item-icon" />}
+                  placeholder="Số điện thoại"
+                  size="large"
+                  className="login-input"
+                />
+              </Form.Item>
+            </motion.div>
+            
+            <motion.div variants={itemVariants}>
+              <Form.Item
+                name="password"
+                rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined className="site-form-item-icon" />}
+                  type="password"
+                  placeholder="Mật khẩu"
+                  size="large"
+                  className="login-input"
+                />
+              </Form.Item>
+            </motion.div>
+            
+            <motion.div 
+              variants={itemVariants}
             >
-              Đăng nhập
-            </Button>
-          </Form.Item>
-          <div className="login-links">
-            <Link to="/register">Đăng ký tài khoản</Link>
-            <Link to="/forgot-password">Quên mật khẩu?</Link>
-          </div>
-        </Form>
-      </Card>
+              <Form.Item>
+                <motion.div
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    className="login-form-button"
+                    size="large"
+                    loading={isLoading}
+                  >
+                    Đăng nhập
+                  </Button>
+                </motion.div>
+              </Form.Item>
+            </motion.div>
+            
+            <motion.div 
+              className="login-links"
+              variants={itemVariants}
+            >
+              <Link to="/register" className="register-link">Đăng ký tài khoản</Link>
+              <Link to="/forgot-password" className="forgot-link">Quên mật khẩu?</Link>
+            </motion.div>
+          </Form>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

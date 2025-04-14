@@ -3,34 +3,320 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(-45deg, #3bb77e, #4CAF50, #2D8259, #1E5631);
+  background-size: 400% 400%;
+  animation: gradientBackground 15s ease infinite;
+}
+
+@keyframes gradientBackground {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.login-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.shape {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  animation: float 15s infinite ease-in-out;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+}
+
+.shape:nth-child(1) {
+  width: 500px;
+  height: 500px;
+  top: -100px;
+  right: -100px;
+  animation-delay: 0s;
+  animation: float 20s infinite ease-in-out, pulse 8s infinite alternate;
+}
+
+.shape:nth-child(2) {
+  width: 400px;
+  height: 400px;
+  bottom: -100px;
+  left: -100px;
+  animation-delay: 4s;
+  animation: float 25s infinite ease-in-out reverse, pulse 12s infinite alternate-reverse;
+}
+
+@keyframes float {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(80px, 40px) rotate(120deg);
+  }
+  66% {
+    transform: translate(-60px, 80px) rotate(240deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}
+
+.login-card-container {
+  position: relative;
+  z-index: 1;
+  max-width: 92%;
 }
 
 .login-card {
-  width: 400px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
+  width: 420px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  transition: all 0.3s ease;
+  animation: cardEntrance 1s ease-out;
+}
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.login-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
 .login-logo-container {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  padding-top: 20px;
 }
 
 .login-logo {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
 }
 
 .login-title {
-  margin-top: 16px;
+  margin-top: 5px !important;
+  margin-bottom: 5px !important;
+  color: #3bb77e !important;
+  font-weight: 700 !important;
+  background: linear-gradient(45deg, #3bb77e, #2D8259);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textGradient 4s linear infinite;
+}
+
+@keyframes textGradient { 
+  to {
+    background-position: 200% center;
+  }
+}
+
+.login-subtitle {
+  color: #888;
+  margin-bottom: 20px;
+  font-size: 14px;
+  animation: fadeIn 1s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.login-form {
+  padding: 0 20px;
+}
+
+.login-input {
+  height: 50px;
+  border-radius: 10px !important;
+  border: 1px solid #e0e0e0 !important;
+  transition: all 0.3s ease !important;
+  background: #ffffff !important;
+}
+
+.login-input:hover,
+.login-input:focus {
+  border-color: #3bb77e !important;
+  box-shadow: 0 0 0 2px rgba(59, 183, 126, 0.2) !important;
+  background: #ffffff !important;
+}
+
+/* Modify the Ant Design input components */
+.login-card .ant-input-affix-wrapper {
+  background: #ffffff !important;
+  border-radius: 10px !important;
+  border: 1px solid #e0e0e0 !important;
+  transition: all 0.3s ease !important;
+}
+
+.login-card .ant-input-affix-wrapper:hover,
+.login-card .ant-input-affix-wrapper:focus,
+.login-card .ant-input-affix-wrapper-focused {
+  background: #ffffff !important;
+  border-color: #3bb77e !important;
+  box-shadow: 0 0 0 2px rgba(59, 183, 126, 0.2) !important;
+  transform: translateY(-2px);
+}
+
+.login-card .ant-input-affix-wrapper input.ant-input {
+  background: transparent !important;
+}
+
+.site-form-item-icon {
+  color: #3bb77e !important;
 }
 
 .login-form-button {
+  height: 50px;
+  border-radius: 10px !important;
+  background: linear-gradient(45deg, #3bb77e, #4CAF50, #2D8259) !important;
+  background-size: 200% auto !important;
+  border: none !important;
+  box-shadow: 0 8px 15px rgba(59, 183, 126, 0.3) !important;
+  font-weight: 500 !important;
+  margin-top: 10px;
+  transition: all 0.5s ease !important;
+  position: relative;
+  overflow: hidden;
+  animation: buttonGradient 3s linear infinite;
+}
+
+@keyframes buttonGradient { 
+  to {
+    background-position: 200% center;
+  }
+}
+
+.login-form-button:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
   width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: all 0.6s ease;
+}
+
+.login-form-button:hover:before {
+  left: 100%;
+}
+
+.login-form-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 20px rgba(59, 183, 126, 0.4) !important;
+  background-position: right center !important;
 }
 
 .login-links {
   display: flex;
   justify-content: space-between;
+  margin-top: 15px;
+  padding-bottom: 10px;
+}
+
+.login-links a {
+  color: #3bb77e;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.login-links a:after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -2px;
+  left: 0;
+  background-color: #3bb77e;
+  transition: width 0.3s ease;
+}
+
+.login-links a:hover {
+  color: #2D8259;
+  transform: translateY(-2px);
+}
+
+.login-links a:hover:after {
+  width: 100%;
+}
+
+/* Responsive styles */
+@media (max-width: 500px) {
+  .login-card {
+    width: 100%;
+    min-width: 300px;
+  }
+  
+  .login-logo {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .login-form {
+    padding: 0 15px;
+  }
+}
+
+@media (max-height: 700px) {
+  .login-logo {
+    width: 90px;
+    height: 90px;
+  }
+  
+  .login-form {
+    padding: 0 15px;
+  }
+  
+  .login-form-button {
+    height: 45px;
+  }
 }
