@@ -15,7 +15,7 @@ import {
 import { axiosClientVer2 } from "../../config/axiosInterceptor";
 import { getRequest } from "@services/api";
 import { Col, Row } from "antd";
-import { motion } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
 
 import orderImage from "../../assets/image/order.png";
 import customerImage from "../../assets/image/customer.png";
@@ -25,6 +25,7 @@ import CountUp from "react-countup";
 import { Line } from "react-chartjs-2";
 import domtoimage from "dom-to-image";
 import { FaFileExport } from "react-icons/fa6";
+import { useInView } from "react-intersection-observer";
 
 // Đăng ký các thành phần cần thiết
 ChartJS.register(
@@ -39,62 +40,120 @@ ChartJS.register(
   ArcElement
 );
 
-// Hàm tạo hiệu ứng tuyết
-const generateSnowflakes = (count) => {
-  return Array.from({ length: count }).map((_, i) => ({
-    id: i,
-    x: Math.random() * 100, // vị trí x ngẫu nhiên (0-100%)
-    size: Math.random() * 10 + 5, // kích thước ngẫu nhiên (5-15px)
-    duration: Math.random() * 20 + 15, // thời gian rơi ngẫu nhiên (15-35s)
-    delay: Math.random() * 5, // độ trễ ngẫu nhiên (0-5s)
-    blur: Math.random() * 3, // độ mờ ngẫu nhiên (0-3px)
-    opacity: Math.random() * 0.5 + 0.3, // độ trong suốt ngẫu nhiên (0.3-0.8)
-    rotation: Math.random() * 360, // góc xoay ngẫu nhiên (0-360 độ)
-    symbol: i % 3 === 0 ? '❄' : i % 3 === 1 ? '❅' : '❆',
-  }));
+// Định nghĩa các biến thể animation
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1, // Hiệu ứng xuất hiện lần lượt cho các children
+      delayChildren: 0.2
+    }
+  }
 };
 
-// Các biến thể animation cho tuyết rơi
-const snowflakeVariant = {
-  animate: (custom) => ({
-    y: ["-10vh", "100vh"],
-    x: [
-      `${custom.x}vw`,
-      `${custom.x - 10 + Math.random() * 20}vw`,
-      `${custom.x - 5 + Math.random() * 10}vw`,
-      `${custom.x + 5 + Math.random() * 15}vw`,
-      `${custom.x - 5 + Math.random() * 10}vw`,
-    ],
-    rotate: [custom.rotation, custom.rotation + 360],
-    scale: [0.8, 1.2, 0.8],
+const cardItemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
     transition: {
-      y: {
-        duration: custom.duration,
-        repeat: Infinity,
-        delay: custom.delay,
-        ease: "linear",
-      },
-      x: {
-        duration: custom.duration,
-        repeat: Infinity,
-        delay: custom.delay,
-        times: [0, 0.25, 0.5, 0.75, 1],
-        ease: "easeInOut",
-      },
-      rotate: {
-        duration: custom.duration / 2,
-        repeat: Infinity,
-        delay: custom.delay,
-        ease: "linear",
-      },
-      scale: {
-        duration: custom.duration / 3,
-        repeat: Infinity,
-        delay: custom.delay,
-        ease: "easeInOut",
-      }
+      type: "spring",
+      stiffness: 300,
+      damping: 24
     }
-  })
+  }
+};
+
+const cardHoverVariants = {
+  scale: 1.03,
+  boxShadow: "0px 10px 20px rgba(0, 0, 0, 0.1)",
+  transition: { type: "spring", stiffness: 400, damping: 10 }
+};
+
+const iconVariants = {
+  initial: { scale: 0, rotate: -90 },
+  animate: { 
+    scale: 1, 
+    rotate: 0, 
+    transition: { type: "spring", stiffness: 260, damping: 20, delay: 0.2 } 
+  },
+  pulse: {
+    scale: [1, 1.1, 1],
+    transition: {
+      duration: 1.5,
+      repeat: Infinity,
+      ease: "easeInOut"
+    }
+  }
+};
+
+const numberVariants = {
+  initial: { opacity: 0, scale: 0.5 },
+  animate: { 
+    opacity: 1, 
+    scale: 1, 
+    transition: { type: "spring", stiffness: 500, damping: 30, delay: 0.4 } 
+  }
+};
+
+const titleVariants = {
+  hidden: { opacity: 0, y: -30 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { type: "spring", stiffness: 120, damping: 20, delay: 0.1 } 
+  }
+};
+
+const chartContainerVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    transition: { duration: 0.5, ease: "easeOut" } 
+  }
+};
+
+const exportButtonVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { delay: 0.5 } }
+};
+
+// Component cho Chart với animation khi scroll vào view
+const AnimatedChart = ({ children, options, data, ChartComponent }) => {
+  const controls = useAnimation();
+  const [ref, inView] = useInView({
+    triggerOnce: true, // Chỉ trigger animation một lần
+    threshold: 0.1,    // Trigger khi 10% component hiển thị
+  });
+
+  useEffect(() => {
+    if (inView) {
+      controls.start("visible");
+    }
+  }, [controls, inView]);
+
+  return (
+    <motion.div
+      ref={ref}
+      initial="hidden"
+      animate={controls}
+      variants={chartContainerVariants}
+      style={{
+        position: "relative",
+        backgroundColor: "white",
+        borderRadius: "10px",
+        padding: "20px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+      }}
+    >
+      {children}
+      <div style={{ height: "300px" }}>
+        <ChartComponent data={data} options={options} />
+      </div>
+    </motion.div>
+  );
 };
 
 function DashBoard() {
@@ -124,9 +183,6 @@ function DashBoard() {
   const [orderStats, setOrderStats] = useState(null);
   // Create a reference to the dashboard div
   const dashboardRef = useRef();
-  
-  // Create snowflakes
-  const snowflakes = generateSnowflakes(50);
 
   useEffect(() => {
     const fetchNumberOfCustomer = async () => {
@@ -180,30 +236,6 @@ function DashBoard() {
   if (!orderStats) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <div>Loading...</div>
-      {/* Snowflake effect while loading */}
-      {snowflakes.slice(0, 20).map((flake) => (
-        <motion.div
-          key={flake.id}
-          variants={snowflakeVariant}
-          custom={flake}
-          animate="animate"
-          style={{
-            position: "fixed",
-            fontSize: `${flake.size}px`,
-            left: `${flake.x}vw`,
-            top: "-5vh",
-            color: "#3bb77e",
-            filter: `blur(${flake.blur}px)`,
-            opacity: flake.opacity,
-            zIndex: 1000,
-            textShadow: "0 0 5px white",
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
-        >
-          {flake.symbol}
-        </motion.div>
-      ))}
     </div>
   );
 
@@ -219,6 +251,22 @@ function DashBoard() {
         hoverOffset: 4,
       },
     ],
+  };
+   const pieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "bottom",
+        labels: {
+          boxWidth: 15,
+          padding: 15,
+          font: {
+            size: 12
+          }
+        }
+      }
+    }
   };
 
   // ChartJS data cho orders in nhiều thời gian  (Bar Chart)
@@ -244,6 +292,20 @@ function DashBoard() {
       },
     ],
   };
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  };
 
   //line chart user
   const lineData = {
@@ -251,7 +313,7 @@ function DashBoard() {
     datasets: [
       {
         label: "Khách hàng mới",
-        data: [5, 20, 50],
+        data: [5, 20, 50], // Dữ liệu giả định, cần thay thế bằng API nếu có
         borderColor: "#36A2EB",
         backgroundColor: "rgba(54, 162, 235, 0.2)",
         tension: 0.4,
@@ -259,12 +321,27 @@ function DashBoard() {
       },
     ],
   };
+   const lineOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: "top"
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  };
 
   //Export dashboard to PNG
   const exportToPNG = () => {
     if (dashboardRef.current) {
       domtoimage
-        .toPng(dashboardRef.current)
+        .toPng(dashboardRef.current, { bgcolor: '#f8f9fa' }) // Thêm bgcolor để nền trắng
         .then((dataUrl) => {
           const link = document.createElement("a");
           link.download = "dashboard.png";
@@ -280,56 +357,55 @@ function DashBoard() {
   };
 
   return (
-    <div ref={dashboardRef} style={{ padding: "20px", backgroundColor: "#f8f9fa", position: "relative" }}>
-      {/* Snowfall effect */}
-      {snowflakes.map((flake) => (
-        <motion.div
-          key={flake.id}
-          variants={snowflakeVariant}
-          custom={flake}
-          animate="animate"
-          style={{
-            position: "fixed",
-            fontSize: `${flake.size}px`,
-            left: `${flake.x}vw`,
-            top: "-5vh",
-            color: "#3bb77e",
-            filter: `blur(${flake.blur}px)`,
-            opacity: flake.opacity,
-            zIndex: 1000,
-            textShadow: "0 0 5px white",
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
-        >
-          {flake.symbol}
-        </motion.div>
-      ))}
-      
+    <motion.div // Bọc toàn bộ dashboard để có thể áp dụng stagger cho children
+      ref={dashboardRef} 
+      style={{ padding: "20px", backgroundColor: "#f8f9fa", position: "relative" }}
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Dashboard Title */}
+      <motion.h1 
+        style={{ textAlign: 'center', marginBottom: '30px', color: '#333', fontWeight: 'bold' }}
+        variants={titleVariants} // Áp dụng animation cho title
+      >
+        Dashboard Quản Trị
+      </motion.h1>
+
       {/* Stats Cards Row */}
       <Row gutter={[20, 20]}>
+        {/* Customer Card */}
         <Col xs={24} sm={12} md={6}>
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: "10px",
-            padding: "20px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            height: "100%"
-          }}>
-            <div style={{
-              backgroundColor: "rgba(52, 152, 219, 0.1)",
-              borderRadius: "50%",
-              width: "60px",
-              height: "60px",
+          <motion.div 
+            variants={cardItemVariants} // Animation cho từng card item
+            whileHover={cardHoverVariants} // Animation khi hover
+            style={{
+              backgroundColor: "white",
+              borderRadius: "10px",
+              padding: "20px",
               display: "flex",
-              justifyContent: "center",
+              flexDirection: "column",
               alignItems: "center",
-              marginBottom: "15px"
-            }}>
-              <img
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              height: "100%"
+            }}
+          >
+            <motion.div // Wrapper cho icon
+              style={{
+                backgroundColor: "rgba(52, 152, 219, 0.1)",
+                borderRadius: "50%",
+                width: "60px",
+                height: "60px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: "15px"
+              }}
+              variants={iconVariants} // Initial animation cho icon
+              initial="initial"
+              animate="animate"
+            >
+              <motion.img // Icon với animation pulse
                 src={customerImage}
                 alt="Customer"
                 style={{
@@ -337,8 +413,10 @@ function DashBoard() {
                   height: "30px",
                   objectFit: "contain",
                 }}
+                animate="pulse"
+                variants={iconVariants}
               />
-            </div>
+            </motion.div>
             <p style={{
               fontSize: "16px",
               fontWeight: "500",
@@ -348,39 +426,54 @@ function DashBoard() {
             }}>
               Tổng số khách hàng
             </p>
-            <h3 style={{
-              fontSize: "24px",
-              fontWeight: "700",
-              margin: 0,
-              textAlign: "center"
-            }}>
+            <motion.h3 // Wrapper cho số liệu
+              style={{
+                fontSize: "24px",
+                fontWeight: "700",
+                margin: 0,
+                textAlign: "center"
+              }}
+              variants={numberVariants} // Animation cho số liệu
+              initial="initial"
+              animate="animate"
+            >
               <CountUp start={0} end={numberOfCustomer} duration={2} separator="," />
-            </h3>
-          </div>
+            </motion.h3>
+          </motion.div>
         </Col>
         
-        <Col xs={24} sm={12} md={6}>
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: "10px",
-            padding: "20px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            height: "100%"
-          }}>
-            <div style={{
-              backgroundColor: "rgba(241, 196, 15, 0.1)",
-              borderRadius: "50%",
-              width: "60px",
-              height: "60px",
+        {/* Order Card */}
+         <Col xs={24} sm={12} md={6}>
+          <motion.div 
+            variants={cardItemVariants} // Animation cho từng card item
+            whileHover={cardHoverVariants} // Animation khi hover
+            style={{
+              backgroundColor: "white",
+              borderRadius: "10px",
+              padding: "20px",
               display: "flex",
-              justifyContent: "center",
+              flexDirection: "column",
               alignItems: "center",
-              marginBottom: "15px"
-            }}>
-              <img
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              height: "100%"
+            }}
+          >
+            <motion.div // Wrapper cho icon
+              style={{
+                backgroundColor: "rgba(241, 196, 15, 0.1)",
+                borderRadius: "50%",
+                width: "60px",
+                height: "60px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: "15px"
+              }}
+              variants={iconVariants} // Initial animation cho icon
+              initial="initial"
+              animate="animate"
+            >
+              <motion.img // Icon với animation pulse
                 src={orderImage}
                 alt="Order"
                 style={{
@@ -388,8 +481,10 @@ function DashBoard() {
                   height: "30px",
                   objectFit: "contain",
                 }}
+                animate="pulse"
+                variants={iconVariants}
               />
-            </div>
+            </motion.div>
             <p style={{
               fontSize: "16px",
               fontWeight: "500",
@@ -399,39 +494,54 @@ function DashBoard() {
             }}>
               Tổng số đơn hàng
             </p>
-            <h3 style={{
-              fontSize: "24px",
-              fontWeight: "700",
-              margin: 0,
-              textAlign: "center"
-            }}>
+            <motion.h3 // Wrapper cho số liệu
+              style={{
+                fontSize: "24px",
+                fontWeight: "700",
+                margin: 0,
+                textAlign: "center"
+              }}
+              variants={numberVariants} // Animation cho số liệu
+              initial="initial"
+              animate="animate"
+            >
               <CountUp start={0} end={numberOfOrder} duration={2} separator="," />
-            </h3>
-          </div>
+            </motion.h3>
+          </motion.div>
         </Col>
         
-        <Col xs={24} sm={12} md={6}>
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: "10px",
-            padding: "20px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            height: "100%"
-          }}>
-            <div style={{
-              backgroundColor: "rgba(46, 204, 113, 0.1)",
-              borderRadius: "50%",
-              width: "60px",
-              height: "60px",
+        {/* Service Card */}
+         <Col xs={24} sm={12} md={6}>
+          <motion.div 
+            variants={cardItemVariants} // Animation cho từng card item
+            whileHover={cardHoverVariants} // Animation khi hover
+            style={{
+              backgroundColor: "white",
+              borderRadius: "10px",
+              padding: "20px",
               display: "flex",
-              justifyContent: "center",
+              flexDirection: "column",
               alignItems: "center",
-              marginBottom: "15px"
-            }}>
-              <img
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              height: "100%"
+            }}
+          >
+            <motion.div // Wrapper cho icon
+              style={{
+                backgroundColor: "rgba(46, 204, 113, 0.1)",
+                borderRadius: "50%",
+                width: "60px",
+                height: "60px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: "15px"
+              }}
+              variants={iconVariants} // Initial animation cho icon
+              initial="initial"
+              animate="animate"
+            >
+              <motion.img // Icon với animation pulse
                 src={serviesImage}
                 alt="Service"
                 style={{
@@ -439,8 +549,10 @@ function DashBoard() {
                   height: "30px",
                   objectFit: "contain",
                 }}
+                animate="pulse"
+                variants={iconVariants}
               />
-            </div>
+            </motion.div>
             <p style={{
               fontSize: "16px",
               fontWeight: "500",
@@ -450,39 +562,54 @@ function DashBoard() {
             }}>
               Tổng số lượng dịch vụ
             </p>
-            <h3 style={{
-              fontSize: "24px",
-              fontWeight: "700",
-              margin: 0,
-              textAlign: "center"
-            }}>
+            <motion.h3 // Wrapper cho số liệu
+              style={{
+                fontSize: "24px",
+                fontWeight: "700",
+                margin: 0,
+                textAlign: "center"
+              }}
+              variants={numberVariants} // Animation cho số liệu
+              initial="initial"
+              animate="animate"
+            >
               <CountUp start={0} end={numberOfService} duration={2} separator="," />
-            </h3>
-          </div>
+            </motion.h3>
+          </motion.div>
         </Col>
         
+        {/* Extra Service Card */}
         <Col xs={24} sm={12} md={6}>
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: "10px",
-            padding: "20px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            height: "100%"
-          }}>
-            <div style={{
-              backgroundColor: "rgba(142, 68, 173, 0.1)",
-              borderRadius: "50%",
-              width: "60px",
-              height: "60px",
+          <motion.div 
+            variants={cardItemVariants} // Animation cho từng card item
+            whileHover={cardHoverVariants} // Animation khi hover
+            style={{
+              backgroundColor: "white",
+              borderRadius: "10px",
+              padding: "20px",
               display: "flex",
-              justifyContent: "center",
+              flexDirection: "column",
               alignItems: "center",
-              marginBottom: "15px"
-            }}>
-              <img
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              height: "100%"
+            }}
+          >
+            <motion.div // Wrapper cho icon
+              style={{
+                backgroundColor: "rgba(142, 68, 173, 0.1)",
+                borderRadius: "50%",
+                width: "60px",
+                height: "60px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: "15px"
+              }}
+              variants={iconVariants} // Initial animation cho icon
+              initial="initial"
+              animate="animate"
+            >
+              <motion.img // Icon với animation pulse
                 src={extraImage}
                 alt="Extra Service"
                 style={{
@@ -490,8 +617,10 @@ function DashBoard() {
                   height: "30px",
                   objectFit: "contain",
                 }}
+                animate="pulse"
+                variants={iconVariants}
               />
-            </div>
+            </motion.div>
             <p style={{
               fontSize: "16px",
               fontWeight: "500",
@@ -501,108 +630,54 @@ function DashBoard() {
             }}>
               Tổng số dịch vụ thêm
             </p>
-            <h3 style={{
-              fontSize: "24px",
-              fontWeight: "700",
-              margin: 0,
-              textAlign: "center"
-            }}>
+            <motion.h3 // Wrapper cho số liệu
+              style={{
+                fontSize: "24px",
+                fontWeight: "700",
+                margin: 0,
+                textAlign: "center"
+              }}
+              variants={numberVariants} // Animation cho số liệu
+              initial="initial"
+              animate="animate"
+            >
               <CountUp start={0} end={numberOfExtra} duration={2} separator="," />
-            </h3>
-          </div>
+            </motion.h3>
+          </motion.div>
         </Col>
       </Row>
 
       {/* Charts Row */}
       <Row gutter={[20, 20]} style={{ marginTop: "20px" }}>
+        {/* Pie Chart */}
         <Col xs={24} lg={12}>
-          <div style={{
-            position: "relative",
-            backgroundColor: "white",
-            borderRadius: "10px",
-            padding: "20px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-          }}>
-            <h2 style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              marginBottom: "20px",
-              paddingBottom: "10px",
-              borderBottom: "1px solid #f0f0f0"
-            }}>
-              Biểu đồ thống kê đơn hàng
-            </h2>
-            <div style={{ height: "300px" }}>
-              <Pie
-                data={pieData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: "bottom",
-                      labels: {
-                        boxWidth: 15,
-                        padding: 15,
-                        font: {
-                          size: 12
-                        }
-                      }
-                    }
-                  }
-                }}
-              />
-            </div>
-          </div>
+           <AnimatedChart ChartComponent={Pie} data={pieData} options={pieOptions}>
+             <h2 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "20px", paddingBottom: "10px", borderBottom: "1px solid #f0f0f0" }}>
+               Biểu đồ thống kê đơn hàng
+             </h2>
+           </AnimatedChart>
         </Col>
 
+        {/* Bar Chart */}
         <Col xs={24} lg={12}>
-          <div style={{
-            position: "relative",
-            backgroundColor: "white",
-            borderRadius: "10px",
-            padding: "20px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-          }}>
-            <h2 style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              marginBottom: "20px",
-              paddingBottom: "10px",
-              borderBottom: "1px solid #f0f0f0"
-            }}>
-              Thống kế đơn hàng theo tính theo ngày, tuần, tháng
-            </h2>
-            <div style={{ height: "300px" }}>
-              <Bar
-                data={barData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: false
-                    }
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true
-                    }
-                  }
-                }}
-              />
-            </div>
-          </div>
+           <AnimatedChart ChartComponent={Bar} data={barData} options={barOptions}>
+             <h2 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "20px", paddingBottom: "10px", borderBottom: "1px solid #f0f0f0" }}>
+               Thống kê đơn hàng theo ngày, tuần, tháng
+             </h2>
+           </AnimatedChart>
         </Col>
       </Row>
 
       {/* Export Button */}
-      <div style={{
-        display: "flex",
-        justifyContent: "flex-end",
-        marginTop: "20px",
-        marginBottom: "20px"
-      }}>
+      <motion.div // Wrapper cho nút export
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginTop: "20px",
+          marginBottom: "20px"
+        }}
+        variants={exportButtonVariants} // Animation cho nút export
+      >
         <motion.button
           whileHover={{ scale: 1.05, boxShadow: "0 4px 8px rgba(0,0,0,0.2)" }}
           whileTap={{ scale: 0.95 }}
@@ -626,50 +701,19 @@ function DashBoard() {
           <FaFileExport size={16} />
           <span>Export Dashboard</span>
         </motion.button>
-      </div>
+      </motion.div>
 
       {/* Line Chart Row */}
       <Row>
         <Col span={24}>
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: "10px",
-            padding: "20px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
-          }}>
-            <h2 style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              marginBottom: "20px",
-              paddingBottom: "10px",
-              borderBottom: "1px solid #f0f0f0"
-            }}>
-              Khách hàng mới
-            </h2>
-            <div style={{ height: "300px" }}>
-              <Line
-                data={lineData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: "top"
-                    }
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true
-                    }
-                  }
-                }}
-              />
-            </div>
-          </div>
+           <AnimatedChart ChartComponent={Line} data={lineData} options={lineOptions}>
+             <h2 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "20px", paddingBottom: "10px", borderBottom: "1px solid #f0f0f0" }}>
+               Khách hàng mới
+             </h2>
+           </AnimatedChart>
         </Col>
       </Row>
-    </div>
+    </motion.div> // Kết thúc motion.div bọc toàn bộ dashboard
   );
 }
 
