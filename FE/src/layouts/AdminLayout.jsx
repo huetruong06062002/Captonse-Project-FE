@@ -66,20 +66,45 @@ const sidebarStyles = css`
     line-height: 1.4 !important;
   }
   
+  .ant-layout-sider-collapsed .ant-menu-item, 
+  .ant-layout-sider-collapsed .ant-menu-submenu-title {
+    padding: 0 calc(50% - 16px) !important;
+    text-align: center !important;
+  }
+  
   .ant-menu-item-icon {
     margin-right: 12px !important;
+    font-size: 18px !important;
+  }
+  
+  .ant-layout-sider-collapsed .ant-menu-item-icon {
+    margin-right: 0 !important;
+    font-size: 18px !important;
+    line-height: 45px !important;
   }
   
   .ant-menu-title-content {
     white-space: normal !important;
     line-height: 1.4 !important;
     display: inline-block !important;
+    transition: opacity 0.3s !important;
+  }
+  
+  .ant-layout-sider-collapsed .ant-menu-title-content {
+    opacity: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
   }
   
   .ant-menu-item:hover, .ant-menu-submenu-title:hover {
     background-color: rgba(59, 183, 126, 0.1) !important;
     color: #3bb77e !important;
     transform: translateX(5px) !important;
+  }
+  
+  .ant-layout-sider-collapsed .ant-menu-item:hover, 
+  .ant-layout-sider-collapsed .ant-menu-submenu-title:hover {
+    transform: scale(1.1) !important;
   }
   
   .ant-menu-item-selected {
@@ -134,6 +159,16 @@ const sidebarStyles = css`
     opacity: 1;
     transition: all 0.3s ease;
   }
+  
+  /* Fix tooltip positioning */
+  .ant-tooltip {
+    max-width: 300px;
+  }
+  
+  .ant-tooltip-inner {
+    word-wrap: break-word;
+    word-break: break-word;
+  }
 `;
 
 const AdminLayout = () => {
@@ -172,35 +207,55 @@ const AdminLayout = () => {
     dispatch(setOpenKeys(keys));
   };
 
+  // Hàm tạo label với tooltip
+  const createLabelWithTooltip = (text) => (
+    <Tooltip 
+      title={text} 
+      placement={collapsed ? "right" : "top"}
+      overlayStyle={{ 
+        wordBreak: "break-word", 
+        maxWidth: "300px" 
+      }}
+    >
+      <div style={{ 
+        overflow: "hidden", 
+        textOverflow: "ellipsis",
+        ...(collapsed ? { width: 0, height: 0, opacity: 0 } : {})
+      }}>
+        {text}
+      </div>
+    </Tooltip>
+  );
+
   const menuItems = [
     {
       key: endPoints.DASHBOARD,
       icon: <DashboardOutlined />,
-      label: <Tooltip title="Dashboard">Dashboard</Tooltip>,
+      label: createLabelWithTooltip("Dashboard"),
       allowedRoles: ["Admin"],
     },
     {
       key: endPoints.QuanLyGiaoNhanHang,
       icon: <ShoppingCartOutlined />,
-      label: <Tooltip title="Quản lý giao nhận đơn hàng">Quản lý giao nhận đơn hàng</Tooltip>,
+      label: createLabelWithTooltip("Quản lý giao nhận đơn hàng"),
       allowedRoles: ["Admin"],
       children: [
         {
           key: `${endPoints.DANH_SACH_TAT_CA_DON_HANG}`,
           icon: <ShoppingOutlined />,
-          label: <Tooltip title="Danh sách tất cả đơn hàng">Danh sách tất cả đơn hàng</Tooltip>,
+          label: createLabelWithTooltip("Danh sách tất cả đơn hàng"),
           allowedRoles: ["Admin", "Staff"],
         },
         {
           key: `${endPoints.DANH_SACH_DON_HANG_KHACH_VUA_DAT}`,
           icon: <ClockCircleOutlined />,
-          label: <Tooltip title="Danh sách đơn hàng khách hàng vừa đặt">Danh sách đơn hàng khách hàng vừa đặt</Tooltip>,
+          label: createLabelWithTooltip("Danh sách đơn hàng khách hàng vừa đặt"),
           allowedRoles: ["Admin", "Staff"],
         },
         {
           key: `${endPoints.DANH_SACH_DON_HANG_DA_KIEM_TRA_CHAT_LUONG}`,
           icon: <CheckCircleOutlined />,
-          label: <Tooltip title="Danh sách đơn hàng đã giặt xong và kiểm tra chất lượng">Danh sách đơn hàng đã giặt xong và kiểm tra chất lượng</Tooltip>,
+          label: createLabelWithTooltip("Danh sách đơn hàng đã giặt xong và kiểm tra chất lượng"),
           allowedRoles: ["Admin", "Staff"],
         },
       ],
@@ -208,43 +263,37 @@ const AdminLayout = () => {
     {
       key: endPoints.SERVICES,
       icon: <CustomerServiceOutlined />,
-      label: <Tooltip title="Quản lý các dịch vụ">Quản lý các dịch vụ</Tooltip>,
+      label: createLabelWithTooltip("Quản lý các dịch vụ"),
       allowedRoles: ["Admin"],
     },
     {
       key: endPoints.EXTRACATEGORIES,
       icon: <AppstoreAddOutlined />,
-      label: <Tooltip title="Quản lý dịch vụ đi kèm">Quản lý dịch vụ đi kèm</Tooltip>,
+      label: createLabelWithTooltip("Quản lý dịch vụ đi kèm"),
       allowedRoles: ["Admin"],
-    },
-    {
-      key: endPoints.ORDER,
-      icon: <ShoppingCartOutlined />,
-      label: <Tooltip title="Quản lý đơn hàng">Quản lý đơn hàng</Tooltip>,
-      allowedRoles: ["Admin", "Staff"],
     },
     {
       key: endPoints.USERS,
       icon: <TeamOutlined />,
-      label: <Tooltip title="Quản lý người dùng">Quản lý người dùng</Tooltip>,
+      label: createLabelWithTooltip("Quản lý người dùng"),
       allowedRoles: ["Admin"],
     },
     {
       key: endPoints.CONFIRMCUSTOMERPENDING,
       icon: <ClockCircleOutlined />,
-      label: <Tooltip title="Đơn hàng đang chờ xác nhận">Đơn hàng đang chờ xác nhận</Tooltip>,
+      label: createLabelWithTooltip("Đơn hàng đang chờ xác nhận"),
       allowedRoles: ["CustomerStaff"],
     },
     {
       key: endPoints.CHAT,
       icon: <MessageOutlined />,
-      label: <Tooltip title="Chat">Chat</Tooltip>,
+      label: createLabelWithTooltip("Chat"),
       allowedRoles: ["Admin", "Staff", "CustomerStaff"],
     },
     {
       key: endPoints.CHATWIITHAI,
       icon: <RobotOutlined />,
-      label: <Tooltip title="Chat Với AI Support">Chat Với AI Support</Tooltip>,
+      label: createLabelWithTooltip("Chat Với AI Support"),
       allowedRoles: ["Admin"],
     },
   ];
@@ -305,6 +354,7 @@ const AdminLayout = () => {
           transition: "all 0.3s cubic-bezier(0.2, 0, 0, 1)"
         }}
         width={280}
+        collapsedWidth={80}
         className={sidebarStyles}
       >
         <div className="sidebar-logo"
@@ -316,19 +366,24 @@ const AdminLayout = () => {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "24px 0 16px 0"
+            padding: collapsed ? "16px 0" : "24px 0 16px 0"
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            alignItems: "center",
+            transition: "all 0.3s ease"
+          }}>
             <img
               src={collapsed ? logo2 : logo}
               alt="logo"
               className="primary-logo"
               style={{ 
-                maxWidth: collapsed ? "40px" : "60px",
+                width: collapsed ? "40px" : "60px",
                 height: "auto",
                 transition: "all 0.3s",
-                marginBottom: "8px"
+                marginBottom: collapsed ? "0" : "8px"
               }}
             />
             {!collapsed && <span style={{ fontSize: "16px", fontWeight: "600", color: "#3bb77e" }}>EcoLaundry</span>}
@@ -348,6 +403,7 @@ const AdminLayout = () => {
             background: "transparent",
             fontSize: "14px",
           }}
+          inlineCollapsed={collapsed}
         />
       </Sider>
       <Layout>

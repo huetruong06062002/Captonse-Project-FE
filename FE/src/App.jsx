@@ -50,7 +50,7 @@ function App() {
               path={endPoints.DANH_SACH_DON_HANG_DA_KIEM_TRA_CHAT_LUONG}
               element={<QuanLiDonHangDaKiemTraChatLuong />}
             />
-            <Route path={endPoints.ORDER} element={<Order />} />
+            {/* <Route path={endPoints.ORDER} element={<Order />} /> */}
             <Route path={endPoints.CHAT} element={<Chat />} />
           </Route>
         </Route>
