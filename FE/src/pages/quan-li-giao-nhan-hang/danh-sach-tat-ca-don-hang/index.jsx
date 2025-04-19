@@ -1,7 +1,9 @@
-import { Table, Tag, Input, Button, Space, Tooltip, message, Modal, Descriptions, Typography, Timeline, Image } from "antd";
+import { Table, Tag, Input, Button, Space, Tooltip, message, Modal, Descriptions, Typography, Timeline, Image, Popconfirm } from "antd";
 import React, { useEffect, useState } from "react";
-import { getRequest, getRequestParams } from "@services/api";
-import { SearchOutlined, ReloadOutlined, EyeOutlined, FilterFilled, EnvironmentOutlined, HistoryOutlined, CameraOutlined } from '@ant-design/icons';
+import { getRequest, getRequestParams, deleteRequest } from "@services/api";
+import { SearchOutlined, ReloadOutlined, EyeOutlined, FilterFilled, EnvironmentOutlined, HistoryOutlined, CameraOutlined, DeleteOutlined } from '@ant-design/icons';
+import { axiosClientVer2 } from '../../../config/axiosInterceptor';
+
 
 const { Search } = Input;
 const { Text } = Typography;
@@ -26,6 +28,8 @@ function ListAllOrders() {
   const [selectedHistoryPhotos, setSelectedHistoryPhotos] = useState([]);
   const [isPhotoModalVisible, setIsPhotoModalVisible] = useState(false);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchAllOrder();
@@ -232,6 +236,46 @@ function ListAllOrders() {
     }
   };
 
+  const handleBatchDelete = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('Vui lòng chọn ít nhất một đơn hàng để xóa');
+      return;
+    }
+    
+    setIsDeleteModalVisible(true);
+  };
+
+  const confirmBatchDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const payload = {
+        orderIds: selectedRowKeys
+      };
+      
+      const response = await axiosClientVer2.delete('/admin/orders/batch', {
+        data: payload
+      });
+      
+      if (response && response.status === 200) {
+        message.success(`Đã xóa thành công ${selectedRowKeys.length} đơn hàng`);
+        setSelectedRowKeys([]);
+        fetchAllOrder();
+      } else {
+        throw new Error('Xóa đơn hàng không thành công');
+      }
+    } catch (error) {
+      console.error("Error deleting orders:", error);
+      message.error("Xóa đơn hàng không thành công: " + (error.message || "Lỗi không xác định"));
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalVisible(false);
+    }
+  };
+
+  const cancelBatchDelete = () => {
+    setIsDeleteModalVisible(false);
+  };
+
   const columns = [
     {
       title: "Mã đơn hàng",
@@ -388,6 +432,17 @@ function ListAllOrders() {
           <Space>
             <Button onClick={clearFilters}>Xóa lọc</Button>
             <Button onClick={clearAll}>Xóa lọc và sắp xếp</Button>
+            {selectedRowKeys.length > 0 && (
+              <Button 
+                danger
+                type="primary"
+                icon={<DeleteOutlined />}
+                onClick={handleBatchDelete}
+                loading={isDeleting}
+              >
+                Xóa {selectedRowKeys.length} đơn hàng đã chọn
+              </Button>
+            )}
           </Space>
           <Space>
             <Search
@@ -678,6 +733,34 @@ function ListAllOrders() {
             ))}
           </div>
         )}
+      </Modal>
+
+      {/* Modal xác nhận xóa hàng loạt */}
+      <Modal
+        title={<Text strong style={{ color: '#ff4d4f' }}>Xác nhận xóa đơn hàng</Text>}
+        open={isDeleteModalVisible}
+        onCancel={cancelBatchDelete}
+        footer={null}
+        centered
+      >
+        <div style={{ padding: '16px 0' }}>
+          <p>Bạn có chắc chắn muốn xóa {selectedRowKeys.length} đơn hàng đã chọn?</p>
+          <p><Text strong>Lưu ý:</Text> Hành động này không thể hoàn tác và sẽ xóa tất cả dữ liệu liên quan.</p>
+          
+          <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <Button onClick={cancelBatchDelete}>
+              Hủy
+            </Button>
+            <Button 
+              type="primary" 
+              danger 
+              loading={isDeleting}
+              onClick={confirmBatchDelete}
+            >
+              Xác nhận xóa
+            </Button>
+          </div>
+        </div>
       </Modal>
     </>
   );
