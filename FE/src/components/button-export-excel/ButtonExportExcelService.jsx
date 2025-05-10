@@ -32,7 +32,7 @@ const ExportExcelButton = () => {
 
     try {
       const response = await axios.get('https://laundry.vuhai.me/api/excels/export-laundry-services', {
-        responseType: 'blob',
+        responseType: 'blob', //nhận diện file excel theo dạng nhị phân
       });
 
       // Lấy tên file từ header 

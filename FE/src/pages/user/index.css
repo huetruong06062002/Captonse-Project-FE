@@ -400,4 +400,26 @@
   background-color: #40a9ff;
   border-color: #40a9ff;
   color: white;
+}
+
+.user-search .ant-btn-primary {
+  background: linear-gradient(90deg, #1677ff 60%, #2D9CDB 100%);
+  border: none;
+  border-radius: 0 8px 8px 0;
+  height: 40px;
+  font-weight: 600;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(45, 156, 219, 0.08);
+  transition: all 0.2s;
+}
+.user-search .ant-btn-primary:hover, .user-search .ant-btn-primary:focus {
+  background: linear-gradient(90deg, #2D9CDB 60%, #1677ff 100%);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(45, 156, 219, 0.18);
+  transform: translateY(-1px) scale(1.04);
+}
+.user-search .ant-input {
+  border-radius: 8px 0 0 8px;
+  height: 40px;
+  font-size: 16px;
 } 

@@ -19,14 +19,17 @@ import ChatWithAi from "@pages/chat-with-ai";
 import ConfirmOrderPending from "@pages/confirm-order-pending";
 import QuanLiDonHangDaKiemTraChatLuong from '@pages/quan-li-giao-nhan-hang/quan-li-don-hang-da-giat-xong-va-kiem-tra-chat-luong';
 import Profile from '@pages/profile';
+import Complaint from '@pages/complaint';
+import useComplaintNotification from '@pages/notification';
 
 function App() {
+  useComplaintNotification();
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to={endPoints.LOGIN} replace />} />
 
-        {/* PrivateRoute cho Admin và Staff */}
+        {/* PrivateRoute cho Admin và Staff, CustomerStaff */}
         <Route
           element={
             <PrivateRoute allowedRoles={["Admin", "Staff", "CustomerStaff"]} />
@@ -36,7 +39,7 @@ function App() {
             <Route index element={<Chat />} />
             <Route
               path={endPoints.PROFILE}
-              element={<Profile/>}
+              element={<Profile />}
             />
             <Route
               path={endPoints.DANH_SACH_TAT_CA_DON_HANG}
@@ -52,6 +55,14 @@ function App() {
             />
             {/* <Route path={endPoints.ORDER} element={<Order />} /> */}
             <Route path={endPoints.CHAT} element={<Chat />} />
+          </Route>
+        </Route>
+        
+        {/* PrivateRoute cho Admin và CustomerStaff */}
+
+        <Route element={<PrivateRoute allowedRoles={["Admin", "CustomerStaff"]} />}>
+          <Route path={endPoints.ALL} element={<AdminLayout />}>
+            <Route path={endPoints.COMPLAINT} element={<Complaint />} />
           </Route>
         </Route>
 
@@ -72,6 +83,7 @@ function App() {
           <Route path={endPoints.ALL} element={<AdminLayout />}>
             <Route index element={<DashBoard />} />
             <Route path={endPoints.DASHBOARD} element={<DashBoard />} />
+
             <Route path={endPoints.SERVICES} element={<Services />} />
             <Route
               path={endPoints.EXTRACATEGORIES}

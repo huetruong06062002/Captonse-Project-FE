@@ -252,6 +252,7 @@ const AdminLayout = () => {
           label: createLabelWithTooltip("Danh sách đơn hàng khách hàng vừa đặt"),
           allowedRoles: ["Admin", "Staff"],
         },
+       
         {
           key: `${endPoints.DANH_SACH_DON_HANG_DA_KIEM_TRA_CHAT_LUONG}`,
           icon: <CheckCircleOutlined />,
@@ -259,6 +260,12 @@ const AdminLayout = () => {
           allowedRoles: ["Admin", "Staff"],
         },
       ],
+    },
+    {
+      key: `${endPoints.COMPLAINT}`,
+      icon: <ClockCircleOutlined />,
+      label: createLabelWithTooltip("Quản lý khiếu nại"),
+      allowedRoles: ["Admin", "CustomerStaff"],
     },
     {
       key: endPoints.SERVICES,

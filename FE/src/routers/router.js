@@ -13,6 +13,7 @@ const endPoints = {
   CHAT: "chat",
   PROFILE: "profile",
   CONFIRMCUSTOMERPENDING: "confirm-customer-pending",
+  COMPLAINT: '/complaint',
   ADMIN: "/admin",
   LOGIN: "/login",
   REGISTER: "/register",

@@ -1,0 +1,143 @@
+.complaint-container {
+  background: #fff;
+  border-radius: 10px;
+  padding: 25px 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin: 20px auto;
+  max-width: 1200px;
+}
+
+.complaint-create-btn {
+  margin: 0 auto 25px;
+  display: block;
+  font-size: 15px;
+  height: 40px;
+  width: 150px;
+  border-radius: 5px;
+}
+
+.complaint-tabs .ant-tabs-nav {
+  margin-bottom: 15px;
+}
+
+.complaint-tabs .ant-tabs-tab {
+  padding: 8px 16px;
+  margin-right: 5px;
+}
+
+.complaint-tabs .ant-tabs-tab-active {
+  font-weight: 500;
+}
+
+.complaint-tabs .ant-tabs-ink-bar {
+  height: 3px;
+  background: #1677ff;
+}
+
+.complaint-table {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.complaint-table .ant-table-container {
+  border: 1px solid #e8e8e8;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.complaint-table .ant-table-thead > tr > th {
+  background: #f0f0f0 !important;
+  color: #333;
+  font-weight: 600;
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.complaint-table th:nth-child(1) { min-width: 150px; }
+.complaint-table th:nth-child(2) { min-width: 140px; }
+.complaint-table th:nth-child(3) { min-width: 140px; }
+.complaint-table th:nth-child(4) { min-width: 100px; }
+.complaint-table th:nth-child(5) { min-width: 150px; }
+
+.complaint-table .ant-table-tbody > tr > td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  white-space: nowrap;
+  background: #fff !important;
+}
+
+.complaint-table .ant-table-tbody > tr:nth-child(even) > td {
+  background: #f7f7f7 !important;
+}
+
+.complaint-table .ant-table-tbody > tr:hover > td {
+  background: #efefef !important;
+}
+
+.complaint-table .ant-table-tbody > tr > td:first-child {
+  font-family: monospace;
+  font-size: 13px;
+  color: #333;
+}
+
+.complaint-table .ant-table-tbody > tr > td:nth-child(3) {
+  font-style: italic;
+}
+
+.complaint-table .ant-table-tbody > tr > td:nth-child(4) {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.complaint-table .ant-table-tbody > tr > td:nth-child(4)::before {
+  content: '•';
+  display: inline-block;
+  margin-right: 5px;
+  color: #ff9800;
+}
+
+.complaint-table::-webkit-scrollbar {
+  height: 8px;
+  background: #f0f0f0;
+}
+
+.complaint-table::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.complaint-modal .ant-modal-content {
+  border-radius: 8px;
+}
+
+.complaint-modal .ant-modal-header {
+  padding: 15px 20px;
+  background: #f8f8f8;
+  border-bottom: 1px solid #eee;
+}
+
+.complaint-modal .ant-modal-body {
+  padding: 20px;
+}
+
+.complaint-modal p {
+  margin-bottom: 10px;
+}
+
+.complaint-modal b {
+  display: inline-block;
+  min-width: 120px;
+}
+
+@media (max-width: 768px) {
+  .complaint-container {
+    padding: 15px 10px;
+  }
+  
+  .complaint-create-btn {
+    margin-bottom: 15px;
+  }
+}
