@@ -35,6 +35,7 @@ import { FaSearch } from "react-icons/fa";
 import { HomeOutlined, AppstoreOutlined, PictureOutlined, FileImageOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import "./index.css";
 import { ServicesDetail } from "./components/ServicesDetail";
+import ButtonExportExcelService from '@components/button-export-excel/ButtonExportExcelService';
 
 const { Search } = Input;
 const { Title, Text } = Typography;
@@ -286,6 +287,7 @@ function Services() {
               >
                 Refresh
               </Button>
+              <ButtonExportExcelService />
               <Button
                 type="primary"
                 icon={<IoIosAdd />}

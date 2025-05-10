@@ -136,7 +136,7 @@ function Users() {
         ? record[dataIndex].toString().toLowerCase().includes(value.toLowerCase())
         : '';
     },
-    render: text => 
+    render: text =>
       searchedColumn === dataIndex ? (
         <span style={{ backgroundColor: '#ffc069', padding: 0 }}>
           {text}
@@ -171,7 +171,7 @@ function Users() {
     if (role === "CustomerStaff") return "orange";
     return "default";
   };
-  
+
   const getInitials = (name) => {
     if (!name) return '?';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -184,13 +184,15 @@ function Users() {
       key: "avatar",
       width: 80,
       render: (avatar, record) => (
-        avatar ? 
-        <Avatar src={avatar} size={45} className="user-avatar" /> :
-        <Avatar size={45} className="user-avatar" style={{ backgroundColor: getRoleColor(record.role) === 'blue' ? '#1890ff' : 
-                                                  getRoleColor(record.role) === 'green' ? '#52c41a' : 
-                                                  '#722ed1' }}>
-          {getInitials(record.fullName)}
-        </Avatar>
+        avatar ?
+          <Avatar src={avatar} size={45} className="user-avatar" /> :
+          <Avatar size={45} className="user-avatar" style={{
+            backgroundColor: getRoleColor(record.role) === 'blue' ? '#1890ff' :
+              getRoleColor(record.role) === 'green' ? '#52c41a' :
+                '#722ed1'
+          }}>
+            {getInitials(record.fullName)}
+          </Avatar>
       ),
     },
     {
@@ -214,15 +216,15 @@ function Users() {
       children: [
         {
           title: <Space><PhoneOutlined /> Số điện thoại</Space>,
-      dataIndex: "phoneNumber",
-      key: "phoneNumber",
+          dataIndex: "phoneNumber",
+          key: "phoneNumber",
           ...getColumnSearchProps('phoneNumber'),
           width: 150,
-    },
-    {
+        },
+        {
           title: <Space><MailOutlined /> Email</Space>,
-      dataIndex: "email",
-      key: "email",
+          dataIndex: "email",
+          key: "email",
           ...getColumnSearchProps('email'),
           render: (email) => email || <Text type="secondary">Chưa cung cấp</Text>,
           width: 220,
@@ -248,7 +250,7 @@ function Users() {
         else if (role === 'Customer') className += ' role-customer';
         else if (role === 'Admin') className += ' role-admin';
         else if (role === 'CustomerStaff') className += ' role-customerstaff';
-        
+
         return <span className={className}>{role}</span>;
       },
       width: 160,
@@ -284,10 +286,10 @@ function Users() {
             />
           </Tooltip>
           <Tooltip title="Chỉnh sửa">
-          <Button         
+            <Button
               className="action-btn action-btn-edit"
               icon={<EditOutlined />}
-            onClick={() => handleEditUser(record)}
+              onClick={() => handleEditUser(record)}
             />
           </Tooltip>
           <Tooltip title="Xóa">
@@ -298,7 +300,7 @@ function Users() {
               cancelText="Hủy"
               icon={<ExclamationCircleOutlined style={{ color: 'red' }} />}
             >
-          <Button
+              <Button
                 className="action-btn action-btn-delete"
                 icon={<DeleteOutlined />}
               />
@@ -311,7 +313,7 @@ function Users() {
 
   const handleEditUser = (record) => {
     setSelectedUser(record);
-    
+
     if (record.dob) {
       try {
         setEditDob(record.dob);
@@ -319,7 +321,7 @@ function Users() {
         console.error("Error parsing date:", error);
       }
     }
-    
+
     form.setFieldsValue({
       userId: record.userId,
       fullName: record.fullName,
@@ -355,13 +357,13 @@ function Users() {
       formData.append("FullName", values.fullName);
       formData.append("Email", values.email);
       formData.append("Avatar", values.avatar ? values.avatar.file : null);
-      
+
       if (editDob) {
         formData.append("Dob", editDob);
       } else {
         formData.append("Dob", "");
       }
-      
+
       formData.append("Gender", values.gender);
 
       await axiosClientVer2.put("/users/update-profile", formData, {
@@ -406,17 +408,17 @@ function Users() {
       formData.append("Email", values.email);
       formData.append("Password", values.password);
       formData.append("Role", values.role);
-      
+
       if (createDob) {
         formData.append("Dob", createDob);
       } else {
         formData.append("Dob", "");
       }
-      
+
       formData.append("Gender", values.gender || '');
       formData.append("PhoneNumber", values.phoneNumber || '');
       formData.append("RewardPoints", values.rewardPoints || 0);
-      
+
       if (values.avatar?.file) {
         formData.append("Avatar", values.avatar.file);
       }
@@ -478,7 +480,37 @@ function Users() {
           <h2>Quản lý người dùng</h2>
           <div className="action-buttons">
             <Tooltip title="Làm mới">
-              <Button icon={<ReloadOutlined />} onClick={clearAll} />
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={clearAll}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '40px',
+                  height: '40px',
+                  padding: "0 10px",
+                  borderRadius: '6px',
+                  backgroundColor: '#fff',
+                  borderColor: '#d9d9d9',
+                  boxShadow: '0 2px 0 rgba(0, 0, 0, 0.02)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    backgroundColor: '#f5f5f5',
+                    borderColor: '#40a9ff',
+                    color: '#40a9ff',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
+                  },
+                  '&:active': {
+                    backgroundColor: '#e6f7ff',
+                    borderColor: '#1890ff',
+                    color: '#1890ff',
+                    transform: 'translateY(0)',
+                    boxShadow: '0 2px 0 rgba(0, 0, 0, 0.02)'
+                  }
+                }}
+              />
             </Tooltip>
             <Tooltip title="Xuất Excel">
               <ButtonExportExcelUser type="primary" icon={<FileExcelOutlined />}>
@@ -491,10 +523,10 @@ function Users() {
               onClick={() => setIsCreateUserModalVisible(true)}
             >
               Tạo người dùng
-      </Button>
+            </Button>
           </div>
         </div>
-        
+
         <div className="user-body">
           <div className="user-search">
             <Search
@@ -503,13 +535,13 @@ function Users() {
               enterButton
             />
           </div>
-          
-      <Table
+
+          <Table
             className="user-table"
-        columns={columns}
-        dataSource={users}
-        rowKey="userId"
-        loading={isLoading}
+            columns={columns}
+            dataSource={users}
+            rowKey="userId"
+            loading={isLoading}
             onChange={handleTableChange}
             pagination={{
               current: currentPage,
@@ -552,9 +584,9 @@ function Users() {
             className="user-form"
           >
             <Form.Item name="userId" hidden>
-            <Input />
-          </Form.Item>
-            
+              <Input />
+            </Form.Item>
+
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
@@ -563,16 +595,16 @@ function Users() {
                   rules={[{ required: true, message: "Vui lòng nhập họ tên" }]}
                 >
                   <Input placeholder="Nhập họ tên" />
-          </Form.Item>
+                </Form.Item>
               </Col>
               <Col span={12}>
-          <Form.Item
+                <Form.Item
                   name="email"
                   label="Email"
                   rules={[{ type: "email", message: "Email không hợp lệ" }]}
                 >
                   <Input placeholder="Nhập email" />
-          </Form.Item>
+                </Form.Item>
               </Col>
             </Row>
 
@@ -589,10 +621,10 @@ function Users() {
                   </label>
                   <DatePicker
                     value={
-                      selectedUser?.dob && editDob === null 
-                        ? dayjs(selectedUser.dob, "YYYY-MM-DD") 
-                        : editDob 
-                          ? dayjs(editDob, "YYYY-MM-DD") 
+                      selectedUser?.dob && editDob === null
+                        ? dayjs(selectedUser.dob, "YYYY-MM-DD")
+                        : editDob
+                          ? dayjs(editDob, "YYYY-MM-DD")
                           : null
                     }
                     format="DD/MM/YYYY"
@@ -614,8 +646,8 @@ function Users() {
                     <Select.Option value="Male">Nam</Select.Option>
                     <Select.Option value="Female">Nữ</Select.Option>
                     <Select.Option value="Other">Khác</Select.Option>
-            </Select>
-          </Form.Item>
+                  </Select>
+                </Form.Item>
               </Col>
             </Row>
 
@@ -645,9 +677,9 @@ function Users() {
               <Button onClick={handleModalCancel}>Hủy</Button>
               <Button type="primary" htmlType="submit" loading={isLoading}>
                 Cập nhật
-            </Button>
+              </Button>
             </div>
-        </Form>
+          </Form>
         </Spin>
       </Modal>
 
@@ -670,13 +702,13 @@ function Users() {
           >
             <Row gutter={16}>
               <Col span={12}>
-          <Form.Item
-            name="fullName"
-            label="Họ và Tên"
+                <Form.Item
+                  name="fullName"
+                  label="Họ và Tên"
                   rules={[{ required: true, message: "Vui lòng nhập họ tên" }]}
-          >
+                >
                   <Input placeholder="Nhập họ tên" />
-          </Form.Item>
+                </Form.Item>
               </Col>
               <Col span={12}>
                 <Form.Item
@@ -688,21 +720,21 @@ function Users() {
                   ]}
                 >
                   <Input placeholder="Nhập email" />
-          </Form.Item>
+                </Form.Item>
               </Col>
             </Row>
 
             <Row gutter={16}>
               <Col span={12}>
-          <Form.Item
-            name="password"
-            label="Mật khẩu"
+                <Form.Item
+                  name="password"
+                  label="Mật khẩu"
                   rules={[
                     { required: true, message: "Vui lòng nhập mật khẩu" },
                   ]}
-          >
+                >
                   <Input.Password placeholder="Nhập mật khẩu" />
-          </Form.Item>
+                </Form.Item>
               </Col>
               <Col span={12}>
                 <Form.Item
@@ -711,13 +743,13 @@ function Users() {
                   rules={[{ required: true, message: "Vui lòng chọn vai trò" }]}
                 >
                   <Select placeholder="Chọn vai trò">
-              <Select.Option value="Admin">Admin</Select.Option>
-              <Select.Option value="User">User</Select.Option>
-              <Select.Option value="Staff">Staff</Select.Option>
-              <Select.Option value="Driver">Driver</Select.Option>
+                    <Select.Option value="Admin">Admin</Select.Option>
+                    <Select.Option value="User">User</Select.Option>
+                    <Select.Option value="Staff">Staff</Select.Option>
+                    <Select.Option value="Driver">Driver</Select.Option>
                     <Select.Option value="CustomerStaff">CustomerStaff</Select.Option>
-            </Select>
-          </Form.Item>
+                  </Select>
+                </Form.Item>
               </Col>
             </Row>
 
@@ -747,34 +779,34 @@ function Users() {
                 </div>
               </Col>
               <Col span={12}>
-          <Form.Item
-            name="gender"
-            label="Giới tính"
+                <Form.Item
+                  name="gender"
+                  label="Giới tính"
                   rules={[{ required: true, message: "Vui lòng chọn giới tính" }]}
-          >
+                >
                   <Select placeholder="Chọn giới tính">
-              <Select.Option value="Male">Nam</Select.Option>
-              <Select.Option value="Female">Nữ</Select.Option>
-              <Select.Option value="Other">Khác</Select.Option>
-            </Select>
-          </Form.Item>
+                    <Select.Option value="Male">Nam</Select.Option>
+                    <Select.Option value="Female">Nữ</Select.Option>
+                    <Select.Option value="Other">Khác</Select.Option>
+                  </Select>
+                </Form.Item>
               </Col>
             </Row>
 
             <Row gutter={16}>
               <Col span={12}>
-          <Form.Item
-            name="phoneNumber"
-            label="Số điện thoại"
+                <Form.Item
+                  name="phoneNumber"
+                  label="Số điện thoại"
                   rules={[{ required: true, message: "Vui lòng nhập số điện thoại" }]}
-          >
+                >
                   <Input placeholder="Nhập số điện thoại" />
-          </Form.Item>
+                </Form.Item>
               </Col>
               <Col span={12}>
-          <Form.Item name="rewardPoints" label="Điểm thưởng">
+                <Form.Item name="rewardPoints" label="Điểm thưởng">
                   <Input type="number" min={0} placeholder="Nhập điểm thưởng" />
-          </Form.Item>
+                </Form.Item>
               </Col>
             </Row>
 
@@ -790,16 +822,16 @@ function Users() {
                   <UploadOutlined />
                   <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
                 </div>
-            </Upload>
-          </Form.Item>
+              </Upload>
+            </Form.Item>
 
             <div className="user-form-footer">
               <Button onClick={handleCreateModalCancel}>Hủy</Button>
               <Button type="primary" htmlType="submit" loading={isLoading}>
                 Tạo mới
-            </Button>
+              </Button>
             </div>
-        </Form>
+          </Form>
         </Spin>
       </Modal>
 
@@ -819,8 +851,8 @@ function Users() {
         {detailUser && (
           <div className="user-detail">
             <div className="user-detail-header">
-              <Avatar 
-                src={detailUser.avatar} 
+              <Avatar
+                src={detailUser.avatar}
                 size={100}
                 className="user-detail-avatar"
                 icon={!detailUser.avatar && <UserOutlined />}
@@ -885,9 +917,9 @@ function Users() {
                   <div className="detail-item">
                     <div className="detail-label">Giới tính:</div>
                     <div className="detail-value">
-                      {detailUser.gender === 'Male' ? 'Nam' : 
-                       detailUser.gender === 'Female' ? 'Nữ' : 
-                       detailUser.gender === 'Other' ? 'Khác' : 'Chưa cung cấp'}
+                      {detailUser.gender === 'Male' ? 'Nam' :
+                        detailUser.gender === 'Female' ? 'Nữ' :
+                          detailUser.gender === 'Other' ? 'Khác' : 'Chưa cung cấp'}
                     </div>
                   </div>
                 </Col>
