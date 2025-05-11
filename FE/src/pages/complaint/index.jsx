@@ -1,10 +1,13 @@
-import { Tabs, Table, Modal, Button, message, Spin, Descriptions, Tag, Form, Input } from "antd";
+import { Tabs, Table, Modal, Button, message, Spin, Descriptions, Tag, Form, Input, Space, Select, DatePicker } from "antd";
 import { useState, useEffect } from "react";
 import { axiosClientVer2 } from "../../config/axiosInterceptor";
 import * as signalR from "@microsoft/signalr";
 import axios from "axios";
+import { SearchOutlined, FilterOutlined, SortAscendingOutlined } from '@ant-design/icons';
 const { TabPane } = Tabs;
 const { TextArea } = Input;
+const { RangePicker } = DatePicker;
+const { Option } = Select;
 import "./index.css";
 import { Helmet } from "react-helmet";
 import { getRequest, postRequest } from "@services/api";
@@ -15,6 +18,16 @@ import 'moment/locale/vi';
 moment.locale('vi');
 
 const Complaint = () => {
+  const [searchText, setSearchText] = useState("");
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("descend");
+  const [filterStatus, setFilterStatus] = useState([]);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [createForm] = Form.useForm();
+  const [orderIdInput, setOrderIdInput] = useState("");
+
   const [complaintPending, setComplaintPending] = useState([]);
   const [compaintInProgress, setComplaintInProgress] = useState([]);
   const [complaintResolved, setComplaintResolved] = useState([]);
@@ -69,28 +82,53 @@ const Complaint = () => {
     }
   };
 
-  const handleCreateComplaint = async () => {
-    const token = localStorage.getItem("accessToken");
-    const data = {
-      complaintDescription: "Đơn hàng cần khiếu nại",
-      complaintType: "Sai dịch vụ",
-    };
+  const handleCreateComplaint = () => {
+    createForm.resetFields();
+    setCreateModalVisible(true);
+  };
 
+  const handleCreateConfirm = async () => {
     try {
-      await axios.post(
-        `http://localhost:5239/api/complaints/250414E1TVAS/admin-customerstaff`,
-        data,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+      const values = await createForm.validateFields();
+      setLoading(true);
+      
+      try {
+        await postRequest(
+          `complaints/${values.orderId}/admin-customerstaff`,
+          {
+            complaintDescription: values.complaintDescription,
+            complaintType: values.complaintType
           },
+        );
+        
+        message.success("Tạo khiếu nại thành công!");
+        setCreateModalVisible(false);
+        // Refresh data
+        try {
+          await getComplaintPending();
+        } catch (refreshError) {
+          console.error("Error refreshing data:", refreshError);
         }
-      );
-      message.success("Tạo khiếu nại thành công!");
-    } catch (err) {
-      message.error("Tạo khiếu nại thất bại!");
-      console.error(err);
+      } catch (error) {
+        console.error("Error creating complaint:", error);
+        // Kiểm tra các trường hợp lỗi cụ thể
+        if (error.response) {
+          if (error.response.status === 400) {
+            message.error("Mã đơn hàng không hợp lệ hoặc không tồn tại!");
+          } else if (error.response.status === 401 || error.response.status === 403) {
+            message.error("Bạn không có quyền thực hiện thao tác này. Vui lòng đăng nhập lại!");
+          } else {
+            message.error("Tạo khiếu nại thất bại! Vui lòng thử lại.");
+          }
+        } else {
+          message.error("Tạo khiếu nại thất bại! Vui lòng thử lại.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    } catch (validationError) {
+      // Form validation failed
+      console.log("Validation failed:", validationError);
     }
   };
 
@@ -213,21 +251,127 @@ const Complaint = () => {
     };
   }, []);
 
-  // Table columns
+  // Hàm tìm kiếm
+  const handleSearch = (value) => {
+    setSearchText(value);
+    setCurrentPage(1); // Reset về trang 1 khi tìm kiếm
+  };
 
-  // Định nghĩa các cột cho bảng
+  // Hàm xử lý thay đổi phân trang
+  const handlePaginationChange = (page, pageSize) => {
+    setCurrentPage(page);
+    setPageSize(pageSize);
+  };
+
+  // Cấu hình chung cho phân trang
+  const paginationConfig = {
+    showSizeChanger: true,
+    pageSizeOptions: ["5", "10", "20", "50"],
+    current: currentPage,
+    pageSize: pageSize,
+    onChange: handlePaginationChange,
+    showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} mục`,
+  };
+
+  // Hàm lọc dữ liệu theo từ khóa tìm kiếm
+  const filterDataBySearch = (data) => {
+    if (!searchText) return data;
+    
+    return data.filter(item => {
+      const searchFields = [
+        item.orderId,
+        item.fullName,
+        item.complaintType,
+        item.handlerName
+      ].filter(Boolean); // Loại bỏ undefined/null
+      
+      return searchFields.some(
+        field => field.toLowerCase().includes(searchText.toLowerCase())
+      );
+    });
+  };
+
+  // Cấu hình cột có thể tìm kiếm và sắp xếp
+  const getColumnSearchProps = (dataIndex, title) => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+      <div style={{ padding: 8 }}>
+        <Input
+          placeholder={`Tìm ${title}`}
+          value={selectedKeys[0]}
+          onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => confirm()}
+          style={{ width: 188, marginBottom: 8, display: 'block' }}
+        />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button
+            type="primary"
+            onClick={() => confirm()}
+            icon={<SearchOutlined />}
+            size="middle"
+            style={{ flex: 1, height: '32px' }}
+          >
+            Tìm
+          </Button>
+          <Button 
+            onClick={() => clearFilters()} 
+            size="middle" 
+            style={{ flex: 1, height: '32px' }}
+          >
+            Xóa
+          </Button>
+        </div>
+      </div>
+    ),
+    filterIcon: filtered => <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />,
+    onFilter: (value, record) => 
+      record[dataIndex] ? record[dataIndex].toString().toLowerCase().includes(value.toLowerCase()) : '',
+    sorter: (a, b) => {
+      if (!a[dataIndex] && !b[dataIndex]) return 0;
+      if (!a[dataIndex]) return -1;
+      if (!b[dataIndex]) return 1;
+      return a[dataIndex].localeCompare(b[dataIndex]);
+    },
+  });
+
+  // Định nghĩa lại cột cho bảng với tìm kiếm và sắp xếp
   const columnPending = [
-    { title: "Mã đơn hàng", dataIndex: "orderId", key: "orderId" },
-    { title: "Người tạo", dataIndex: "fullName", key: "fullName" },
+    { 
+      title: "Mã đơn hàng", 
+      dataIndex: "orderId", 
+      key: "orderId",
+      ...getColumnSearchProps('orderId', 'mã đơn hàng'),
+      width: 150,
+    },
+    { 
+      title: "Người tạo", 
+      dataIndex: "fullName", 
+      key: "fullName",
+      ...getColumnSearchProps('fullName', 'người tạo'),
+    },
     {
       title: "Loại khiếu nại",
       dataIndex: "complaintType",
       key: "complaintType",
+      ...getColumnSearchProps('complaintType', 'loại khiếu nại'),
+      filters: [
+        { text: 'Sai dịch vụ', value: 'Sai dịch vụ' },
+        { text: 'Dịch vụ kém', value: 'Dịch vụ kém' },
+        { text: 'Nhân viên thái độ', value: 'Nhân viên thái độ' },
+        { text: 'Giao hàng chậm', value: 'Giao hàng chậm' },
+        { text: 'Khác', value: 'Khác' },
+      ],
+      onFilter: (value, record) => record.complaintType === value,
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
+      filters: [
+        { text: 'Chờ xử lý', value: 'PENDING' },
+        { text: 'Đang xử lý', value: 'IN_PROGRESS' },
+        { text: 'Đã giải quyết', value: 'RESOLVED' },
+      ],
+      onFilter: (value, record) => record.status === value,
       render: (status) => {
         let className = "";
         let text = "";
@@ -295,11 +439,14 @@ const Complaint = () => {
       title: "Ngày tạo",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (text) => new Date(text).toLocaleString("vi-VN"), // Định dạng ngày giờ
+      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+      defaultSortOrder: 'descend',
+      render: (text) => new Date(text).toLocaleString("vi-VN"),
     },
     {
       title: "Hành động",
       key: "action",
+      width: 180,
       render: (_, record) => (
         <div className="action-buttons-container">
           {record.status === "PENDING" && (
@@ -315,7 +462,6 @@ const Complaint = () => {
               </Button>
             </motion.div>
           )}
-        
           
           <motion.div whileHover={{ scale: 1.05 }} className="action-button-wrapper">
             <Button
@@ -331,18 +477,45 @@ const Complaint = () => {
     },
   ];
 
+  // Cập nhật cột cho bảng Đang xử lý
   const columnInProgress = [
-    { title: "Mã đơn hàng", dataIndex: "orderId", key: "orderId" },
-    { title: "Người tạo", dataIndex: "fullName", key: "fullName" },
+    { 
+      title: "Mã đơn hàng", 
+      dataIndex: "orderId", 
+      key: "orderId",
+      ...getColumnSearchProps('orderId', 'mã đơn hàng'),
+      width: 150,
+    },
+    { 
+      title: "Người tạo", 
+      dataIndex: "fullName", 
+      key: "fullName",
+      ...getColumnSearchProps('fullName', 'người tạo'),
+    },
     {
       title: "Loại khiếu nại",
       dataIndex: "complaintType",
       key: "complaintType",
+      ...getColumnSearchProps('complaintType', 'loại khiếu nại'),
+      filters: [
+        { text: 'Sai dịch vụ', value: 'Sai dịch vụ' },
+        { text: 'Dịch vụ kém', value: 'Dịch vụ kém' },
+        { text: 'Nhân viên thái độ', value: 'Nhân viên thái độ' },
+        { text: 'Giao hàng chậm', value: 'Giao hàng chậm' },
+        { text: 'Khác', value: 'Khác' },
+      ],
+      onFilter: (value, record) => record.complaintType === value,
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
+      filters: [
+        { text: 'Chờ xử lý', value: 'PENDING' },
+        { text: 'Đang xử lý', value: 'IN_PROGRESS' },
+        { text: 'Đã giải quyết', value: 'RESOLVED' },
+      ],
+      onFilter: (value, record) => record.status === value,
       render: (status) => {
         let color = "";
         let text = "";
@@ -404,17 +577,21 @@ const Complaint = () => {
       title: "Ngày tạo",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (text) => new Date(text).toLocaleString("vi-VN"), // Định dạng ngày giờ
+      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+      defaultSortOrder: 'descend',
+      render: (text) => new Date(text).toLocaleString("vi-VN"),
     },
     {
       title: "Người xử lý",
       dataIndex: "handlerName",
       key: "handlerName",
+      ...getColumnSearchProps('handlerName', 'người xử lý'),
       render: (text) => text || "Chưa phân công",
     },
     {
       title: "Hành động",
       key: "action",
+      width: 180,
       render: (_, record) => (
         <div className="action-buttons-container">
           {record.status === "IN_PROGRESS" && (
@@ -444,18 +621,45 @@ const Complaint = () => {
     },
   ];
 
+  // Cập nhật cột cho bảng Đã hoàn thành
   const columnResolved = [
-    { title: "Mã đơn hàng", dataIndex: "orderId", key: "orderId" },
-    { title: "Người tạo", dataIndex: "fullName", key: "fullName" },
+    { 
+      title: "Mã đơn hàng", 
+      dataIndex: "orderId", 
+      key: "orderId",
+      ...getColumnSearchProps('orderId', 'mã đơn hàng'),
+      width: 150,
+    },
+    { 
+      title: "Người tạo", 
+      dataIndex: "fullName", 
+      key: "fullName",
+      ...getColumnSearchProps('fullName', 'người tạo'),
+    },
     {
       title: "Loại khiếu nại",
       dataIndex: "complaintType",
       key: "complaintType",
+      ...getColumnSearchProps('complaintType', 'loại khiếu nại'),
+      filters: [
+        { text: 'Sai dịch vụ', value: 'Sai dịch vụ' },
+        { text: 'Dịch vụ kém', value: 'Dịch vụ kém' },
+        { text: 'Nhân viên thái độ', value: 'Nhân viên thái độ' },
+        { text: 'Giao hàng chậm', value: 'Giao hàng chậm' },
+        { text: 'Khác', value: 'Khác' },
+      ],
+      onFilter: (value, record) => record.complaintType === value,
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
+      filters: [
+        { text: 'Chờ xử lý', value: 'PENDING' },
+        { text: 'Đang xử lý', value: 'IN_PROGRESS' },
+        { text: 'Đã giải quyết', value: 'RESOLVED' },
+      ],
+      onFilter: (value, record) => record.status === value,
       render: (status) => {
         let color = "";
         let text = "";
@@ -519,11 +723,21 @@ const Complaint = () => {
       title: "Ngày tạo",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (text) => new Date(text).toLocaleString("vi-VN"), // Định dạng ngày giờ
+      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+      defaultSortOrder: 'descend',
+      render: (text) => new Date(text).toLocaleString("vi-VN"),
+    },
+    {
+      title: "Người xử lý",
+      dataIndex: "handlerName",
+      key: "handlerName",
+      ...getColumnSearchProps('handlerName', 'người xử lý'),
+      render: (text) => text || "Chưa phân công",
     },
     {
       title: "Hành động",
       key: "action",
+      width: 100,
       render: (_, record) => (
         <motion.div whileHover={{ scale: 1.05 }}>
           <Button
@@ -651,19 +865,33 @@ const Complaint = () => {
         />
       </Helmet>
 
-      <motion.div
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
-      >
-        <Button
-          type="primary"
-          onClick={handleCreateComplaint}
-          style={{ width: "160px", height: "44px", fontSize: "15px" }}
-          className="complaint-create-btn"
+      <div className="complaint-header">
+        <motion.div
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
         >
-          Tạo khiếu nại
-        </Button>
-      </motion.div>
+          <Button
+            type="primary"
+            onClick={handleCreateComplaint}
+            style={{ width: "160px", height: "44px", fontSize: "15px" }}
+            className="complaint-create-btn"
+          >
+            Tạo khiếu nại
+          </Button>
+        </motion.div>
+
+        <div className="complaint-search">
+          <Input.Search
+            placeholder="Tìm kiếm theo mã đơn, người tạo, loại khiếu nại..."
+            allowClear
+            enterButton
+            size="large"
+            onSearch={handleSearch}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 400 }}
+          />
+        </div>
+      </div>
       
       <Tabs defaultActiveKey="pending" className="complaint-tabs">
         <TabPane tab={<span style={{ fontSize: "15px" }}>Đang chờ xử lý</span>} key="pending">
@@ -677,9 +905,9 @@ const Complaint = () => {
             >
               <Table
                 columns={columnPending}
-                dataSource={complaintPending}
+                dataSource={filterDataBySearch(complaintPending)}
                 rowKey="complaintId"
-                pagination={false}
+                pagination={paginationConfig}
                 scroll={{ x: "max-content" }}
                 components={{
                   body: {
@@ -711,10 +939,10 @@ const Complaint = () => {
             >
               <Table
                 columns={columnInProgress}
-                dataSource={compaintInProgress}
+                dataSource={filterDataBySearch(compaintInProgress)}
                 loading={loading}
                 rowKey="complaintId"
-                pagination={false}
+                pagination={paginationConfig}
                 scroll={{ x: "max-content" }}
                 components={{
                   body: {
@@ -746,10 +974,10 @@ const Complaint = () => {
             >
               <Table
                 columns={columnResolved}
-                dataSource={complaintResolved}
+                dataSource={filterDataBySearch(complaintResolved)}
                 loading={loading}
                 rowKey="complaintId"
-                pagination={false}
+                pagination={paginationConfig}
                 scroll={{ x: "max-content" }}
                 components={{
                   body: {
@@ -862,6 +1090,63 @@ const Complaint = () => {
               autoSize={{ minRows: 4, maxRows: 8 }}
               style={{ width: '100%' }}
             />
+          </Form.Item>
+        </Form>
+      </Modal>
+      <Modal
+        open={createModalVisible}
+        onCancel={() => setCreateModalVisible(false)}
+        title="Tạo khiếu nại"
+        footer={null}
+        width={600}
+        maskClosable={false}
+        bodyStyle={{ padding: '24px' }}
+      >
+        <Form
+          form={createForm}
+          layout="vertical"
+          initialValues={{
+            complaintType: "Sai dịch vụ",
+            complaintDescription: "Đơn hàng cần khiếu nại"
+          }}
+        >
+          <Form.Item
+            name="orderId"
+            label="Mã đơn hàng"
+            rules={[{ required: true, message: 'Vui lòng nhập mã đơn hàng!' }]}
+          >
+            <Input placeholder="Nhập mã đơn hàng cần khiếu nại" />
+          </Form.Item>
+          
+          <Form.Item
+            name="complaintType"
+            label="Loại khiếu nại"
+            rules={[{ required: true, message: 'Vui lòng nhập loại khiếu nại!' }]}
+          >
+            <Input placeholder="Nhập loại khiếu nại" />
+          </Form.Item>
+          
+          <Form.Item
+            name="complaintDescription"
+            label="Mô tả khiếu nại"
+            rules={[{ required: true, message: 'Vui lòng nhập mô tả khiếu nại!' }]}
+          >
+            <TextArea 
+              placeholder="Nhập chi tiết khiếu nại" 
+              autoSize={{ minRows: 4, maxRows: 8 }}
+            />
+          </Form.Item>
+          
+          <Form.Item className="form-actions">
+            <Button 
+              type="primary" 
+              htmlType="submit"
+              onClick={handleCreateConfirm}
+              loading={loading}
+              style={{ width: '100%', height: '40px', borderRadius: '4px' }}
+            >
+              Tạo khiếu nại
+            </Button>
           </Form.Item>
         </Form>
       </Modal>
