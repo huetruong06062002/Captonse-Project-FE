@@ -5,7 +5,7 @@ import { notification } from 'antd';
 function useComplaintNotification() {
   useEffect(() => {
     const connection = new signalR.HubConnectionBuilder()
-    .withUrl('http://localhost:5239/complaintHub') // Đúng endpoint hub backend của bạn
+    .withUrl('https://laundry.vuhai.me/complaintHub') // Đúng endpoint hub backend của bạn
     .withAutomaticReconnect()
     .build();
 

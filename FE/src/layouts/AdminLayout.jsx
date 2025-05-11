@@ -21,6 +21,8 @@ import {
   RobotOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
+  ExclamationCircleOutlined,
+  FlagOutlined,
 } from "@ant-design/icons";
 import {
   Avatar,
@@ -263,7 +265,7 @@ const AdminLayout = () => {
     },
     {
       key: `${endPoints.COMPLAINT}`,
-      icon: <ClockCircleOutlined />,
+      icon: <ExclamationCircleOutlined />,
       label: createLabelWithTooltip("Quản lý khiếu nại"),
       allowedRoles: ["Admin", "CustomerStaff"],
     },

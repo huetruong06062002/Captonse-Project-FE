@@ -1,32 +1,43 @@
 .complaint-container {
   background: #fff;
-  border-radius: 10px;
-  padding: 25px 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  padding: 30px 25px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   margin: 20px auto;
   max-width: 1200px;
+  transition: all 0.3s ease;
 }
 
 .complaint-create-btn {
-  margin: 0 auto 25px;
+  margin: 0 auto 30px;
   display: block;
   font-size: 15px;
-  height: 40px;
-  width: 150px;
-  border-radius: 5px;
+  height: 44px;
+  width: 160px;
+  border-radius: 8px;
+  font-weight: 500;
+  box-shadow: 0 2px 10px rgba(24, 144, 255, 0.2);
+  transition: all 0.3s;
+}
+
+.complaint-create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.25);
 }
 
 .complaint-tabs .ant-tabs-nav {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .complaint-tabs .ant-tabs-tab {
-  padding: 8px 16px;
-  margin-right: 5px;
+  padding: 10px 20px;
+  margin-right: 8px;
+  font-size: 15px;
+  transition: all 0.2s;
 }
 
 .complaint-tabs .ant-tabs-tab-active {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .complaint-tabs .ant-tabs-ink-bar {
@@ -38,22 +49,37 @@
   width: 100%;
   overflow-x: auto;
   margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+  background-color: white;
 }
 
 .complaint-table .ant-table-container {
-  border: 1px solid #e8e8e8;
-  border-radius: 5px;
+  border: none;
+  border-radius: 12px;
   overflow: hidden;
 }
 
 .complaint-table .ant-table-thead > tr > th {
-  background: #f0f0f0 !important;
-  color: #333;
+  background: #f8faff !important;
+  color: #1a1a1a;
   font-weight: 600;
-  padding: 15px;
-  border-bottom: 1px solid #ddd;
+  padding: 18px 16px;
+  border-bottom: 1px solid #edf2ff;
   text-align: left;
   white-space: nowrap;
+  transition: background 0.2s;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.complaint-table .ant-table-thead > tr > th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.complaint-table .ant-table-thead > tr > th:last-child {
+  border-top-right-radius: 12px;
 }
 
 .complaint-table th:nth-child(1) { min-width: 150px; }
@@ -63,41 +89,55 @@
 .complaint-table th:nth-child(5) { min-width: 150px; }
 
 .complaint-table .ant-table-tbody > tr > td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #eee;
+  padding: 16px;
+  border-bottom: 1px solid #f0f5ff;
   white-space: nowrap;
   background: #fff !important;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.complaint-table .ant-table-tbody > tr:last-child > td {
+  border-bottom: none;
+}
+
+.complaint-table .ant-table-tbody > tr:last-child > td:first-child {
+  border-bottom-left-radius: 12px;
+}
+
+.complaint-table .ant-table-tbody > tr:last-child > td:last-child {
+  border-bottom-right-radius: 12px;
 }
 
 .complaint-table .ant-table-tbody > tr:nth-child(even) > td {
-  background: #f7f7f7 !important;
+  background: #fafbff !important;
 }
 
 .complaint-table .ant-table-tbody > tr:hover > td {
-  background: #efefef !important;
+  background: #f0f7ff !important;
+  cursor: pointer;
+  transform: translateY(-1px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 1;
 }
 
 .complaint-table .ant-table-tbody > tr > td:first-child {
-  font-family: monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 13px;
   color: #333;
+  letter-spacing: -0.3px;
+  font-weight: 500;
 }
 
 .complaint-table .ant-table-tbody > tr > td:nth-child(3) {
   font-style: italic;
+  color: #666;
 }
 
 .complaint-table .ant-table-tbody > tr > td:nth-child(4) {
   color: #ff9800;
   font-weight: 600;
-}
-
-.complaint-table .ant-table-tbody > tr > td:nth-child(4)::before {
-  content: '•';
-  display: inline-block;
-  margin-right: 5px;
-  color: #ff9800;
-  animation: pulseDot 1.5s infinite ease-in-out;
 }
 
 @keyframes pulseDot {
@@ -109,42 +149,219 @@
 .complaint-table::-webkit-scrollbar {
   height: 8px;
   background: #f0f0f0;
-}
-
-.complaint-table::-webkit-scrollbar-thumb {
-  background: #ccc;
   border-radius: 4px;
 }
 
+.complaint-table::-webkit-scrollbar-thumb {
+  background: #d0d0d0;
+  border-radius: 4px;
+}
+
+.complaint-table::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+.complaint-table .ant-table-tbody > tr > td:nth-child(4) span {
+  display: flex !important;
+  align-items: center;
+  padding: 4px 8px 4px 6px;
+  border-radius: 12px;
+  background-color: rgba(255, 152, 0, 0.08);
+  width: fit-content;
+}
+
+.complaint-table .ant-btn-link {
+  padding: 4px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  font-weight: 500;
+  color: #1677ff;
+  border: 1px solid rgba(22, 119, 255, 0.1);
+  background-color: rgba(22, 119, 255, 0.05);
+  height: 28px;
+  font-size: 12px;
+  min-width: 90px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.complaint-table .ant-btn-link:hover {
+  background-color: rgba(22, 119, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(22, 119, 255, 0.15);
+}
+
 .complaint-modal .ant-modal-content {
-  border-radius: 8px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .complaint-modal .ant-modal-header {
-  padding: 15px 20px;
-  background: #f8f8f8;
+  padding: 18px 24px;
+  background: #f8fafb;
   border-bottom: 1px solid #eee;
 }
 
 .complaint-modal .ant-modal-body {
   padding: 20px;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 .complaint-modal p {
-  margin-bottom: 10px;
+  margin-bottom: 14px;
+  line-height: 1.6;
 }
 
 .complaint-modal b {
   display: inline-block;
   min-width: 120px;
+  color: #333;
+}
+
+.complaint-status-pending { color: #ff9800; }
+.complaint-status-in-progress { color: #1890ff; }
+.complaint-status-resolved { color: #52c41a; }
+.complaint-status-default { color: #999; }
+
+.complaint-modal-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.complaint-status-tag {
+  margin-left: 12px;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.complaint-detail-descriptions {
+  margin-bottom: 16px;
+}
+
+.complaint-detail-descriptions .ant-descriptions-item-label {
+  background-color: #f8faff;
+  padding: 12px 16px;
+  color: #333;
+}
+
+.complaint-detail-descriptions .ant-descriptions-item-content {
+  padding: 12px 16px;
+  line-height: 1.6;
+}
+
+.complaint-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.complaint-info-section {
+  margin-top: 16px;
+}
+
+.complaint-status-section {
+  margin-top: 16px;
+}
+
+.complaint-detail-scroll {
+  width: 100%;
+}
+
+.detail-order-id {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.loading-container p {
+  margin-top: 16px;
+  color: #666;
 }
 
 @media (max-width: 768px) {
   .complaint-container {
-    padding: 15px 10px;
+    padding: 20px 15px;
+    border-radius: 12px;
   }
   
   .complaint-create-btn {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    height: 40px;
   }
+}
+
+/* Style cho container chứa các nút hành động */
+.action-buttons-container {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.action-button-wrapper {
+  display: inline-block;
+}
+
+/* Style cho các nút hành động trong bảng */
+.complaint-table .action-button {
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  min-width: 90px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.complaint-table .action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.complaint-table .btn-take {
+  background-color: #1890ff;
+  border-color: #1890ff;
+}
+
+.complaint-table .btn-take:hover {
+  background-color: #40a9ff;
+  border-color: #40a9ff;
+}
+
+.complaint-table .btn-resolve {
+  background-color: #52c41a;
+  border-color: #52c41a;
+}
+
+.complaint-table .btn-resolve:hover {
+  background-color: #73d13d;
+  border-color: #73d13d;
+}
+
+.complaint-table .ant-btn[disabled] {
+  background-color: #f5f5f5 !important;
+  border-color: #d9d9d9 !important;
+  color: rgba(0, 0, 0, 0.25) !important;
+  cursor: not-allowed;
+  opacity: 0.8;
 }
