@@ -59,7 +59,7 @@ const ButtonImportExcelService = () => {
       try {
         // Try to fetch the file using axios
         const response = await axios({
-          url: '/src/ExcelExample/SampleImportServiceData.xlsx',
+          url: '/ExcelExample/SampleImportServiceData.xlsx',
           method: 'GET',
           responseType: 'blob',
           timeout: 5000, // 5 second timeout
@@ -90,7 +90,7 @@ const ButtonImportExcelService = () => {
     // Second try: Use window.open directly on the relative path
     const downloadWithWindowOpen = () => {
       try {
-        window.open('/src/ExcelExample/SampleImportServiceData.xlsx', '_blank');
+        window.open('/ExcelExample/SampleImportServiceData.xlsx', '_blank');
         message.success('Đang mở file mẫu...');
         return true;
       } catch (err) {
