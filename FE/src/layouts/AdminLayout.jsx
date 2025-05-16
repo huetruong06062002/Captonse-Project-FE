@@ -23,6 +23,7 @@ import {
   ClockCircleOutlined,
   ExclamationCircleOutlined,
   FlagOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 import {
   Avatar,
@@ -249,12 +250,17 @@ const AdminLayout = () => {
           allowedRoles: ["Admin", "Staff"],
         },
         {
+          key: `${endPoints.AREAS}`,
+          icon: <EnvironmentOutlined />,
+          label: createLabelWithTooltip("Quản lý khu vực"),
+          allowedRoles: ["Admin"],
+        },
+        {
           key: `${endPoints.DANH_SACH_DON_HANG_KHACH_VUA_DAT}`,
           icon: <ClockCircleOutlined />,
           label: createLabelWithTooltip("Danh sách đơn hàng khách hàng vừa đặt"),
           allowedRoles: ["Admin", "Staff"],
-        },
-       
+        },    
         {
           key: `${endPoints.DANH_SACH_DON_HANG_DA_KIEM_TRA_CHAT_LUONG}`,
           icon: <CheckCircleOutlined />,

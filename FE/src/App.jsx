@@ -21,6 +21,7 @@ import QuanLiDonHangDaKiemTraChatLuong from '@pages/quan-li-giao-nhan-hang/quan-
 import Profile from '@pages/profile';
 import Complaint from '@pages/complaint';
 import useComplaintNotification from '@pages/notification';
+import Areas from '@pages/areas';
 
 function App() {
   useComplaintNotification();
@@ -83,6 +84,9 @@ function App() {
           <Route path={endPoints.ALL} element={<AdminLayout />}>
             <Route index element={<DashBoard />} />
             <Route path={endPoints.DASHBOARD} element={<DashBoard />} />
+
+            <Route path={endPoints.AREAS} element={<Areas />} />
+
 
             <Route path={endPoints.SERVICES} element={<Services />} />
             <Route

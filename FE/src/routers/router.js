@@ -11,6 +11,7 @@ const endPoints = {
   EXTRACATEGORIES: "extra-categories",
   USERS: "users",
   CHAT: "chat",
+  AREAS: "areas",
   PROFILE: "profile",
   CONFIRMCUSTOMERPENDING: "confirm-customer-pending",
   COMPLAINT: '/complaint',
