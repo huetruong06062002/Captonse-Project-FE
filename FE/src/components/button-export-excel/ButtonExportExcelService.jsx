@@ -32,10 +32,9 @@ const ExportExcelButton = () => {
 
     try {
       const response = await axios.get('https://laundry.vuhai.me/api/excels/export-laundry-services', {
-        responseType: 'blob', //nhận diện file excel theo dạng nhị phân
+        responseType: 'blob',
       });
 
-      // Lấy tên file từ header 
       const disposition = response.headers['content-disposition'];
       const filenameMatch = disposition && disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
       const filename = filenameMatch ? filenameMatch[1].replace(/['"]/g, '') : defaultFilename;
@@ -56,28 +55,15 @@ const ExportExcelButton = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <Button
         onClick={handleExport}
         type="primary"
         loading={loading}
-        icon={loading ? <LoadingOutlined /> : <DownloadOutlined />}
+        icon={loading ? <LoadingOutlined style={{ fontSize: '20px' }} /> : <DownloadOutlined style={{ fontSize: '20px' }} />}
         style={{
-          backgroundColor: '#2D9CDB',
-          borderColor: '#2D9CDB',
-          height: '40px',
-          padding: '20px 20px',
-          borderRadius: '6px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          transition: 'all 0.3s ease',
-          '&:hover': {
-            backgroundColor: '#1a8bc7',
-            borderColor: '#1a8bc7',
-            transform: 'translateY(-1px)',
-            boxShadow: '0 4px 8px rgba(45, 156, 219, 0.2)'
-          }
+          backgroundColor: '#faad14',
+          borderColor: '#faad14'
         }}
       >
         {loading ? 'Đang xuất...' : 'Xuất Excel'}
@@ -88,8 +74,10 @@ const ExportExcelButton = () => {
           size="small" 
           status="active"
           style={{ 
+            position: 'absolute',
+            bottom: '-8px',
+            left: 0,
             width: '100%',
-            marginTop: '4px'
           }}
         />
       )}

@@ -36,6 +36,8 @@ import { HomeOutlined, AppstoreOutlined, PictureOutlined, FileImageOutlined, Inf
 import "./index.css";
 import { ServicesDetail } from "./components/ServicesDetail";
 import ButtonExportExcelService from '@components/button-export-excel/ButtonExportExcelService';
+import ButtonImportExcelService from '@components/button-import-excel/ButtonImportExcelService';
+import { CloudUploadOutlined, CloudDownloadOutlined } from "@ant-design/icons";
 
 const { Search } = Input;
 const { Title, Text } = Typography;
@@ -49,6 +51,7 @@ function Services() {
   const [editingService, setEditingService] = useState(null); // State để lưu dịch vụ đang chỉnh sửa
   const [openDrawerDetail, setOpenDrawerDetail] = useState(false);
   const [servicesDetail, setServicesDetail] = useState(null);
+  const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
     dispatch(fetchServices());
@@ -268,37 +271,62 @@ function Services() {
           <AppstoreOutlined /> Danh sách dịch vụ
         </Title>
         
-        <Row gutter={[16, 24]} align="middle" justify="space-between" style={{ marginBottom: 20 }}>
-          <Col xs={24} sm={12} md={12} lg={12}>
-            <Search
+        <div className="service-toolbar">
+          <div className="search-container" style={{ display: 'flex', width: '100%' }}>
+            <Input
               placeholder="Tìm kiếm dịch vụ"
               allowClear
-              enterButton={<Button type="primary" icon={<FaSearch />}>Tìm kiếm</Button>}
-              size="large"
+              prefix={<FaSearch style={{ color: 'rgba(0,0,0,.45)' }} />}
+              className="search-input"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onPressEnter={() => {/* Add search logic here if needed */}}
+              style={{ flex: '1', borderRadius: '4px 0 0 4px', height: '45px' }}
             />
-          </Col>
-          <Col xs={24} sm={12} md={12} lg={12} style={{ textAlign: 'right' }}>
-            <Space>
-              <Button
-                type="primary"
-                icon={<IoIosRefresh />}
-                onClick={() => dispatch(fetchServices())}
-                size="large"
-              >
-                Refresh
-              </Button>
-              <ButtonExportExcelService />
-              <Button
-                type="primary"
-                icon={<IoIosAdd />}
-                onClick={() => handleOpenModal()}
-                size="large"
-              >
-                Thêm dịch vụ
-              </Button>
-            </Space>
-          </Col>
-        </Row>
+            <Button 
+              type="primary" 
+              className="search-button"
+              onClick={() => {/* Add search logic here if needed */}}
+              style={{ 
+                width: '200px', 
+                height: '45px', 
+                borderRadius: '0 4px 4px 0', 
+                fontSize: '16px', 
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              icon={<FaSearch style={{ fontSize: '18px', marginRight: '8px' }} />}
+            >
+              Tìm kiếm
+            </Button>
+          </div>
+
+          <div className="service-buttons-row">
+            <Button
+              type="primary"
+              icon={<IoIosRefresh style={{ fontSize: '20px' }} />}
+              onClick={() => dispatch(fetchServices())}
+              className="refresh-button"
+            >
+              Refresh
+            </Button>
+            
+            <ButtonImportExcelService />
+            
+            <ButtonExportExcelService />
+            
+            <Button
+              type="primary"
+              icon={<IoIosAdd style={{ fontSize: '20px' }} />}
+              onClick={() => handleOpenModal()}
+              className="add-button"
+            >
+              Thêm dịch vụ
+            </Button>
+          </div>
+        </div>
 
         <Divider />
 
