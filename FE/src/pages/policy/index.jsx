@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, Button, Alert } from 'antd';
 import { FileWordOutlined, DownloadOutlined } from '@ant-design/icons';
+import PolicyUpload from './PolicyUpload';
 
 const files = [
   {
@@ -22,7 +23,9 @@ export default function Policy() {
   const [viewerError, setViewerError] = useState(false);
 
   return (
+    
     <div style={{ background: '#fff', borderRadius: 12, padding: 32, minHeight: 400 }}>
+        <PolicyUpload />
       <h2 style={{ fontSize: 24, marginBottom: 24, color: '#1677ff' }}>Chính sách EcoLaundry</h2>
       <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 16 }}>Nội dung các chính sách</div>
       <Tabs
@@ -65,6 +68,7 @@ export default function Policy() {
           ),
         }))}
       />
+    
     </div>
   );
 }
