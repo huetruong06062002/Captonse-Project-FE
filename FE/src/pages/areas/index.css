@@ -1,0 +1,124 @@
+.areas-table {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+
+.area-districts-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.area-district-tag {
+  font-size: 15px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  background: #f0f7ff;
+  color: #1677ff;
+  border: 1px solid #e6f4ff;
+  margin-bottom: 4px;
+  transition: box-shadow 0.2s;
+}
+.area-district-tag:hover {
+  box-shadow: 0 2px 8px 0 #e6f4ff;
+}
+
+.area-add-district-btn {
+  border-style: dashed;
+  background: #fafcff;
+  color: #1677ff;
+  border-radius: 8px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+.area-add-district-btn:hover {
+  background: #e6f4ff;
+  color: #0958d9;
+}
+
+.areas-header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.areas-header-actions .ant-btn {
+  height: 44px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 0 22px;
+  box-shadow: 0 2px 8px 0 rgba(22,119,255,0.06);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.areas-header-actions .ant-btn-primary {
+  background: linear-gradient(90deg, #4096ff 0%, #1677ff 100%);
+  border: none;
+}
+.areas-header-actions .ant-btn-primary:hover {
+  background: linear-gradient(90deg, #1677ff 0%, #4096ff 100%);
+  color: #fff;
+}
+
+.area-edit-btn, .area-delete-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  max-width: 48px;
+  max-height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  padding: 0;
+  margin: 0 2px;
+}
+.area-edit-btn {
+  background: #1677ff;
+  color: #fff;
+  border: none;
+}
+.area-edit-btn:hover {
+  background: #0958d9 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px 0 #e6f4ff;
+}
+.area-delete-btn {
+  background: #ff4d4f;
+  color: #fff;
+  border: none;
+}
+.area-delete-btn:hover {
+  background: #d9363e !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px 0 #fff1f0;
+}
+
+.area-action-btns {
+  gap: 18px;
+}
+
+.areas-table .ant-table-thead > tr > th {
+  background: #f5f7fa;
+  font-weight: 600;
+  font-size: 16px;
+  border-bottom: 2px solid #e6e6e6;
+}
+
+.areas-table .ant-table-tbody > tr > td {
+  font-size: 15px;
+  padding: 12px 8px;
+}
+
+.areas-table .ant-table-tbody > tr {
+  transition: background 0.2s;
+}
+.areas-table .ant-table-tbody > tr:hover {
+  background: #f0f7ff;
+}

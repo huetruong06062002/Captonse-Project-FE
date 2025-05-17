@@ -10,6 +10,7 @@ const endPoints = {
   ORDER: "order",
   EXTRACATEGORIES: "extra-categories",
   USERS: "users",
+  BRANCH: "branch",
   CHAT: "chat",
   AREAS: "areas",
   PROFILE: "profile",

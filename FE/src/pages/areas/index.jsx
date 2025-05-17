@@ -29,6 +29,7 @@ import {
   ReloadOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
+import { deleteRequest, getRequestParams, postRequest, putRequest } from '@services/api';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -43,14 +44,19 @@ const Areas = () => {
   const [currentArea, setCurrentArea] = useState(null);
   const [districtForm] = Form.useForm();
   const [allDistricts, setAllDistricts] = useState([]);
+  const [areaType, setAreaType] = useState('ShippingFee');
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importForm] = Form.useForm();
+  const [addDistrictModal, setAddDistrictModal] = useState({ visible: false, area: null });
+  const [addDistrictForm] = Form.useForm();
+  const [editAreaModal, setEditAreaModal] = useState({ visible: false, area: null });
+  const [editAreaForm] = Form.useForm();
 
   // Fetch areas data
-  const fetchAreas = async () => {
+  const fetchAreas = async (type = areaType) => {
     setLoading(true);
     try {
-      const response = await axios.get('https://laundry.vuhai.me/api/admin/areas', {
-        params: { areaType: 'ShippingFee' }
-      });
+      const response = await getRequestParams(`/admin/areas?areaType=${type}`);
       setAreas(response.data);
     } catch (error) {
       console.error('Error fetching areas:', error);
@@ -61,7 +67,7 @@ const Areas = () => {
   };
 
   useEffect(() => {
-    fetchAreas();
+    fetchAreas(areaType);
     // Here we would typically fetch all available districts
     // For now, we'll use a static list
     setAllDistricts([
@@ -70,7 +76,7 @@ const Areas = () => {
       "Quận 11", "Quận 12", "Gò Vấp", "Tân Bình", "Bình Thạnh", 
       "Phú Nhuận", "Thủ Đức", "Bình Tân", "Tân Phú", "Bình Chánh", "Nhà Bè"
     ]);
-  }, []);
+  }, [areaType]);
 
   // Handle adding/editing area
   const showModal = (area = null) => {
@@ -94,14 +100,14 @@ const Areas = () => {
       
       if (editingArea) {
         // Update existing area
-        await axios.put(`https://laundry.vuhai.me/api/admin/areas/${editingArea.id}`, {
+        await putRequest(`/admin/areas/${editingArea.id}`, {
           name: values.name,
           areaType: 'ShippingFee'
         });
         message.success('Cập nhật khu vực thành công');
       } else {
         // Create new area
-        await axios.post('https://laundry.vuhai.me/api/admin/areas', {
+        await postRequest('admin/areas', {
           name: values.name,
           districts: [],
           areaType: 'ShippingFee'
@@ -120,7 +126,7 @@ const Areas = () => {
   // Handle area deletion
   const handleDeleteArea = async (areaId) => {
     try {
-      await axios.delete(`https://laundry.vuhai.me/api/admin/areas/${areaId}`);
+      await deleteRequest(`admin/areas/${areaId}`);
       message.success('Xóa khu vực thành công');
       fetchAreas();
     } catch (error) {
@@ -144,12 +150,14 @@ const Areas = () => {
     try {
       const values = await districtForm.validateFields();
       const updatedDistricts = [...currentArea.districts, values.district];
-      
-      await axios.put(`https://laundry.vuhai.me/api/admin/areas/${currentArea.id}`, {
-        districts: updatedDistricts,
-        areaType: 'ShippingFee'
-      });
-      
+      const payload = {
+        areaType,
+        areas: [{
+          name: currentArea.name,
+          districts: updatedDistricts
+        }]
+      };
+      await axios.post('https://laundry.vuhai.me/api/admin/areas', payload);
       message.success('Thêm quận/huyện thành công');
       setDistrictModalVisible(false);
       fetchAreas();
@@ -162,18 +170,54 @@ const Areas = () => {
   const handleRemoveDistrict = async (area, district) => {
     try {
       const updatedDistricts = area.districts.filter(d => d !== district);
-      
-      await axios.put(`https://laundry.vuhai.me/api/admin/areas/${area.id}`, {
-        districts: updatedDistricts,
-        areaType: 'ShippingFee'
-      });
-      
+      await axios.put(
+        `https://laundry.vuhai.me/api/admin/areas/${area.id}?name=${encodeURIComponent(area.name)}`,
+        updatedDistricts
+      );
       message.success('Xóa quận/huyện thành công');
       fetchAreas();
     } catch (error) {
       console.error('Error removing district:', error);
       message.error('Không thể xóa quận/huyện');
     }
+  };
+
+  // Hàm cập nhật toàn bộ danh sách khu vực lên server
+  const updateAllAreas = async (newAreas) => {
+    try {
+      await postRequest('/admin/areas', {
+        areaType,
+        areas: newAreas.map(area => ({
+          name: area.name,
+          districts: area.districts
+        }))
+      });
+      message.success('Cập nhật khu vực thành công!');
+      fetchAreas();
+    } catch (error) {
+      message.error('Không thể cập nhật khu vực');
+    }
+  };
+
+  // Xoá quận/huyện trong table
+  const handleRemoveDistrictInTable = (area, district) => {
+    const newAreas = areas.map(a =>
+      a.id === area.id
+        ? { ...a, districts: a.districts.filter(d => d !== district) }
+        : a
+    );
+    updateAllAreas(newAreas);
+  };
+
+  // Thêm quận/huyện trong table
+  const handleAddDistrictInTable = (area, newDistrict) => {
+    if (!newDistrict) return;
+    const newAreas = areas.map(a =>
+      a.id === area.id && !a.districts.includes(newDistrict)
+        ? { ...a, districts: [...a.districts, newDistrict] }
+        : a
+    );
+    updateAllAreas(newAreas);
   };
 
   // Table columns
@@ -189,7 +233,7 @@ const Areas = () => {
       dataIndex: 'districts',
       key: 'districts',
       render: (districts, record) => (
-        <>
+        <div className="area-districts-cell">
           {districts.map((district) => (
             <Tag 
               color="blue" 
@@ -197,22 +241,24 @@ const Areas = () => {
               closable
               onClose={(e) => {
                 e.preventDefault();
-                handleRemoveDistrict(record, district);
+                handleRemoveDistrictInTable(record, district);
               }}
+              className="area-district-tag"
             >
               {district}
             </Tag>
           ))}
-          <Button 
-            type="dashed" 
-            size="small" 
-            icon={<PlusOutlined />} 
-            onClick={() => showDistrictModal(record)}
+          <Button
+            type="dashed"
+            size="small"
+            icon={<PlusOutlined />}
+            onClick={() => showAddDistrictModal(record)}
             style={{ marginLeft: 8 }}
+            className="area-add-district-btn"
           >
             Thêm
           </Button>
-        </>
+        </div>
       ),
     },
     {
@@ -220,24 +266,26 @@ const Areas = () => {
       key: 'action',
       width: 150,
       render: (_, record) => (
-        <Space size="middle">
+        <Space size="middle" className="area-action-btns">
           <Tooltip title="Chỉnh sửa">
             <Button 
               type="primary" 
               shape="circle" 
               icon={<EditOutlined />} 
-              onClick={() => showModal(record)} 
+              onClick={() => showEditAreaModal(record)}
+              className="area-edit-btn"
             />
           </Tooltip>
           <Tooltip title="Xóa">
             <Popconfirm
               title="Bạn có chắc chắn muốn xóa khu vực này?"
-              onConfirm={() => handleDeleteArea(record.id)}
+              onConfirm={() => handleDeleteArea(record.areaId)}
               okText="Xóa"
               cancelText="Hủy"
               icon={<ExclamationCircleOutlined style={{ color: 'red' }} />}
+              cancelButtonProps={{ style: { display: 'none' } }}
             >
-              <Button type="primary" danger shape="circle" icon={<DeleteOutlined />} />
+              <Button type="primary" danger shape="circle" icon={<DeleteOutlined />} className="area-delete-btn" />
             </Popconfirm>
           </Tooltip>
         </Space>
@@ -252,6 +300,85 @@ const Areas = () => {
     return allDistricts.filter(
       district => !currentArea.districts.includes(district)
     );
+  };
+
+  // Thêm hàm submit import
+  const handleImportSubmit = async () => {
+    try {
+      const values = await importForm.validateFields();
+      const payload = {
+        areaType,
+        areas: values.areas.map(area => ({
+          name: area.name,
+          districts: area.districts || []
+        }))
+      };
+      await postRequest('/admin/areas', payload);
+      message.success('Nhập danh sách khu vực thành công!');
+      setImportModalVisible(false);
+      fetchAreas();
+    } catch (error) {
+      message.error('Không thể nhập danh sách khu vực');
+    }
+  };
+
+  // Khi mở modal nhập, set giá trị mặc định là danh sách khu vực hiện tại
+  const openImportModal = () => {
+    importForm.setFieldsValue({
+      areas: areas.map(area => ({
+        name: area.name,
+        districts: area.districts
+      }))
+    });
+    setImportModalVisible(true);
+  };
+
+  // Mở modal thêm quận/huyện
+  const showAddDistrictModal = (area) => {
+    addDistrictForm.resetFields();
+    setAddDistrictModal({ visible: true, area });
+  };
+
+  // Xử lý thêm quận/huyện từ modal
+  const handleAddDistrictModalOk = async () => {
+    try {
+      const values = await addDistrictForm.validateFields();
+      const newDistricts = values.districts;
+      const area = addDistrictModal.area;
+      const newAreas = areas.map(a =>
+        a.id === area.id
+          ? { ...a, districts: [...a.districts, ...newDistricts.filter(d => !a.districts.includes(d))] }
+          : a
+      );
+      setAddDistrictModal({ visible: false, area: null });
+      updateAllAreas(newAreas);
+    } catch {}
+  };
+
+  // Mở modal chỉnh sửa khu vực
+  const showEditAreaModal = (area) => {
+    editAreaForm.setFieldsValue({
+      name: area.name,
+      districts: area.districts
+    });
+    setEditAreaModal({ visible: true, area });
+  };
+
+  // Xử lý lưu chỉnh sửa khu vực
+  const handleEditAreaModalOk = async () => {
+  console.log("editAreaModal", editAreaModal)
+    try {
+      const values = await editAreaForm.validateFields();
+      await putRequest(
+        `/admin/areas/${editAreaModal.area.areaId}?name=${encodeURIComponent(values.name)}`,
+        values.districts
+      );
+      setEditAreaModal({ visible: false, area: null });
+      message.success('Cập nhật khu vực thành công!');
+      fetchAreas();
+    } catch (error) {
+      message.error('Không thể cập nhật khu vực');
+    }
   };
 
   return (
@@ -275,21 +402,28 @@ const Areas = () => {
             </Title>
           </Col>
           <Col>
-            <Space>
+            <Space className="areas-header-actions">
+              <Select
+                value={areaType}
+                style={{ width: 160 }}
+                onChange={value => setAreaType(value)}
+              >
+                <Option value="ShippingFee">ShippingFee</Option>
+                <Option value="Driver">Driver</Option>
+              </Select>
               <Button 
                 type="primary" 
                 icon={<ReloadOutlined />} 
-                onClick={fetchAreas}
+                onClick={() => fetchAreas(areaType)}
                 loading={loading}
               >
                 Làm mới
               </Button>
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />} 
-                onClick={() => showModal()}
+              <Button
+                type="default"
+                onClick={openImportModal}
               >
-                Thêm khu vực
+                Nhập danh sách khu vực
               </Button>
             </Space>
           </Col>
@@ -304,6 +438,7 @@ const Areas = () => {
             pageSize: 10,
             showTotal: (total) => `Tổng ${total} khu vực`,
           }}
+          className="areas-table"
         />
       </Card>
 
@@ -347,6 +482,127 @@ const Areas = () => {
                 <Option key={district} value={district}>{district}</Option>
               ))}
             </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Modal nhập danh sách khu vực */}
+      <Modal
+        title="Nhập danh sách khu vực"
+        open={importModalVisible}
+        onOk={handleImportSubmit}
+        onCancel={() => setImportModalVisible(false)}
+        okText="Nhập"
+        width={700}
+        footer={[
+          <Button key="submit" type="primary" onClick={handleImportSubmit} style={{ width: '100%' }}>
+            Nhập
+          </Button>
+        ]}
+      >
+        <Form form={importForm} layout="vertical">
+          <Form.List name="areas" initialValue={[{ name: '', districts: [] }]}>
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...restField }) => (
+                  <div key={key} style={{ border: '1px solid #eee', padding: 16, marginBottom: 12, borderRadius: 8 }}>
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Form.Item
+                          {...restField}
+                          name={[name, 'name']}
+                          label="Tên khu vực"
+                          rules={[{ required: true, message: 'Nhập tên khu vực' }]}
+                        >
+                          <Input placeholder="Tên khu vực" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={14}>
+                        <Form.Item
+                          {...restField}
+                          name={[name, 'districts']}
+                          label="Danh sách quận/huyện"
+                          rules={[{ required: true, message: 'Chọn ít nhất 1 quận/huyện' }]}
+                        >
+                          <Select
+                            mode="multiple"
+                            placeholder="Chọn quận/huyện"
+                            options={allDistricts.map(d => ({ label: d, value: d }))}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={2} style={{ display: 'flex', alignItems: 'center' }}>
+                        {fields.length > 1 && (
+                          <Button danger onClick={() => remove(name)}>-</Button>
+                        )}
+                      </Col>
+                    </Row>
+                  </div>
+                ))}
+                <Form.Item>
+                  <Button type="dashed" onClick={() => add()} block>+ Thêm khu vực</Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+        </Form>
+      </Modal>
+
+      {/* Modal thêm quận/huyện vào khu vực */}
+      <Modal
+        title={`Thêm quận/huyện vào ${addDistrictModal.area?.name || ''}`}
+        open={addDistrictModal.visible}
+        onOk={handleAddDistrictModalOk}
+        onCancel={() => setAddDistrictModal({ visible: false, area: null })}
+        okText="Thêm"
+        cancelText="Hủy"
+      >
+        <Form form={addDistrictForm} layout="vertical">
+          <Form.Item
+            name="districts"
+            label="Chọn quận/huyện"
+            rules={[{ required: true, message: 'Vui lòng chọn ít nhất 1 quận/huyện' }]}
+          >
+            <Select
+              mode="multiple"
+              placeholder="Chọn quận/huyện"
+              options={addDistrictModal.area ? allDistricts.filter(d => !addDistrictModal.area.districts.includes(d)).map(d => ({ label: d, value: d })) : []}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Modal chỉnh sửa khu vực */}
+      <Modal
+        title="Chỉnh sửa khu vực"
+        open={editAreaModal.visible}
+        onOk={handleEditAreaModalOk}
+        onCancel={() => setEditAreaModal({ visible: false, area: null })}
+        okText="Lưu"
+        footer={[
+          <Button key="submit" type="primary" onClick={handleEditAreaModalOk} style={{ width: '100%' }}>
+            Lưu
+          </Button>
+        ]}
+      >
+        <Form form={editAreaForm} layout="vertical">
+          <Form.Item
+            name="name"
+            label="Tên khu vực"
+            rules={[{ required: true, message: 'Vui lòng nhập tên khu vực' }]}
+          >
+            <Input placeholder="Tên khu vực" />
+          </Form.Item>
+          <Form.Item
+            name="districts"
+            label="Danh sách quận/huyện"
+            rules={[{ required: true, message: 'Chọn ít nhất 1 quận/huyện' }]}
+          >
+            <Select
+              mode="multiple"
+              placeholder="Chọn quận/huyện"
+              options={allDistricts.map(d => ({ label: d, value: d }))}
+            />
           </Form.Item>
         </Form>
       </Modal>
