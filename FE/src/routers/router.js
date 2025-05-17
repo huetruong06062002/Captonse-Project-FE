@@ -8,6 +8,7 @@ const endPoints = {
   DANH_SACH_DON_HANG_DA_KIEM_TRA_CHAT_LUONG: "list-orders-checked-quality",
   SERVICES: "services",
   ORDER: "order",
+  POLICY: "policy",
   EXTRACATEGORIES: "extra-categories",
   USERS: "users",
   BRANCH: "branch",

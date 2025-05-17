@@ -22,6 +22,7 @@ import Profile from '@pages/profile';
 import Complaint from '@pages/complaint';
 import useComplaintNotification from '@pages/notification';
 import Areas from '@pages/areas';
+import Policy from '@pages/policy';
 
 function App() {
   useComplaintNotification();
@@ -29,7 +30,6 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to={endPoints.LOGIN} replace />} />
-
         {/* PrivateRoute cho Admin và Staff, CustomerStaff */}
         <Route
           element={
@@ -86,6 +86,9 @@ function App() {
             <Route path={endPoints.DASHBOARD} element={<DashBoard />} />
 
             <Route path={endPoints.AREAS} element={<Areas />} />
+
+            <Route path={endPoints.POLICY} element={<Policy />} />
+
 
 
             <Route path={endPoints.SERVICES} element={<Services />} />

@@ -311,6 +311,12 @@ const AdminLayout = () => {
       label: createLabelWithTooltip("Chat Với AI Support"),
       allowedRoles: ["Admin"],
     },
+    {
+      key: endPoints.POLICY,
+      icon: <FlagOutlined />,
+      label: createLabelWithTooltip("Chính sách"),
+      allowedRoles: ["Admin"],
+    },
   ];
 
   const filteredMenuItems = menuItems
