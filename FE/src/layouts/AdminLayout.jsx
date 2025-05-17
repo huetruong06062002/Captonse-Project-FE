@@ -24,6 +24,7 @@ import {
   ExclamationCircleOutlined,
   FlagOutlined,
   EnvironmentOutlined,
+  ShopOutlined,
 } from "@ant-design/icons";
 import {
   Avatar,
@@ -285,6 +286,12 @@ const AdminLayout = () => {
       key: endPoints.EXTRACATEGORIES,
       icon: <AppstoreAddOutlined />,
       label: createLabelWithTooltip("Quản lý dịch vụ đi kèm"),
+      allowedRoles: ["Admin"],
+    },
+    {
+      key: endPoints.BRANCH,
+      icon: <ShopOutlined />,
+      label: createLabelWithTooltip("Quản lý chi nhánh"),
       allowedRoles: ["Admin"],
     },
     {

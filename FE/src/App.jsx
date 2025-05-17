@@ -23,6 +23,7 @@ import Complaint from '@pages/complaint';
 import useComplaintNotification from '@pages/notification';
 import Areas from '@pages/areas';
 import Policy from '@pages/policy';
+import Branch from '@pages/branch';
 
 function App() {
   useComplaintNotification();
@@ -84,6 +85,7 @@ function App() {
           <Route path={endPoints.ALL} element={<AdminLayout />}>
             <Route index element={<DashBoard />} />
             <Route path={endPoints.DASHBOARD} element={<DashBoard />} />
+            <Route path={endPoints.BRANCH} element={<Branch />} />
 
             <Route path={endPoints.AREAS} element={<Areas />} />
 
