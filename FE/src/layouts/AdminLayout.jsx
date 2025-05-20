@@ -235,7 +235,7 @@ const AdminLayout = () => {
     {
       key: endPoints.DASHBOARD,
       icon: <DashboardOutlined />,
-      label: createLabelWithTooltip("Dashboard"),
+      label: createLabelWithTooltip("Thống kê"),
       allowedRoles: ["Admin"],
     },
     {

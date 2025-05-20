@@ -14,7 +14,7 @@ import {
 } from "chart.js";
 import { axiosClientVer2 } from "../../config/axiosInterceptor";
 import { getRequest } from "@services/api";
-import { Col, Row } from "antd";
+import { Col, Row, Card, Rate, Table, Modal, Button, DatePicker, Radio, Spin, message } from "antd";
 import { motion, useAnimation } from "framer-motion";
 
 import orderImage from "../../assets/image/order.png";
@@ -26,6 +26,9 @@ import { Line } from "react-chartjs-2";
 import domtoimage from "dom-to-image";
 import { FaFileExport } from "react-icons/fa6";
 import { useInView } from "react-intersection-observer";
+import dayjs from "dayjs";
+import isoWeek from "dayjs/plugin/isoWeek";
+dayjs.extend(isoWeek);
 
 // Đăng ký các thành phần cần thiết
 ChartJS.register(
@@ -181,8 +184,29 @@ function DashBoard() {
   const [numberOfService, setNumberOfService] = useState(0);
   const [numberOfExtra, setNumberOfExtra] = useState(0);
   const [orderStats, setOrderStats] = useState(null);
+  // State cho ratings
+  const [ratingStats, setRatingStats] = useState({ totalReviews: 0, averageStar: 0 });
+  const [ratingList, setRatingList] = useState([]);
   // Create a reference to the dashboard div
   const dashboardRef = useRef();
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(dayjs());
+  const [dailyStats, setDailyStats] = useState({ averageStar: 0, totalReviews: 0 });
+  const [selectedWeekDate, setSelectedWeekDate] = useState(dayjs());
+  const [weeklyStats, setWeeklyStats] = useState({ averageStar: 0, totalReviews: 0 });
+  const [chartMode, setChartMode] = useState("day"); // "day" hoặc "week"
+  const [chartLoading, setChartLoading] = useState(false);
+  const [chartLabels, setChartLabels] = useState([]);
+  const [chartData, setChartData] = useState([]);
+  const [chartRange, setChartRange] = useState([dayjs().subtract(29, 'day'), dayjs()]); // 30 ngày gần nhất mặc định
+  const [monthPicker, setMonthPicker] = useState(dayjs());
+  const [monthlyRatings, setMonthlyRatings] = useState([]);
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
+  const [ratingListMode, setRatingListMode] = useState('month'); // 'day' | 'week' | 'month'
+  const [dayPicker, setDayPicker] = useState(dayjs());
+  const [weekPicker, setWeekPicker] = useState(dayjs());
+  const [listLoading, setListLoading] = useState(false);
+  const [listRatings, setListRatings] = useState([]);
 
   useEffect(() => {
     const fetchNumberOfCustomer = async () => {
@@ -226,12 +250,169 @@ function DashBoard() {
       setOrderStats(response.data);
     };
 
+    // Fetch tổng quan đánh giá
+    const fetchRatingStats = async () => {
+      try {
+        const res = await getRequest("ratings/statistics");
+        setRatingStats(res.data);
+      } catch (err) {
+        setRatingStats({ totalReviews: 0, averageStar: 0 });
+      }
+    };
+    // Fetch chi tiết đánh giá
+    const fetchRatingList = async () => {
+      try {
+        const res = await getRequest("https://laundry.vuhai.me/api/ratings");
+        setRatingList(res.data);
+      } catch (err) {
+        setRatingList([]);
+      }
+    };
+
+    // Fetch daily stats khi đổi ngày
+    const fetchDailyStats = async () => {
+      try {
+        const dateStr = selectedDate.format("YYYY-MM-DD");
+        const res = await getRequest(`ratings/statistics/daily?date=${dateStr}`);
+        setDailyStats(res.data);
+      } catch (err) {
+        setDailyStats({ averageStar: 0, totalReviews: 0 });
+      }
+    };
+
+    // Fetch weekly stats khi đổi ngày
+    const fetchWeeklyStats = async () => {
+      try {
+        const dateStr = selectedWeekDate.format("YYYY-MM-DD");
+        const res = await getRequest(`ratings/statistics/weekly?dateInWeek=${dateStr}`);
+        setWeeklyStats(res.data);
+      } catch (err) {
+        setWeeklyStats({ averageStar: 0, totalReviews: 0 });
+      }
+    };
+
     fetchNumberOfCustomer();
     fetchNumberOfOrders();
     fetchNumberOfServices();
     fetchNumberOfExtras();
     fetchNumberOfOrderStatistics();
-  }, []);
+    fetchRatingStats();
+    fetchRatingList();
+    fetchDailyStats();
+    fetchWeeklyStats();
+  }, [selectedDate, selectedWeekDate]);
+
+  // Hàm lấy mảng ngày liên tiếp
+  const getDateArray = (start, end) => {
+    const arr = [];
+    let dt = start.startOf('day');
+    while (dt.isBefore(end) || dt.isSame(end, 'day')) {
+      arr.push(dt.format('YYYY-MM-DD'));
+      dt = dt.add(1, 'day');
+    }
+    return arr;
+  };
+  // Hàm lấy mảng ngày đầu tuần liên tiếp
+  const getWeekArray = (start, end) => {
+    const arr = [];
+    let dt = start.startOf('week');
+    while (dt.isBefore(end) || dt.isSame(end, 'week')) {
+      arr.push(dt.format('YYYY-MM-DD'));
+      dt = dt.add(1, 'week');
+    }
+    return arr;
+  };
+
+  // Fetch dữ liệu cho chart
+  useEffect(() => {
+    const fetchChartData = async () => {
+      setChartLoading(true);
+      try {
+        let labels = [];
+        let data = [];
+        if (chartMode === "day") {
+          labels = getDateArray(chartRange[0], chartRange[1]);
+          const promises = labels.map(date => getRequest(`ratings/statistics/daily?date=${date}`));
+          const results = await Promise.all(promises);
+          data = results.map(res => res.data.averageStar || 0);
+        } else if (chartMode === "week") {
+          labels = getWeekArray(chartRange[0], chartRange[1]);
+          const promises = labels.map(date => getRequest(`ratings/statistics/weekly?dateInWeek=${date}`));
+          const results = await Promise.all(promises);
+          data = results.map(res => res.data.averageStar || 0);
+        } else if (chartMode === "month") {
+          // Lấy mảng tháng liên tiếp
+          const getMonthArray = (start, end) => {
+            const arr = [];
+            let dt = start.startOf('month');
+            while (dt.isBefore(end) || dt.isSame(end, 'month')) {
+              arr.push(dt.format('YYYY-MM'));
+              dt = dt.add(1, 'month');
+            }
+            return arr;
+          };
+          labels = getMonthArray(chartRange[0], chartRange[1]);
+          const promises = labels.map(monthStr => {
+            const [year, month] = monthStr.split('-');
+            return getRequest(`ratings/statistics/monthly?year=${year}&month=${parseInt(month, 10)}`);
+          });
+          const results = await Promise.all(promises);
+          data = results.map(res => res.data.averageStar || 0);
+        }
+        setChartLabels(labels);
+        setChartData(data);
+      } catch (err) {
+        setChartLabels([]);
+        setChartData([]);
+      }
+      setChartLoading(false);
+    };
+    fetchChartData();
+  }, [chartMode, chartRange]);
+
+  // Fetch ratings theo tháng khi đổi tháng/năm và khi mở modal
+  useEffect(() => {
+    if (!isRatingModalOpen) return;
+    const fetchMonthlyRatings = async () => {
+      setMonthlyLoading(true);
+      try {
+        const year = monthPicker.year();
+        const month = monthPicker.month() + 1;
+        const res = await getRequest(`ratings/list/monthly?year=${year}&month=${month}`);
+        setMonthlyRatings(res.data);
+      } catch (err) {
+        setMonthlyRatings([]);
+      }
+      setMonthlyLoading(false);
+    };
+    fetchMonthlyRatings();
+  }, [monthPicker, isRatingModalOpen]);
+
+  // Fetch ratings theo chế độ khi đổi mode, ngày, tuần, tháng hoặc khi mở modal
+  useEffect(() => {
+    if (!isRatingModalOpen) return;
+    const fetchListRatings = async () => {
+      setListLoading(true);
+      try {
+        let res;
+        if (ratingListMode === 'day') {
+          res = await getRequest(`ratings/list/daily?date=${dayPicker.format('YYYY-MM-DD')}`);
+        } else if (ratingListMode === 'week') {
+          res = await getRequest(`ratings/list/weekly?dateInWeek=${weekPicker.format('YYYY-MM-DD')}`);
+        } else {
+          const year = monthPicker.year();
+          const month = monthPicker.month() + 1;
+          res = await getRequest(`ratings/list/monthly?year=${year}&month=${month}`);
+        }
+        setListRatings(res.data);
+      } catch (err) {
+        setListRatings([]);
+        message.error('Không lấy được dữ liệu đánh giá!');
+      }
+      setListLoading(false);
+    };
+    fetchListRatings();
+  }, [ratingListMode, dayPicker, weekPicker, monthPicker, isRatingModalOpen]);
 
   if (!orderStats) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -645,6 +826,52 @@ function DashBoard() {
             </motion.h3>
           </motion.div>
         </Col>
+        {/* Card tổng quan đánh giá */}
+        <Col xs={24} sm={12} md={6}>
+          <Card
+            style={{
+              borderRadius: "16px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              padding: "24px 12px 20px 12px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 260,
+              background: "#fff",
+              border: "none"
+            }}
+            bodyStyle={{ padding: 0 }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#222", marginBottom: 12, textAlign: "center" }}>
+              Đánh giá khách hàng
+            </div>
+            <div style={{ margin: "10px 0 0 0", textAlign: "center" }}>
+              <Rate disabled allowHalf value={ratingStats.averageStar} style={{ fontSize: 28, color: "#FFD700" }} />
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "#222", margin: "8px 0 0 0", textAlign: "center" }}>
+              {ratingStats.averageStar}/5
+            </div>
+            <div style={{ color: "#888", fontSize: 15, margin: "8px 0 0 0", textAlign: "center" }}>
+              Tổng số đánh giá: <b style={{ color: "#222" }}>{ratingStats.totalReviews}</b>
+            </div>
+            <Button
+              type="primary"
+              style={{
+                marginTop: 18,
+                width: "100%",
+                fontWeight: 600,
+                fontSize: 16,
+                borderRadius: 8,
+                background: "#1677ff",
+                boxShadow: "0 2px 8px rgba(22,119,255,0.08)"
+              }}
+              onClick={() => setIsRatingModalOpen(true)}
+            >
+              Chi tiết
+            </Button>
+          </Card>
+        </Col>
       </Row>
 
       {/* Charts Row */}
@@ -711,6 +938,125 @@ function DashBoard() {
                Khách hàng mới
              </h2>
            </AnimatedChart>
+        </Col>
+      </Row>
+      {/* Bảng chi tiết đánh giá */}
+      <Modal
+        title="Chi tiết đánh giá khách hàng"
+        open={isRatingModalOpen}
+        onCancel={() => setIsRatingModalOpen(false)}
+        footer={null}
+        width={900}
+      >
+        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <Radio.Group value={ratingListMode} onChange={e => setRatingListMode(e.target.value)}>
+            <Radio.Button value="day">Theo ngày</Radio.Button>
+            <Radio.Button value="week">Theo tuần</Radio.Button>
+            <Radio.Button value="month">Theo tháng</Radio.Button>
+          </Radio.Group>
+          {ratingListMode === 'day' && (
+            <DatePicker
+              value={dayPicker}
+              onChange={date => setDayPicker(date || dayjs())}
+              allowClear={false}
+              format="DD-MM-YYYY"
+            />
+          )}
+          {ratingListMode === 'week' && (
+            <DatePicker
+              picker="week"
+              value={weekPicker}
+              onChange={date => setWeekPicker(date || dayjs())}
+              allowClear={false}
+              format="WW-YYYY"
+            />
+          )}
+          {ratingListMode === 'month' && (
+            <DatePicker
+              picker="month"
+              value={monthPicker}
+              onChange={date => setMonthPicker(date || dayjs())}
+              allowClear={false}
+              format="MM-YYYY"
+            />
+          )}
+        </div>
+        <Table
+          columns={[
+            { title: "Mã đơn", dataIndex: "orderId", key: "orderId" },
+            { title: "Khách hàng", dataIndex: "fullName", key: "fullName" },
+            { title: "Số sao", dataIndex: "star", key: "star", render: (star) => <Rate disabled value={star} /> },
+            { title: "Đánh giá", dataIndex: "review", key: "review", render: (text) => text || <span style={{ color: '#aaa' }}>[Không có]</span> },
+            { title: "Ngày", dataIndex: "createdAt", key: "createdAt", render: (date) => new Date(date).toLocaleString() },
+          ]}
+          dataSource={listRatings}
+          rowKey="orderId"
+          loading={listLoading}
+          pagination={{ pageSize: 5 }}
+        />
+      </Modal>
+      {/* Chart đánh giá theo ngày/tuần */}
+      <Row style={{ marginTop: 32 }}>
+        <Col span={24}>
+          <Card title="Biểu đồ điểm trung bình đánh giá">
+            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
+              <Radio.Group value={chartMode} onChange={e => setChartMode(e.target.value)}>
+                <Radio.Button value="day">Theo ngày</Radio.Button>
+                <Radio.Button value="week">Theo tuần</Radio.Button>
+                <Radio.Button value="month">Theo tháng</Radio.Button>
+              </Radio.Group>
+              {chartMode === 'month' ? (
+                <DatePicker.RangePicker
+                  picker="month"
+                  value={chartRange}
+                  onChange={range => setChartRange(range || [dayjs().subtract(11, 'month'), dayjs()])}
+                  allowClear={false}
+                  format="MM-YYYY"
+                  style={{ marginLeft: 16 }}
+                />
+              ) : (
+                <DatePicker.RangePicker
+                  value={chartRange}
+                  onChange={range => setChartRange(range || [dayjs().subtract(29, 'day'), dayjs()])}
+                  allowClear={false}
+                  format="DD-MM-YYYY"
+                  style={{ marginLeft: 16 }}
+                />
+              )}
+            </div>
+            {chartLoading ? <Spin /> :
+              <Line
+                data={{
+                  labels: chartLabels.map(label => {
+                    if (chartMode === 'day') return dayjs(label).format('DD-MM-YYYY');
+                    if (chartMode === 'week') return dayjs(label).format('DD-MM-YYYY');
+                    if (chartMode === 'month') return dayjs(label, 'YYYY-MM').format('MM-YYYY');
+                    return label;
+                  }),
+                  datasets: [
+                    {
+                      label: 'Điểm trung bình',
+                      data: chartData,
+                      borderColor: '#36A2EB',
+                      backgroundColor: 'rgba(54,162,235,0.2)',
+                      tension: 0.4,
+                      fill: true,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { display: true, position: 'top' },
+                  },
+                  scales: {
+                    y: { beginAtZero: true, max: 5 },
+                  },
+                }}
+                height={80}
+              />
+            }
+          </Card>
         </Col>
       </Row>
     </motion.div> // Kết thúc motion.div bọc toàn bộ dashboard
