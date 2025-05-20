@@ -334,12 +334,20 @@ function DashBoard() {
           labels = getDateArray(chartRange[0], chartRange[1]);
           const promises = labels.map(date => getRequest(`ratings/statistics/daily?date=${date}`));
           const results = await Promise.all(promises);
-          data = results.map(res => res.data.averageStar || 0);
+          data = results.map(res => ({
+            averageStar: res.data.averageStar || 0,
+            totalReviews: res.data.totalReviews || 0,
+            totalRatings: res.data.totalRatings || 0,
+          }));
         } else if (chartMode === "week") {
           labels = getWeekArray(chartRange[0], chartRange[1]);
           const promises = labels.map(date => getRequest(`ratings/statistics/weekly?dateInWeek=${date}`));
           const results = await Promise.all(promises);
-          data = results.map(res => res.data.averageStar || 0);
+          data = results.map(res => ({
+            averageStar: res.data.averageStar || 0,
+            totalReviews: res.data.totalReviews || 0,
+            totalRatings: res.data.totalRatings || 0,
+          }));
         } else if (chartMode === "month") {
           // Lấy mảng tháng liên tiếp
           const getMonthArray = (start, end) => {
@@ -357,7 +365,11 @@ function DashBoard() {
             return getRequest(`ratings/statistics/monthly?year=${year}&month=${parseInt(month, 10)}`);
           });
           const results = await Promise.all(promises);
-          data = results.map(res => res.data.averageStar || 0);
+          data = results.map(res => ({
+            averageStar: res.data.averageStar || 0,
+            totalReviews: res.data.totalReviews || 0,
+            totalRatings: res.data.totalRatings || 0,
+          }));
         }
         setChartLabels(labels);
         setChartData(data);
@@ -536,6 +548,13 @@ function DashBoard() {
       console.error("dashboardRef is null");
     }
   };
+
+  // Tính max cho cả 2 trục (lấy max của 5 và các giá trị lớn nhất của totalReviews, totalRatings)
+  const maxY = Math.max(
+    5,
+    ...chartData.map(d => d.totalReviews || 0),
+    ...chartData.map(d => d.totalRatings || 0)
+  );
 
   return (
     <motion.div // Bọc toàn bộ dashboard để có thể áp dụng stagger cho children
@@ -826,52 +845,6 @@ function DashBoard() {
             </motion.h3>
           </motion.div>
         </Col>
-        {/* Card tổng quan đánh giá */}
-        <Col xs={24} sm={12} md={6}>
-          <Card
-            style={{
-              borderRadius: "16px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-              padding: "24px 12px 20px 12px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: 260,
-              background: "#fff",
-              border: "none"
-            }}
-            bodyStyle={{ padding: 0 }}
-          >
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#222", marginBottom: 12, textAlign: "center" }}>
-              Đánh giá khách hàng
-            </div>
-            <div style={{ margin: "10px 0 0 0", textAlign: "center" }}>
-              <Rate disabled allowHalf value={ratingStats.averageStar} style={{ fontSize: 28, color: "#FFD700" }} />
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 600, color: "#222", margin: "8px 0 0 0", textAlign: "center" }}>
-              {ratingStats.averageStar}/5
-            </div>
-            <div style={{ color: "#888", fontSize: 15, margin: "8px 0 0 0", textAlign: "center" }}>
-              Tổng số đánh giá: <b style={{ color: "#222" }}>{ratingStats.totalReviews}</b>
-            </div>
-            <Button
-              type="primary"
-              style={{
-                marginTop: 18,
-                width: "100%",
-                fontWeight: 600,
-                fontSize: 16,
-                borderRadius: 8,
-                background: "#1677ff",
-                boxShadow: "0 2px 8px rgba(22,119,255,0.08)"
-              }}
-              onClick={() => setIsRatingModalOpen(true)}
-            >
-              Chi tiết
-            </Button>
-          </Card>
-        </Col>
       </Row>
 
       {/* Charts Row */}
@@ -930,16 +903,141 @@ function DashBoard() {
         </motion.button>
       </motion.div>
 
-      {/* Line Chart Row */}
-      <Row>
-        <Col span={24}>
-           <AnimatedChart ChartComponent={Line} data={lineData} options={lineOptions}>
-             <h2 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "20px", paddingBottom: "10px", borderBottom: "1px solid #f0f0f0" }}>
-               Khách hàng mới
-             </h2>
-           </AnimatedChart>
-        </Col>
-      </Row>
+      {/* Card Đánh giá khách hàng + Biểu đồ điểm trung bình đánh giá (tổng quan ở trên, biểu đồ kéo dài bên dưới) */}
+      <div style={{ marginBottom: 32 }}>
+        <Card
+          style={{
+            borderRadius: "16px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+            padding: "24px 12px 20px 12px",
+            background: "#fff",
+            border: "none",
+            maxWidth: 960,
+            margin: '0 auto',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+          bodyStyle={{ padding: 0, width: '100%' }}
+          title={<div style={{ fontSize: 20, fontWeight: 700, color: "#222", textAlign: "center" }}>Đánh giá khách hàng</div>}
+        >
+          {/* Tổng quan */}
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <Rate disabled allowHalf value={ratingStats.averageStar} style={{ fontSize: 28, color: "#FFD700" }} />
+            <div style={{ fontSize: 22, fontWeight: 700, color: "#222", margin: "8px 0 0 0" }}>{ratingStats.averageStar}/5</div>
+            <div style={{ color: "#888", fontSize: 15, margin: "8px 0 0 0" }}>
+              Tổng số đánh giá: <b style={{ color: "#222" }}>{ratingStats.totalReviews}</b>
+            </div>
+            <Button
+              type="primary"
+              style={{
+                margin: '24px auto 0 auto',
+                display: 'block',
+                width: 180,
+                fontWeight: 600,
+                fontSize: 16,
+                borderRadius: 8,
+                background: "#1677ff",
+                boxShadow: "0 2px 8px rgba(22,119,255,0.08)"
+              }}
+              onClick={() => {
+                setRatingListMode('day');
+                setIsRatingModalOpen(true);
+              }}
+            >
+              Chi tiết
+            </Button>
+          </div>
+          {/* Biểu đồ */}
+          <div style={{ width: '100%' }}>
+            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <Radio.Group value={chartMode} onChange={e => setChartMode(e.target.value)}>
+                <Radio.Button value="day">Theo ngày</Radio.Button>
+                <Radio.Button value="week">Theo tuần</Radio.Button>
+                <Radio.Button value="month">Theo tháng</Radio.Button>
+              </Radio.Group>
+              {chartMode === 'month' ? (
+                <DatePicker.RangePicker
+                  picker="month"
+                  value={chartRange}
+                  onChange={range => setChartRange(range || [dayjs().subtract(11, 'month'), dayjs()])}
+                  allowClear={false}
+                  format="MM-YYYY"
+                  style={{ marginLeft: 16 }}
+                />
+              ) : (
+                <DatePicker.RangePicker
+                  value={chartRange}
+                  onChange={range => setChartRange(range || [dayjs().subtract(29, 'day'), dayjs()])}
+                  allowClear={false}
+                  format="DD-MM-YYYY"
+                  style={{ marginLeft: 16 }}
+                />
+              )}
+            </div>
+            {chartLoading ? <Spin /> :
+              <Line
+                data={{
+                  labels: chartLabels.map(label => {
+                    if (chartMode === 'day') return dayjs(label).format('DD-MM-YYYY');
+                    if (chartMode === 'week') return dayjs(label).format('DD-MM-YYYY');
+                    if (chartMode === 'month') return dayjs(label, 'YYYY-MM').format('MM-YYYY');
+                    return label;
+                  }),
+                  datasets: [
+                    {
+                      label: 'Điểm trung bình',
+                      data: chartData.map(d => d.averageStar),
+                      borderColor: '#36A2EB',
+                      backgroundColor: 'rgba(54,162,235,0.2)',
+                      tension: 0.4,
+                      fill: true,
+                      yAxisID: 'y',
+                    },
+                    {
+                      label: 'Tổng số đánh giá',
+                      data: chartData.map(d => d.totalReviews),
+                      borderColor: '#FF6384',
+                      backgroundColor: 'rgba(255,99,132,0.2)',
+                      tension: 0.4,
+                      fill: false,
+                      yAxisID: 'y1',
+                    },
+                    {
+                      label: 'Tổng số rating',
+                      data: chartData.map(d => d.totalRatings),
+                      borderColor: '#4BC0C0',
+                      backgroundColor: 'rgba(75,192,192,0.2)',
+                      tension: 0.4,
+                      fill: false,
+                      yAxisID: 'y1',
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { display: true, position: 'top' },
+                  },
+                  scales: {
+                    y: { beginAtZero: true, max: maxY, position: 'left', title: { display: true, text: 'Số lượng' } },
+                    y1: { beginAtZero: true, max: maxY, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Số lượng' } },
+                    x: {
+                      ticks: {
+                        autoSkip: false,
+                        maxRotation: 45,
+                        minRotation: 45,
+                      },
+                    },
+                  },
+                }}
+                height={80}
+              />
+            }
+          </div>
+        </Card>
+      </div>
+
       {/* Bảng chi tiết đánh giá */}
       <Modal
         title="Chi tiết đánh giá khách hàng"
@@ -995,70 +1093,6 @@ function DashBoard() {
           pagination={{ pageSize: 5 }}
         />
       </Modal>
-      {/* Chart đánh giá theo ngày/tuần */}
-      <Row style={{ marginTop: 32 }}>
-        <Col span={24}>
-          <Card title="Biểu đồ điểm trung bình đánh giá">
-            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
-              <Radio.Group value={chartMode} onChange={e => setChartMode(e.target.value)}>
-                <Radio.Button value="day">Theo ngày</Radio.Button>
-                <Radio.Button value="week">Theo tuần</Radio.Button>
-                <Radio.Button value="month">Theo tháng</Radio.Button>
-              </Radio.Group>
-              {chartMode === 'month' ? (
-                <DatePicker.RangePicker
-                  picker="month"
-                  value={chartRange}
-                  onChange={range => setChartRange(range || [dayjs().subtract(11, 'month'), dayjs()])}
-                  allowClear={false}
-                  format="MM-YYYY"
-                  style={{ marginLeft: 16 }}
-                />
-              ) : (
-                <DatePicker.RangePicker
-                  value={chartRange}
-                  onChange={range => setChartRange(range || [dayjs().subtract(29, 'day'), dayjs()])}
-                  allowClear={false}
-                  format="DD-MM-YYYY"
-                  style={{ marginLeft: 16 }}
-                />
-              )}
-            </div>
-            {chartLoading ? <Spin /> :
-              <Line
-                data={{
-                  labels: chartLabels.map(label => {
-                    if (chartMode === 'day') return dayjs(label).format('DD-MM-YYYY');
-                    if (chartMode === 'week') return dayjs(label).format('DD-MM-YYYY');
-                    if (chartMode === 'month') return dayjs(label, 'YYYY-MM').format('MM-YYYY');
-                    return label;
-                  }),
-                  datasets: [
-                    {
-                      label: 'Điểm trung bình',
-                      data: chartData,
-                      borderColor: '#36A2EB',
-                      backgroundColor: 'rgba(54,162,235,0.2)',
-                      tension: 0.4,
-                      fill: true,
-                    },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: { display: true, position: 'top' },
-                  },
-                  scales: {
-                    y: { beginAtZero: true, max: 5 },
-                  },
-                }}
-                height={80}
-              />
-            }
-          </Card>
-        </Col>
-      </Row>
     </motion.div> // Kết thúc motion.div bọc toàn bộ dashboard
   );
 }
