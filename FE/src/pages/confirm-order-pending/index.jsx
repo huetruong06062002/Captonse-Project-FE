@@ -218,10 +218,16 @@ function ConfirmOrderPending() {
     // Thêm logic xử lý xem chi tiết ở đây
   };
 
-  const handleAcceptOrder = (orderId) => {
-    postProcessOrder(orderId); // Gọi hàm xử lý đơn hàng
-    console.log("Nhận xử lý đơn hàng:", orderId);
-    // Thêm logic xử lý nhận đơn hàng ở đây
+  const handleAcceptOrder = async (orderId) => {
+    await postProcessOrder(orderId); // Gọi API
+    // Cập nhật trạng thái đơn hàng trong state
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.orderId === orderId
+          ? { ...order, orderStatus: "PROCESSING" }
+          : order
+      )
+    );
   };
 
   const handleConfirmOrderSuccess = async (orderId) => {
@@ -367,7 +373,7 @@ function ConfirmOrderPending() {
       render: (status) => {
         let color = 'blue';
         if (status === 'PENDING') color = 'orange';
-        
+        if (status === 'PROCESSING') color = 'green';
         return (
           <Tag color={color} key={status}>
             {status}
@@ -411,10 +417,16 @@ function ConfirmOrderPending() {
             type="primary"
             ghost
             icon={<FormOutlined />}
-            style={{ borderColor: '#52c41a', color: '#52c41a' }}
+            style={{
+              borderColor: '#52c41a',
+              color: '#52c41a',
+              backgroundColor: record.orderStatus === "PROCESSING" ? "#e6fffb" : undefined,
+              cursor: record.orderStatus === "PROCESSING" ? "not-allowed" : "pointer"
+            }}
             onClick={() => handleAcceptOrder(record.orderId)}
+            disabled={record.orderStatus === "PROCESSING"}
           >
-            Nhận xử lý
+            {record.orderStatus === "PROCESSING" ? "Đang nhận xử lý" : "Nhận xử lý"}
           </Button>
         </Tooltip>
       ),

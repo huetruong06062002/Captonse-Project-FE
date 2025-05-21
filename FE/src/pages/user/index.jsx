@@ -45,6 +45,7 @@ import moment from "moment";
 import dayjs from "dayjs";
 import ButtonExportExcelUser from '@components/button-export-excel/ButtonExportExcelUser';
 import './index.css';
+import { getRequestParams } from "@services/api";
 
 const { Title, Text } = Typography;
 const { Search } = AntInput;
@@ -68,17 +69,21 @@ function Users() {
   const [createDob, setCreateDob] = useState(null);
   const [detailUser, setDetailUser] = useState(null);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("");
 
   useEffect(() => {
-    fetchUsers();
-  }, [currentPage, pageSize]);
+    fetchUsers(selectedRole);
+  }, [currentPage, pageSize, selectedRole]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (role = "") => {
     try {
       setIsLoading(true);
-      const response = await axiosClientVer2.get("/users", {
-        params: { page: currentPage, pageSize },
-      });
+      const params = {
+        role,
+        page: currentPage,
+        pageSize,
+      };
+      const response = await getRequestParams("/api/users", params);
       setUsers(response.data.data);
       setTotalRecords(response.data.totalRecords);
     } catch (error) {
@@ -473,12 +478,31 @@ function Users() {
     setDetailUser(null);
   };
 
+  const handleRoleChange = (value) => {
+    setSelectedRole(value);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="user-page">
       <Card className="user-card">
         <div className="user-header">
           <h2>Quản lý người dùng</h2>
           <div className="action-buttons">
+            <Select
+              allowClear
+              style={{ width: 180, marginRight: 16 }}
+              placeholder="Lọc theo vai trò"
+              value={selectedRole || undefined}
+              onChange={handleRoleChange}
+            >
+              <Select.Option value="">Tất cả</Select.Option>
+              <Select.Option value="Admin">Admin</Select.Option>
+              <Select.Option value="Staff">Staff</Select.Option>
+              <Select.Option value="Driver">Driver</Select.Option>
+              <Select.Option value="Customer">Customer</Select.Option>
+              <Select.Option value="CustomerStaff">CustomerStaff</Select.Option>
+            </Select>
             <Tooltip title="Làm mới">
               <Button
                 icon={<ReloadOutlined />}

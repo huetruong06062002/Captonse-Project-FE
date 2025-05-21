@@ -24,6 +24,7 @@ import useComplaintNotification from '@pages/notification';
 import Areas from '@pages/areas';
 import Policy from '@pages/policy';
 import Branch from '@pages/branch';
+import UserManagementCustomerStaff from '@pages/user-management-customer-staff';
 
 function App() {
   useComplaintNotification();
@@ -77,6 +78,7 @@ function App() {
               element={<ConfirmOrderPending />}
             />
             <Route path={endPoints.CHAT} element={<Chat />} />
+            <Route path={endPoints.USERMANAGEMENTCUSTOMERSTAFF} element={<UserManagementCustomerStaff />} />
           </Route>
         </Route>
 
