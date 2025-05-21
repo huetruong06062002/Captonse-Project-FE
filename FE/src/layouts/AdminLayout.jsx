@@ -308,7 +308,7 @@ const AdminLayout = () => {
     },
     {
       key: endPoints.USERMANAGEMENTCUSTOMERSTAFF,
-      icon: <ClockCircleOutlined />,
+      icon: <UsergroupAddOutlined />,
       label: createLabelWithTooltip("Quản lý người dùng(chăm sóc khách hàng)"),
       allowedRoles: ["CustomerStaff"],
     },
