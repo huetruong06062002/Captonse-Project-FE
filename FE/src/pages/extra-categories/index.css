@@ -116,6 +116,8 @@
   border: 1px solid #f0f0f0;
   transition: all 0.2s ease;
   margin-bottom: 12px;
+  position: relative;
+  overflow: visible;
 }
 
 .extra-service-card:hover {
@@ -124,7 +126,8 @@
 }
 
 .extra-service-content {
-  padding: 4px;
+  padding: 0;
+  position: relative;
 }
 
 /* Service header styling */
@@ -132,7 +135,57 @@
   display: flex;
   align-items: center;
   position: relative;
-  padding-right: 40px; /* Space for action button */
+  padding: 12px;
+  padding-right: 38px; /* Space for action button */
+  min-height: 60px;
+}
+
+/* New style for the service item action button */
+.extra-service-content .action-button {
+  position: absolute !important;
+  right: -20px !important;
+  top:-20px !important; /* Align with top-right corner */
+  transform: none !important;
+  width: 28px !important;
+  height: 28px !important;
+  background-color: #f5f5f5 !important;
+  border-radius: 50% !important; /* Make it round */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 100;
+  border: 1px solid #e8e8e8 !important;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
+  transition: all 0.2s ease;
+  margin: 0 !important;
+  opacity: 0.85;
+}
+
+.extra-service-content .action-button:hover {
+  background-color: #e6f7ff !important;
+  opacity: 1;
+  transform: scale(1.05) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+}
+
+/* Fix text overflow issues */
+.service-header .ant-space {
+  max-width: calc(100% - 36px);
+}
+
+.service-header .ant-space-item {
+  max-width: 100%;
+}
+
+/* Better avatar alignment and styling */
+.service-header .ant-avatar {
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+/* Extra styling for price tags */
+.service-header .ant-tag {
+  margin-top: 4px;
 }
 
 /* Ensure dropdown menus appear above everything */
