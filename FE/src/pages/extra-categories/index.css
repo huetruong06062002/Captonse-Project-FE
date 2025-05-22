@@ -1,3 +1,4 @@
+/* Basic layout for the page */
 .extra-categories-page {
   padding: 16px;
 }
@@ -21,6 +22,7 @@
   margin-top: 16px;
 }
 
+/* Card styling */
 .category-card {
   transition: all 0.3s ease;
   height: 100%;
@@ -30,16 +32,68 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+/* Card header styling */
 .category-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  position: relative;
+  width: 100%;
+  padding-right: 40px; /* Space for action button */
 }
 
 .category-tag {
   margin-right: 8px;
+  flex-shrink: 0;
 }
 
+/* Card title styling */
+.ant-card-head-title {
+  padding-right: 0 !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.4;
+}
+
+/* Hide the date display */
+.ant-card-extra {
+  display: none !important;
+}
+
+/* Ensure the card head has proper sizing */
+.ant-card-head {
+  min-height: 48px;
+  padding: 8px 16px;
+  position: relative;
+}
+
+/* Style the action button */
+.action-button {
+  position: absolute !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #f5f5f5 !important;
+  border-radius: 4px !important;
+  z-index: 100;
+  transition: background-color 0.2s;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+}
+
+.action-button:hover {
+  background-color: #e6f7ff !important;
+}
+
+/* Category services styling */
 .category-services {
   margin-top: 8px;
   max-height: 500px;
@@ -56,10 +110,12 @@
   border-radius: 4px;
 }
 
+/* Service card styling */
 .extra-service-card {
   border-radius: 6px;
   border: 1px solid #f0f0f0;
   transition: all 0.2s ease;
+  margin-bottom: 12px;
 }
 
 .extra-service-card:hover {
@@ -71,37 +127,20 @@
   padding: 4px;
 }
 
+/* Service header styling */
 .service-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  position: relative;
+  padding-right: 40px; /* Space for action button */
 }
 
-.action-button {
-  transition: all 0.3s;
-  border-radius: 4px;
-  z-index: 10;
-}
-
-.action-button:hover {
-  background-color: #f5f5f5;
-}
-
-/* Make dropdown have higher z-index than other elements */
+/* Ensure dropdown menus appear above everything */
 .ant-dropdown {
   z-index: 1050 !important;
 }
 
-/* Make card buttons more clickable */
-.service-header .ant-btn,
-.category-header .ant-btn {
-  padding: 4px 8px;
-  height: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
+/* Rest of styles unchanged */
 .upload-container {
   display: flex;
   align-items: center;
@@ -198,7 +237,7 @@
   word-wrap: break-word;
 }
 
-/* Loại bỏ viền kép cho Input.TextArea */
+/* Form styling */
 .ant-input-textarea .ant-input {
   border: 1px solid #d9d9d9 !important;
   box-shadow: none !important;
@@ -213,7 +252,6 @@
   box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
 }
 
-/* Chỉnh sửa thêm để loại bỏ hoàn toàn viền kép */
 .ant-form-item-control-input-content .ant-input-textarea {
   border: none !important;
   background: transparent !important;
@@ -229,7 +267,6 @@
   resize: vertical;
 }
 
-/* Đặc biệt cho modal chỉnh sửa */
 .ant-modal-body .ant-form-item-control-input-content textarea {
   border: 1px solid #d9d9d9 !important;
   box-shadow: none !important;
@@ -280,7 +317,7 @@
   color: #ff4d4f;
 }
 
-/* Ghi đè style cho các modal */
+/* Modal styles */
 .ant-modal-footer {
   text-align: right;
 }
@@ -294,12 +331,11 @@
   border-color: #1890ff;
 }
 
-/* Ẩn nút hủy dư thừa trong các modal chỉnh sửa */
 .ant-modal-footer button:not(.ant-btn-primary):nth-child(2) {
   display: none !important;
 }
 
-/* Ẩn viền kép trên input */
+/* Input styling */
 .ant-input, 
 .ant-input-affix-wrapper,
 .ant-input-number {
@@ -308,7 +344,6 @@
   outline: none !important;
 }
 
-/* Đảm bảo textarea trong form không có viền kép */
 form .ant-form-item .ant-input-textarea textarea {
   border: 1px solid #d9d9d9 !important;
   box-shadow: none !important;
