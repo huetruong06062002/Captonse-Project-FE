@@ -83,7 +83,7 @@ function Users() {
         page: currentPage,
         pageSize,
       };
-      const response = await getRequestParams("/api/users", params);
+      const response = await getRequestParams("users", params);
       setUsers(response.data.data);
       setTotalRecords(response.data.totalRecords);
     } catch (error) {
