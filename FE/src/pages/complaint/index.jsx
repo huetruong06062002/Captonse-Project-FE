@@ -597,7 +597,6 @@ const Complaint = () => {
                 type="link"
                 size="small"
                 onClick={() => handleViewDetail(record)}
-                className="action-button btn-detail"
               >
                 Chi tiết
               </Button>
@@ -610,6 +609,7 @@ const Complaint = () => {
               >
                 Hoàn thành
               </Button>
+
             </>
           )}
 
