@@ -207,20 +207,23 @@
   transition: all 0.2s;
   font-weight: 500;
   color: #1677ff;
-  border: 1px solid rgba(22, 119, 255, 0.1);
-  background-color: rgba(22, 119, 255, 0.05);
-  height: 28px;
+  border: 1px solid rgba(22, 119, 255, 0.2);
+  background-color: rgba(22, 119, 255, 0.08);
+  height: 32px;
   font-size: 12px;
-  min-width: 90px;
+  min-width: 85px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
 }
 
 .complaint-table .ant-btn-link:hover {
-  background-color: rgba(22, 119, 255, 0.1);
+  background-color: rgba(22, 119, 255, 0.15);
   transform: translateY(-2px);
   box-shadow: 0 2px 6px rgba(22, 119, 255, 0.15);
+  color: #1677ff;
+  border-color: rgba(22, 119, 255, 0.3);
 }
 
 .complaint-modal .ant-modal-content {
@@ -343,11 +346,13 @@
   flex-direction: row;
   gap: 8px;
   align-items: center;
-  flex-wrap: wrap;
+  justify-content: flex-start;
+  min-width: 200px;
 }
 
 .action-button-wrapper {
   display: inline-block;
+  white-space: nowrap;
 }
 
 /* Style cho các nút hành động trong bảng */
@@ -357,11 +362,12 @@
   font-weight: 500;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   transition: all 0.2s;
-  min-width: 90px;
-  height: 28px;
+  min-width: 85px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
 }
 
 .complaint-table .action-button:hover {
@@ -370,23 +376,89 @@
 }
 
 .complaint-table .btn-take {
-  background-color: #1890ff;
-  border-color: #1890ff;
+  background-color: #fa8c16 !important;
+  border-color: #fa8c16 !important;
+  color: white !important;
 }
 
 .complaint-table .btn-take:hover {
-  background-color: #40a9ff;
-  border-color: #40a9ff;
+  background-color: #ffa940 !important;
+  border-color: #ffa940 !important;
+  color: white !important;
+}
+
+.complaint-table .btn-take:focus {
+  background-color: #fa8c16 !important;
+  border-color: #fa8c16 !important;
+  color: white !important;
 }
 
 .complaint-table .btn-resolve {
-  background-color: #52c41a;
-  border-color: #52c41a;
+  background-color: #52c41a !important;
+  border-color: #52c41a !important;
+  color: white !important;
 }
 
 .complaint-table .btn-resolve:hover {
-  background-color: #73d13d;
-  border-color: #73d13d;
+  background-color: #73d13d !important;
+  border-color: #73d13d !important;
+  color: white !important;
+}
+
+.complaint-table .btn-resolve:focus {
+  background-color: #52c41a !important;
+  border-color: #52c41a !important;
+  color: white !important;
+}
+
+.complaint-table .btn-detail {
+  padding: 4px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  font-weight: 500;
+  color: #1677ff !important;
+  border: 1px solid rgba(22, 119, 255, 0.2) !important;
+  background-color: rgba(22, 119, 255, 0.08) !important;
+  height: 32px;
+  font-size: 12px;
+  min-width: 85px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.complaint-table .btn-detail:hover {
+  background-color: rgba(22, 119, 255, 0.15) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(22, 119, 255, 0.15);
+  color: #1677ff !important;
+  border-color: rgba(22, 119, 255, 0.3) !important;
+}
+
+.complaint-table .ant-btn-link {
+  padding: 4px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  font-weight: 500;
+  color: #1677ff;
+  border: 1px solid rgba(22, 119, 255, 0.2);
+  background-color: rgba(22, 119, 255, 0.08);
+  height: 32px;
+  font-size: 12px;
+  min-width: 85px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.complaint-table .ant-btn-link:hover {
+  background-color: rgba(22, 119, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(22, 119, 255, 0.15);
+  color: #1677ff;
+  border-color: rgba(22, 119, 255, 0.3);
 }
 
 .complaint-table .ant-btn[disabled] {

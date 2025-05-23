@@ -91,7 +91,7 @@ const Complaint = () => {
     try {
       const values = await createForm.validateFields();
       setLoading(true);
-      
+
       try {
         await postRequest(
           `complaints/${values.orderId}/admin-customerstaff`,
@@ -100,7 +100,7 @@ const Complaint = () => {
             complaintType: values.complaintType
           },
         );
-        
+
         message.success("Tạo khiếu nại thành công!");
         setCreateModalVisible(false);
         // Refresh data
@@ -158,7 +158,7 @@ const Complaint = () => {
       setLoading(true);
       await postRequest(`/complaints/${complaintId}/accept`, {});
       message.success("Đã nhận xử lý khiếu nại!");
-      
+
       // Refresh data trong try-catch riêng để tránh lỗi ảnh hưởng đến UI
       try {
         await getComplaintPending();
@@ -190,14 +190,14 @@ const Complaint = () => {
     try {
       // Validate và lấy giá trị form
       const values = await resolveForm.validateFields();
-      
+
       setLoading(true);
       setResolveModalVisible(false);
-      await postRequest(`/complaints/${currentComplaintId}/complete`, 
+      await postRequest(`/complaints/${currentComplaintId}/complete`,
         values.resolutionDetails
       );
       message.success("Đã hoàn thành xử lý khiếu nại!");
-      
+
       // Refresh data trong try-catch riêng để tránh lỗi ảnh hưởng đến UI
       try {
         await getComplaintPending();
@@ -276,7 +276,7 @@ const Complaint = () => {
   // Hàm lọc dữ liệu theo từ khóa tìm kiếm
   const filterDataBySearch = (data) => {
     if (!searchText) return data;
-    
+
     return data.filter(item => {
       const searchFields = [
         item.orderId,
@@ -284,7 +284,7 @@ const Complaint = () => {
         item.complaintType,
         item.handlerName
       ].filter(Boolean); // Loại bỏ undefined/null
-      
+
       return searchFields.some(
         field => field.toLowerCase().includes(searchText.toLowerCase())
       );
@@ -312,9 +312,9 @@ const Complaint = () => {
           >
             Tìm
           </Button>
-          <Button 
-            onClick={() => clearFilters()} 
-            size="middle" 
+          <Button
+            onClick={() => clearFilters()}
+            size="middle"
             style={{ flex: 1, height: '32px' }}
           >
             Xóa
@@ -323,7 +323,7 @@ const Complaint = () => {
       </div>
     ),
     filterIcon: filtered => <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />,
-    onFilter: (value, record) => 
+    onFilter: (value, record) =>
       record[dataIndex] ? record[dataIndex].toString().toLowerCase().includes(value.toLowerCase()) : '',
     sorter: (a, b) => {
       if (!a[dataIndex] && !b[dataIndex]) return 0;
@@ -335,16 +335,16 @@ const Complaint = () => {
 
   // Định nghĩa lại cột cho bảng với tìm kiếm và sắp xếp
   const columnPending = [
-    { 
-      title: "Mã đơn hàng", 
-      dataIndex: "orderId", 
+    {
+      title: "Mã đơn hàng",
+      dataIndex: "orderId",
       key: "orderId",
       ...getColumnSearchProps('orderId', 'mã đơn hàng'),
       width: 150,
     },
-    { 
-      title: "Người tạo", 
-      dataIndex: "fullName", 
+    {
+      title: "Người tạo",
+      dataIndex: "fullName",
       key: "fullName",
       ...getColumnSearchProps('fullName', 'người tạo'),
     },
@@ -450,28 +450,25 @@ const Complaint = () => {
       render: (_, record) => (
         <div className="action-buttons-container">
           {record.status === "PENDING" && (
-            <motion.div whileHover={{ scale: 1.05 }} className="action-button-wrapper">
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => handleTakeComplaint(record.complaintId)}
-                loading={loading}
-                className="action-button btn-take"
-              >
-                Nhận xử lý
-              </Button>
-            </motion.div>
-          )}
-          
-          <motion.div whileHover={{ scale: 1.05 }} className="action-button-wrapper">
             <Button
-              type="link"
+              type="primary"
               size="small"
-              onClick={() => handleViewDetail(record)}
+              onClick={() => handleTakeComplaint(record.complaintId)}
+              loading={loading}
+              className="action-button btn-take"
+              style={{ background: "orange!important" }}
             >
-              Chi tiết
+              Nhận xử lý
             </Button>
-          </motion.div>
+          )}
+
+          <Button
+            type="link"
+            size="small"
+            onClick={() => handleViewDetail(record)}
+          >
+            Chi tiết
+          </Button>
         </div>
       ),
     },
@@ -479,16 +476,16 @@ const Complaint = () => {
 
   // Cập nhật cột cho bảng Đang xử lý
   const columnInProgress = [
-    { 
-      title: "Mã đơn hàng", 
-      dataIndex: "orderId", 
+    {
+      title: "Mã đơn hàng",
+      dataIndex: "orderId",
       key: "orderId",
       ...getColumnSearchProps('orderId', 'mã đơn hàng'),
       width: 150,
     },
-    { 
-      title: "Người tạo", 
-      dataIndex: "fullName", 
+    {
+      title: "Người tạo",
+      dataIndex: "fullName",
       key: "fullName",
       ...getColumnSearchProps('fullName', 'người tạo'),
     },
@@ -595,7 +592,15 @@ const Complaint = () => {
       render: (_, record) => (
         <div className="action-buttons-container">
           {record.status === "IN_PROGRESS" && (
-            <motion.div whileHover={{ scale: 1.05 }} className="action-button-wrapper">
+            <>
+              <Button
+                type="link"
+                size="small"
+                onClick={() => handleViewDetail(record)}
+                className="action-button btn-detail"
+              >
+                Chi tiết
+              </Button>
               <Button
                 type="primary"
                 size="small"
@@ -605,17 +610,9 @@ const Complaint = () => {
               >
                 Hoàn thành
               </Button>
-            </motion.div>
+            </>
           )}
-          <motion.div whileHover={{ scale: 1.05 }} className="action-button-wrapper">
-            <Button
-              type="link"
-              size="small"
-              onClick={() => handleViewDetail(record)}
-            >
-              Chi tiết
-            </Button>
-          </motion.div>
+
         </div>
       ),
     },
@@ -623,16 +620,16 @@ const Complaint = () => {
 
   // Cập nhật cột cho bảng Đã hoàn thành
   const columnResolved = [
-    { 
-      title: "Mã đơn hàng", 
-      dataIndex: "orderId", 
+    {
+      title: "Mã đơn hàng",
+      dataIndex: "orderId",
       key: "orderId",
       ...getColumnSearchProps('orderId', 'mã đơn hàng'),
       width: 150,
     },
-    { 
-      title: "Người tạo", 
-      dataIndex: "fullName", 
+    {
+      title: "Người tạo",
+      dataIndex: "fullName",
       key: "fullName",
       ...getColumnSearchProps('fullName', 'người tạo'),
     },
@@ -852,7 +849,7 @@ const Complaint = () => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="complaint-container"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -892,11 +889,11 @@ const Complaint = () => {
           />
         </div>
       </div>
-      
+
       <Tabs defaultActiveKey="pending" className="complaint-tabs">
         <TabPane tab={<span style={{ fontSize: "15px" }}>Đang chờ xử lý</span>} key="pending">
           <AnimatePresence>
-            <motion.div 
+            <motion.div
               className="complaint-table"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -930,7 +927,7 @@ const Complaint = () => {
         </TabPane>
         <TabPane tab={<span style={{ fontSize: "15px" }}>Đang xử lý</span>} key="in-progress">
           <AnimatePresence>
-            <motion.div 
+            <motion.div
               className="complaint-table"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -965,7 +962,7 @@ const Complaint = () => {
         </TabPane>
         <TabPane tab={<span style={{ fontSize: "15px" }}>Đã hoàn thành</span>} key="resolved">
           <AnimatePresence>
-            <motion.div 
+            <motion.div
               className="complaint-table"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1006,8 +1003,8 @@ const Complaint = () => {
           setDetail(null);
         }}
         footer={[
-          <Button 
-            key="back" 
+          <Button
+            key="back"
             onClick={() => {
               setModalVisible(false);
               setDetail(null);
@@ -1020,20 +1017,20 @@ const Complaint = () => {
           <div className="complaint-modal-title">
             <span>Chi tiết khiếu nại</span>
             {detail && detail.status && (
-              <Tag 
+              <Tag
                 color={
-                  detail.status === "RESOLVED" 
-                    ? "success" 
-                    : detail.status === "IN_PROGRESS" 
-                      ? "processing" 
+                  detail.status === "RESOLVED"
+                    ? "success"
+                    : detail.status === "IN_PROGRESS"
+                      ? "processing"
                       : "warning"
                 }
                 className="complaint-status-tag"
               >
-                {detail.status === "RESOLVED" 
-                  ? "Đã giải quyết" 
-                  : detail.status === "IN_PROGRESS" 
-                    ? "Đang xử lý" 
+                {detail.status === "RESOLVED"
+                  ? "Đã giải quyết"
+                  : detail.status === "IN_PROGRESS"
+                    ? "Đang xử lý"
                     : "Chờ xử lý"}
               </Tag>
             )}
@@ -1060,9 +1057,9 @@ const Complaint = () => {
           setResolveModalVisible(false);
         }}
         footer={[
-          <Button 
-            key="confirm" 
-            type="primary" 
+          <Button
+            key="confirm"
+            type="primary"
             onClick={handleResolveConfirm}
             loading={loading}
           >
@@ -1117,7 +1114,7 @@ const Complaint = () => {
           >
             <Input placeholder="Nhập mã đơn hàng cần khiếu nại" />
           </Form.Item>
-          
+
           <Form.Item
             name="complaintType"
             label="Loại khiếu nại"
@@ -1125,21 +1122,21 @@ const Complaint = () => {
           >
             <Input placeholder="Nhập loại khiếu nại" />
           </Form.Item>
-          
+
           <Form.Item
             name="complaintDescription"
             label="Mô tả khiếu nại"
             rules={[{ required: true, message: 'Vui lòng nhập mô tả khiếu nại!' }]}
           >
-            <TextArea 
-              placeholder="Nhập chi tiết khiếu nại" 
+            <TextArea
+              placeholder="Nhập chi tiết khiếu nại"
               autoSize={{ minRows: 4, maxRows: 8 }}
             />
           </Form.Item>
-          
+
           <Form.Item className="form-actions">
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               htmlType="submit"
               onClick={handleCreateConfirm}
               loading={loading}
