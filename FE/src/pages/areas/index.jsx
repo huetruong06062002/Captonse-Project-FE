@@ -84,7 +84,8 @@ const Areas = () => {
     form.resetFields();
     if (area) {
       form.setFieldsValue({ 
-        name: area.name
+        name: area.name,
+        shippingFee: area.shippingFee || 0
       });
     }
     setModalVisible(true);
@@ -110,7 +111,8 @@ const Areas = () => {
         await postRequest('admin/areas', {
           name: values.name,
           districts: [],
-          areaType: 'ShippingFee'
+          areaType: 'ShippingFee',
+          shippingFee: values.shippingFee || 0
         });
         message.success('Thêm khu vực thành công');
       }
@@ -189,7 +191,8 @@ const Areas = () => {
         areaType,
         areas: newAreas.map(area => ({
           name: area.name,
-          districts: area.districts
+          districts: area.districts,
+          shippingFee: area.shippingFee || 0
         }))
       });
       message.success('Cập nhật khu vực thành công!');
@@ -262,6 +265,18 @@ const Areas = () => {
       ),
     },
     {
+      title: 'Phí giao hàng',
+      dataIndex: 'shippingFee',
+      key: 'shippingFee',
+      width: 140,
+      align: 'center',
+      render: (fee) => (
+        <Tag color="orange" style={{ fontSize: '13px', fontWeight: '500' }}>
+          {fee ? `${fee.toLocaleString('vi-VN')} VNĐ` : 'Chưa cập nhật'}
+        </Tag>
+      ),
+    },
+    {
       title: 'Thao tác',
       key: 'action',
       width: 150,
@@ -310,7 +325,8 @@ const Areas = () => {
         areaType,
         areas: values.areas.map(area => ({
           name: area.name,
-          districts: area.districts || []
+          districts: area.districts || [],
+          shippingFee: area.shippingFee || 0
         }))
       };
       await postRequest('/admin/areas', payload);
@@ -327,7 +343,8 @@ const Areas = () => {
     importForm.setFieldsValue({
       areas: areas.map(area => ({
         name: area.name,
-        districts: area.districts
+        districts: area.districts,
+        shippingFee: area.shippingFee || 0
       }))
     });
     setImportModalVisible(true);
@@ -359,18 +376,19 @@ const Areas = () => {
   const showEditAreaModal = (area) => {
     editAreaForm.setFieldsValue({
       name: area.name,
-      districts: area.districts
+      districts: area.districts,
+      shippingFee: area.shippingFee || 0
     });
     setEditAreaModal({ visible: true, area });
   };
 
   // Xử lý lưu chỉnh sửa khu vực
   const handleEditAreaModalOk = async () => {
-  console.log("editAreaModal", editAreaModal)
     try {
       const values = await editAreaForm.validateFields();
+      console.log("values", values);
       await putRequest(
-        `/admin/areas/${editAreaModal.area.areaId}?name=${encodeURIComponent(values.name)}`,
+        `/admin/areas/${editAreaModal.area.areaId}?name=${encodeURIComponent(values.name)}&shippingFee=${values.shippingFee}`,
         values.districts
       );
       setEditAreaModal({ visible: false, area: null });
@@ -447,9 +465,7 @@ const Areas = () => {
         title={editingArea ? "Chỉnh sửa khu vực" : "Thêm khu vực mới"}
         open={modalVisible}
         onOk={handleModalSubmit}
-        onCancel={handleModalCancel}
         okText={editingArea ? "Cập nhật" : "Thêm"}
-        cancelText="Hủy"
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -459,6 +475,18 @@ const Areas = () => {
           >
             <Input placeholder="Nhập tên khu vực" />
           </Form.Item>
+          <Form.Item
+            name="shippingFee"
+            label="Phí giao hàng (VNĐ)"
+            rules={[{ required: true, message: 'Vui lòng nhập phí giao hàng' }]}
+          >
+            <Input 
+              type="number" 
+              placeholder="30000"
+              min={0}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
         </Form>
       </Modal>
 
@@ -467,9 +495,7 @@ const Areas = () => {
         title={`Thêm quận/huyện vào ${currentArea?.name || ''}`}
         open={districtModalVisible}
         onOk={handleAddDistrict}
-        onCancel={handleDistrictModalCancel}
         okText="Thêm"
-        cancelText="Hủy"
       >
         <Form form={districtForm} layout="vertical">
           <Form.Item
@@ -493,7 +519,7 @@ const Areas = () => {
         onOk={handleImportSubmit}
         onCancel={() => setImportModalVisible(false)}
         okText="Nhập"
-        width={700}
+        width={1000}
         footer={[
           <Button key="submit" type="primary" onClick={handleImportSubmit} style={{ width: '100%' }}>
             Nhập
@@ -501,13 +527,13 @@ const Areas = () => {
         ]}
       >
         <Form form={importForm} layout="vertical">
-          <Form.List name="areas" initialValue={[{ name: '', districts: [] }]}>
+          <Form.List name="areas" initialValue={[{ name: '', districts: [], shippingFee: 0 }]}>
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name, ...restField }) => (
                   <div key={key} style={{ border: '1px solid #eee', padding: 16, marginBottom: 12, borderRadius: 8 }}>
                     <Row gutter={16}>
-                      <Col span={8}>
+                      <Col span={6}>
                         <Form.Item
                           {...restField}
                           name={[name, 'name']}
@@ -517,7 +543,7 @@ const Areas = () => {
                           <Input placeholder="Tên khu vực" />
                         </Form.Item>
                       </Col>
-                      <Col span={14}>
+                      <Col span={12}>
                         <Form.Item
                           {...restField}
                           name={[name, 'districts']}
@@ -531,6 +557,21 @@ const Areas = () => {
                           />
                         </Form.Item>
                       </Col>
+                      <Col span={4}>
+                        <Form.Item
+                          {...restField}
+                          name={[name, 'shippingFee']}
+                          label="Phí giao hàng (VNĐ)"
+                          rules={[{ required: true, message: 'Nhập phí giao hàng' }]}
+                        >
+                          <Input 
+                            type="number" 
+                            placeholder="30000"
+                            min={0}
+                            style={{ width: '100%' }}
+                          />
+                        </Form.Item>
+                      </Col>
                       <Col span={2} style={{ display: 'flex', alignItems: 'center' }}>
                         {fields.length > 1 && (
                           <Button danger onClick={() => remove(name)}>-</Button>
@@ -540,7 +581,7 @@ const Areas = () => {
                   </div>
                 ))}
                 <Form.Item>
-                  <Button type="dashed" onClick={() => add()} block>+ Thêm khu vực</Button>
+                  <Button type="dashed" onClick={() => add({ name: '', districts: [], shippingFee: 0 })} block>+ Thêm khu vực</Button>
                 </Form.Item>
               </>
             )}
@@ -556,6 +597,11 @@ const Areas = () => {
         onCancel={() => setAddDistrictModal({ visible: false, area: null })}
         okText="Thêm"
         cancelText="Hủy"
+        footer={[
+          <Button key="submit" type="primary" onClick={handleAddDistrictModalOk} style={{ width: '100%' }}>
+            Thêm
+          </Button>
+        ]}
       >
         <Form form={addDistrictForm} layout="vertical">
           <Form.Item
@@ -602,6 +648,18 @@ const Areas = () => {
               mode="multiple"
               placeholder="Chọn quận/huyện"
               options={allDistricts.map(d => ({ label: d, value: d }))}
+            />
+          </Form.Item>
+          <Form.Item
+            name="shippingFee"
+            label="Phí giao hàng (VNĐ)"
+            rules={[{ required: true, message: 'Vui lòng nhập phí giao hàng' }]}
+          >
+            <Input 
+              type="number" 
+              placeholder="30000"
+              min={0}
+              style={{ width: '100%' }}
             />
           </Form.Item>
         </Form>
