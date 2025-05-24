@@ -151,9 +151,6 @@ export default function Branch() {
 
   return (
     <div style={{ maxWidth: 700, margin: '32px auto' }}>
-      <Button type="primary" onClick={() => setModalOpen(true)} style={{ marginBottom: 24 }}>
-        Tạo địa chỉ cho chi nhánh
-      </Button>
       <Modal
         open={modalOpen}
         onCancel={() => setModalOpen(false)}

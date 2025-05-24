@@ -303,7 +303,7 @@ const AdminLayout = () => {
     {
       key: endPoints.BRANCH,
       icon: <ShopOutlined />,
-      label: createLabelWithTooltip("Quản lý chi nhánh"),
+      label: createLabelWithTooltip("Quản lý địa chỉ cửa hàng"),
       allowedRoles: ["Admin"],
     },
     {
