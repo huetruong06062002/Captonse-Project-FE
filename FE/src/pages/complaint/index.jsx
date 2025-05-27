@@ -879,7 +879,7 @@ const Complaint = () => {
 
         <div className="complaint-search">
           <Input.Search
-            placeholder="Tìm kiếm theo mã đơn, người tạo, loại khiếu nại..."
+            placeholder="Tìm kiếm theo mã đơn"
             allowClear
             enterButton
             size="large"
