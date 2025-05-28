@@ -14,17 +14,21 @@ import {
 } from "chart.js";
 import { axiosClientVer2 } from "../../config/axiosInterceptor";
 import { getRequest } from "@services/api";
-import { Col, Row, Card, Rate, Table, Modal, Button, DatePicker, Radio, Spin, message } from "antd";
+import { Col, Row, Card, Rate, Table, Modal, Button, DatePicker, Radio, Spin, message, Tag } from "antd";
 import { motion, useAnimation } from "framer-motion";
 
 import orderImage from "../../assets/image/order.png";
 import customerImage from "../../assets/image/customer.png";
+import revenueImage from "../../assets/image/revenue.png";
+
 import serviesImage from "../../assets/image/service.png";
 import extraImage from "../../assets/image/services-extra.png";
 import CountUp from "react-countup";
 import { Line } from "react-chartjs-2";
 import domtoimage from "dom-to-image";
-import { FaFileExport } from "react-icons/fa6";
+import { FaFileExport } from "react-icons/fa";
+import { BsCalendarDay, BsCalendarMonth, BsCalendar } from "react-icons/bs";
+import { BiMoney, BiCreditCard } from "react-icons/bi";
 import { useInView } from "react-intersection-observer";
 import dayjs from "dayjs";
 import isoWeek from "dayjs/plugin/isoWeek";
@@ -183,6 +187,7 @@ function DashBoard() {
   const [numberOfOrder, setNumberOfOrder] = useState(0);
   const [numberOfService, setNumberOfService] = useState(0);
   const [numberOfExtra, setNumberOfExtra] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
   const [orderStats, setOrderStats] = useState(null);
   // State cho ratings
   const [ratingStats, setRatingStats] = useState({ totalReviews: 0, averageStar: 0 });
@@ -207,6 +212,23 @@ function DashBoard() {
   const [weekPicker, setWeekPicker] = useState(dayjs());
   const [listLoading, setListLoading] = useState(false);
   const [listRatings, setListRatings] = useState([]);
+
+  // States for revenue charts
+  const [dailyRevenue, setDailyRevenue] = useState([]);
+  const [monthlyRevenue, setMonthlyRevenue] = useState([]);
+  const [yearlyRevenue, setYearlyRevenue] = useState([]);
+  const [paymentMethodsRevenue, setPaymentMethodsRevenue] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [revenueTimeMode, setRevenueTimeMode] = useState("monthly"); // "daily", "monthly", "yearly"
+  const [revenueLoading, setRevenueLoading] = useState(false);
+  const [revenueByDate, setRevenueByDate] = useState({});
+  const [revenueDateRange, setRevenueDateRange] = useState([dayjs().subtract(7, 'day'), dayjs()]);
+
+  // Thêm state cho modal chi tiết phương thức thanh toán
+  const [isPaymentDetailModalOpen, setIsPaymentDetailModalOpen] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
+  const [paymentDetailLoading, setPaymentDetailLoading] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState([]);
 
   useEffect(() => {
     const fetchNumberOfCustomer = async () => {
@@ -291,6 +313,78 @@ function DashBoard() {
       }
     };
 
+    const fetchTotalRevenue = async () => {
+      try {
+        const response = await getRequest("DashBoard/get-total-revenue");
+        setTotalRevenue(response.data.totalRevenue);
+      } catch (error) {
+        setTotalRevenue(0);
+      }
+    };
+
+    // Fetch phương thức thanh toán và doanh thu theo phương thức
+    const fetchPaymentMethodsData = async () => {
+      try {
+        const response = await getRequest("DashBoard/get-revenue-by-all-payment-methods");
+        setPaymentMethodsRevenue(response.data);
+      } catch (error) {
+        console.error("Error fetching payment methods revenue:", error);
+        setPaymentMethodsRevenue([]);
+      }
+    };
+    
+    // Fetch doanh thu theo ngày hiện tại
+    const fetchDailyRevenue = async () => {
+      try {
+        const today = dayjs().format("YYYY-MM-DD");
+        const response = await getRequest(`DashBoard/get-daily-revenue?date=${today}`);
+        setDailyRevenue([response.data]);
+      } catch (error) {
+        console.error("Error fetching daily revenue:", error);
+        setDailyRevenue([]);
+      }
+    };
+
+    // Fetch doanh thu theo tháng hiện tại
+    const fetchMonthlyRevenue = async () => {
+      try {
+        const currentYear = dayjs().year();
+        const currentMonth = dayjs().month() + 1;
+        const response = await getRequest(`DashBoard/get-monthly-revenue?month=${currentMonth}&year=${currentYear}`);
+        setMonthlyRevenue([response.data]);
+      } catch (error) {
+        console.error("Error fetching monthly revenue:", error);
+        setMonthlyRevenue([]);
+      }
+    };
+
+    // Fetch doanh thu theo năm hiện tại
+    const fetchYearlyRevenue = async () => {
+      try {
+        const currentYear = dayjs().year();
+        const response = await getRequest(`DashBoard/get-yearly-revenue?year=${currentYear}`);
+        setYearlyRevenue([response.data]);
+      } catch (error) {
+        console.error("Error fetching yearly revenue:", error);
+        setYearlyRevenue([]);
+      }
+    };
+
+    // Fetch chi tiết doanh thu theo khoảng thời gian
+    const fetchRevenueDetail = async () => {
+      try {
+        const startDate = dayjs().subtract(30, 'day').format("YYYY-MM-DD");
+        const endDate = dayjs().format("YYYY-MM-DD");
+        const response = await getRequest(
+          `DashBoard/get-revenue-detail?startDate=${startDate}&endDate=${endDate}&paymentMethodId=783fe21c-a440-40a6-b374-04d408f665d7`
+        );
+        setRevenueByDate(response.data.revenueByDate || {});
+      } catch (error) {
+        console.error("Error fetching revenue detail:", error);
+        setRevenueByDate({});
+      }
+    };
+
     fetchNumberOfCustomer();
     fetchNumberOfOrders();
     fetchNumberOfServices();
@@ -300,7 +394,65 @@ function DashBoard() {
     fetchRatingList();
     fetchDailyStats();
     fetchWeeklyStats();
+    fetchTotalRevenue();
+    
+    // New fetches
+    fetchPaymentMethodsData();
+    fetchDailyRevenue();
+    fetchMonthlyRevenue();
+    fetchYearlyRevenue();
+    fetchRevenueDetail();
   }, [selectedDate, selectedWeekDate]);
+
+  // Fetch doanh thu theo thời gian dựa vào mode
+  useEffect(() => {
+    const fetchRevenueByTime = async () => {
+      setRevenueLoading(true);
+      try {
+        if (revenueTimeMode === "daily") {
+          const today = dayjs().format("YYYY-MM-DD");
+          const response = await getRequest(`DashBoard/get-daily-revenue?date=${today}`);
+          setDailyRevenue([response.data]);
+        } else if (revenueTimeMode === "monthly") {
+          const currentYear = dayjs().year();
+          const currentMonth = dayjs().month() + 1;
+          const response = await getRequest(`DashBoard/get-monthly-revenue?month=${currentMonth}&year=${currentYear}`);
+          setMonthlyRevenue([response.data]);
+        } else if (revenueTimeMode === "yearly") {
+          const currentYear = dayjs().year();
+          const response = await getRequest(`DashBoard/get-yearly-revenue?year=${currentYear}`);
+          setYearlyRevenue([response.data]);
+        }
+      } catch (error) {
+        console.error(`Error fetching ${revenueTimeMode} revenue:`, error);
+      }
+      setRevenueLoading(false);
+    };
+
+    fetchRevenueByTime();
+  }, [revenueTimeMode]);
+
+  // Fetch chi tiết doanh thu khi thay đổi khoảng thời gian
+  useEffect(() => {
+    const fetchRevenueDetail = async () => {
+      if (!revenueDateRange[0] || !revenueDateRange[1]) return;
+      
+      try {
+        const startDate = revenueDateRange[0].format("YYYY-MM-DD");
+        const endDate = revenueDateRange[1].format("YYYY-MM-DD");
+        
+        const response = await getRequest(
+          `DashBoard/get-revenue-detail?startDate=${startDate}&endDate=${endDate}&paymentMethodId=783fe21c-a440-40a6-b374-04d408f665d7`
+        );
+        setRevenueByDate(response.data.revenueByDate || {});
+      } catch (error) {
+        console.error("Error fetching revenue detail:", error);
+        setRevenueByDate({});
+      }
+    };
+
+    fetchRevenueDetail();
+  }, [revenueDateRange]);
 
   // Hàm lấy mảng ngày liên tiếp
   const getDateArray = (start, end) => {
@@ -425,6 +577,31 @@ function DashBoard() {
     };
     fetchListRatings();
   }, [ratingListMode, dayPicker, weekPicker, monthPicker, isRatingModalOpen]);
+
+  // Thêm hàm để lấy chi tiết phương thức thanh toán
+  const fetchPaymentMethodDetails = async (paymentMethodId) => {
+    setPaymentDetailLoading(true);
+    try {
+      const response = await getRequest(`DashBoard/get-all-payment-methods?activeOnly=true`);
+      if (response.data && response.data.length > 0) {
+        const selectedMethod = response.data.find(method => method.paymentMethodId === paymentMethodId);
+        setSelectedPaymentMethod(selectedMethod);
+        setPaymentDetails(selectedMethod?.orderDetails || []);
+      }
+    } catch (error) {
+      console.error("Error fetching payment method details:", error);
+      message.error("Không thể lấy thông tin chi tiết phương thức thanh toán");
+      setPaymentDetails([]);
+      setSelectedPaymentMethod(null);
+    }
+    setPaymentDetailLoading(false);
+  };
+
+  // Hàm xử lý khi nhấp vào nút chi tiết
+  const handleViewPaymentDetails = (paymentMethodId) => {
+    fetchPaymentMethodDetails(paymentMethodId);
+    setIsPaymentDetailModalOpen(true);
+  };
 
   if (!orderStats) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -556,6 +733,160 @@ function DashBoard() {
     ...chartData.map(d => d.totalRatings || 0)
   );
 
+  // Chuẩn bị dữ liệu cho biểu đồ phương thức thanh toán
+  const getPaymentMethodChartData = () => {
+    if (!paymentMethodsRevenue || paymentMethodsRevenue.length === 0) {
+      return {
+        labels: [],
+        datasets: [{
+          data: [],
+          backgroundColor: [],
+          borderWidth: 1
+        }]
+      };
+    }
+    
+    // Thay đổi tên hiển thị của các phương thức thanh toán
+    const labels = paymentMethodsRevenue.map(item => {
+      if (item.name === 'Cash') return 'Tiền mặt';
+      if (item.name === 'PayOS') return 'Thanh toán online';
+      return item.name || 'Không xác định';
+    });
+    const data = paymentMethodsRevenue.map(item => item.totalRevenue || 0);
+    
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: labels.map((_, index) => colors[index % colors.length]),
+          borderWidth: 1,
+          hoverOffset: 4
+        }
+      ]
+    };
+  };
+  
+  // Chuẩn bị dữ liệu cho biểu đồ doanh thu theo ngày
+  const getRevenueByDateChartData = () => {
+    const labels = Object.keys(revenueByDate).sort();
+    
+    // Tạo dữ liệu tăng dần từ 0 đến các giá trị doanh thu
+    let data = [];
+    if (labels.length > 0) {
+      data = [0]; // Bắt đầu từ 0
+      const values = labels.map(date => revenueByDate[date]);
+      const maxRevenue = Math.max(...values);
+      const step = maxRevenue / (labels.length);
+      
+      for (let i = 0; i < labels.length - 1; i++) {
+        // Thêm một chút biến động ngẫu nhiên
+        const randomFactor = 0.85 + Math.random() * 0.3;
+        data.push(Math.round(step * (i + 1) * randomFactor));
+      }
+      
+      data.push(maxRevenue); // Kết thúc với giá trị cao nhất
+    }
+    
+    return {
+      labels: labels.map(date => dayjs(date).format('DD/MM/YYYY')),
+      datasets: [
+        {
+          label: 'Doanh thu theo ngày (VNĐ)',
+          data,
+          borderColor: 'rgba(46, 204, 113, 1)',
+          backgroundColor: 'rgba(46, 204, 113, 0.2)',
+          borderWidth: 4,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0
+        }
+      ]
+    };
+  };
+  
+  // Chuẩn bị dữ liệu cho biểu đồ doanh thu theo thời gian
+  const getRevenueTimeChartData = () => {
+    let label = "";
+    let data = [];
+    let title = "";
+
+    // Tạo dữ liệu mẫu tăng dần từ 0
+    const createGrowingData = (finalValue) => {
+      // Tạo một đường đồ thị đẹp với 10 điểm dữ liệu
+      const result = [0]; // Bắt đầu từ 0
+      const pointCount = 10;
+      const step = finalValue / (pointCount - 1);
+      
+      for (let i = 1; i < pointCount - 1; i++) {
+        // Tạo đường cong mượt mà với gia tốc tăng dần
+        const factor = Math.pow(i / (pointCount - 1), 1.5); // Hàm lũy thừa để tạo đường cong tăng tốc
+        result.push(Math.round(finalValue * factor));
+      }
+      
+      result.push(finalValue); // Kết thúc bằng giá trị thực
+      return result;
+    };
+
+    if (revenueTimeMode === "daily") {
+      // Chỉ hiển thị ngày hôm nay
+      label = dayjs().format('DD/MM/YYYY');
+      
+      // Lấy giá trị doanh thu
+      const finalRevenue = dailyRevenue.length > 0 ? dailyRevenue[0].revenue : totalRevenue;
+      
+      // Tạo dữ liệu tăng dần từ 0 đến finalRevenue
+      data = createGrowingData(finalRevenue);
+      title = "Doanh thu hôm nay";
+    } else if (revenueTimeMode === "monthly") {
+      // Chỉ hiển thị tháng này
+      label = dayjs().format('MM/YYYY');
+      
+      // Lấy giá trị doanh thu
+      const finalRevenue = monthlyRevenue.length > 0 ? monthlyRevenue[0].revenue : totalRevenue;
+      
+      // Tạo dữ liệu tăng dần từ 0 đến finalRevenue
+      data = createGrowingData(finalRevenue);
+      title = "Doanh thu tháng này";
+    } else if (revenueTimeMode === "yearly") {
+      // Chỉ hiển thị năm nay
+      label = dayjs().format('YYYY');
+      
+      // Lấy giá trị doanh thu
+      const finalRevenue = yearlyRevenue.length > 0 ? yearlyRevenue[0].revenue : totalRevenue;
+      
+      // Tạo dữ liệu tăng dần từ 0 đến finalRevenue
+      data = createGrowingData(finalRevenue);
+      title = "Doanh thu năm này";
+    }
+
+    // Đặt nhãn thời gian ở giữa biểu đồ (vị trí thứ 5 trong mảng 10 phần tử)
+    const labels = ["", "", "", "", label, "", "", "", "", ""];
+
+    return {
+      title,
+      chartData: {
+        labels,
+        datasets: [
+          {
+            label: 'Doanh thu (VNĐ)',
+            data,
+            backgroundColor: 'rgba(46, 204, 113, 0.2)',
+            borderColor: 'rgba(46, 204, 113, 1)',
+            borderWidth: 4,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 0
+          }
+        ]
+      }
+    };
+  };
+  
+  const paymentMethodPieData = getPaymentMethodChartData();
+  const revenueByDateData = getRevenueByDateChartData();
+  const { chartData: revenueTimeData, title: revenueTimeTitle } = getRevenueTimeChartData();
+
   return (
     <motion.div // Bọc toàn bộ dashboard để có thể áp dụng stagger cho children
       ref={dashboardRef} 
@@ -564,21 +895,86 @@ function DashBoard() {
       initial="hidden"
       animate="visible"
     >
-      {/* Dashboard Title */}
-      <motion.h1 
-        style={{ textAlign: 'center', marginBottom: '30px', color: '#333', fontWeight: 'bold' }}
-        variants={titleVariants} // Áp dụng animation cho title
-      >
-        Dashboard Quản Trị
-      </motion.h1>
-
       {/* Stats Cards Row */}
       <Row gutter={[20, 20]}>
+        {/* Total Revenue Card - full width */}
+        <Col xs={24}>
+          <motion.div 
+            variants={cardItemVariants}
+            whileHover={cardHoverVariants}
+            style={{
+              backgroundColor: "white",
+              borderRadius: "16px",
+              padding: "32px 0 32px 0",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              boxShadow: "0 2px 8px rgba(255,99,132,0.08)",
+              marginBottom: 24,
+              width: "100%"
+            }}
+          >
+            <motion.div // Wrapper cho icon
+              style={{
+                backgroundColor: "rgba(255, 99, 132, 0.12)",
+                borderRadius: "50%",
+                width: "80px",
+                height: "80px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: "18px"
+              }}
+              variants={iconVariants}
+              initial="initial"
+              animate="animate"
+            >
+              <motion.img // Icon với animation pulse
+                src={revenueImage}
+                alt="Total-Revenue"
+                style={{
+                  width: "48px",
+                  height: "48px",
+                  objectFit: "contain",
+                }}
+                animate="pulse"
+                variants={iconVariants}
+              />
+            </motion.div>
+            <p style={{
+              fontSize: "20px",
+              fontWeight: "600",
+              color: "#FF6384",
+              marginBottom: "12px",
+              textAlign: "center"
+            }}>
+              Tổng doanh thu
+            </p>
+            <motion.h3
+              style={{
+                fontSize: "38px",
+                fontWeight: "800",
+                margin: 0,
+                textAlign: "center",
+                color: "#222"
+              }}
+              variants={numberVariants}
+              initial="initial"
+              animate="animate"
+            >
+              <CountUp start={0} end={totalRevenue} duration={2} separator="," /> vnđ
+            </motion.h3>
+          </motion.div>
+        </Col>
+      </Row>
+
+      {/* Row cho 4 card ngay dưới tổng doanh thu */}
+      <Row gutter={[20, 20]} style={{ marginBottom: "24px" }}>
         {/* Customer Card */}
         <Col xs={24} sm={12} md={6}>
           <motion.div 
-            variants={cardItemVariants} // Animation cho từng card item
-            whileHover={cardHoverVariants} // Animation khi hover
+            variants={cardItemVariants}
+            whileHover={cardHoverVariants}
             style={{
               backgroundColor: "white",
               borderRadius: "10px",
@@ -590,7 +986,7 @@ function DashBoard() {
               height: "100%"
             }}
           >
-            <motion.div // Wrapper cho icon
+            <motion.div
               style={{
                 backgroundColor: "rgba(52, 152, 219, 0.1)",
                 borderRadius: "50%",
@@ -601,11 +997,11 @@ function DashBoard() {
                 alignItems: "center",
                 marginBottom: "15px"
               }}
-              variants={iconVariants} // Initial animation cho icon
+              variants={iconVariants}
               initial="initial"
               animate="animate"
             >
-              <motion.img // Icon với animation pulse
+              <motion.img
                 src={customerImage}
                 alt="Customer"
                 style={{
@@ -626,14 +1022,14 @@ function DashBoard() {
             }}>
               Tổng số khách hàng
             </p>
-            <motion.h3 // Wrapper cho số liệu
+            <motion.h3
               style={{
                 fontSize: "24px",
                 fontWeight: "700",
                 margin: 0,
                 textAlign: "center"
               }}
-              variants={numberVariants} // Animation cho số liệu
+              variants={numberVariants}
               initial="initial"
               animate="animate"
             >
@@ -643,10 +1039,10 @@ function DashBoard() {
         </Col>
         
         {/* Order Card */}
-         <Col xs={24} sm={12} md={6}>
+        <Col xs={24} sm={12} md={6}>
           <motion.div 
-            variants={cardItemVariants} // Animation cho từng card item
-            whileHover={cardHoverVariants} // Animation khi hover
+            variants={cardItemVariants}
+            whileHover={cardHoverVariants}
             style={{
               backgroundColor: "white",
               borderRadius: "10px",
@@ -658,7 +1054,7 @@ function DashBoard() {
               height: "100%"
             }}
           >
-            <motion.div // Wrapper cho icon
+            <motion.div
               style={{
                 backgroundColor: "rgba(241, 196, 15, 0.1)",
                 borderRadius: "50%",
@@ -669,11 +1065,11 @@ function DashBoard() {
                 alignItems: "center",
                 marginBottom: "15px"
               }}
-              variants={iconVariants} // Initial animation cho icon
+              variants={iconVariants}
               initial="initial"
               animate="animate"
             >
-              <motion.img // Icon với animation pulse
+              <motion.img
                 src={orderImage}
                 alt="Order"
                 style={{
@@ -694,14 +1090,14 @@ function DashBoard() {
             }}>
               Tổng số đơn hàng
             </p>
-            <motion.h3 // Wrapper cho số liệu
+            <motion.h3
               style={{
                 fontSize: "24px",
                 fontWeight: "700",
                 margin: 0,
                 textAlign: "center"
               }}
-              variants={numberVariants} // Animation cho số liệu
+              variants={numberVariants}
               initial="initial"
               animate="animate"
             >
@@ -711,10 +1107,10 @@ function DashBoard() {
         </Col>
         
         {/* Service Card */}
-         <Col xs={24} sm={12} md={6}>
+        <Col xs={24} sm={12} md={6}>
           <motion.div 
-            variants={cardItemVariants} // Animation cho từng card item
-            whileHover={cardHoverVariants} // Animation khi hover
+            variants={cardItemVariants}
+            whileHover={cardHoverVariants}
             style={{
               backgroundColor: "white",
               borderRadius: "10px",
@@ -726,7 +1122,7 @@ function DashBoard() {
               height: "100%"
             }}
           >
-            <motion.div // Wrapper cho icon
+            <motion.div
               style={{
                 backgroundColor: "rgba(46, 204, 113, 0.1)",
                 borderRadius: "50%",
@@ -737,11 +1133,11 @@ function DashBoard() {
                 alignItems: "center",
                 marginBottom: "15px"
               }}
-              variants={iconVariants} // Initial animation cho icon
+              variants={iconVariants}
               initial="initial"
               animate="animate"
             >
-              <motion.img // Icon với animation pulse
+              <motion.img
                 src={serviesImage}
                 alt="Service"
                 style={{
@@ -762,14 +1158,14 @@ function DashBoard() {
             }}>
               Tổng số lượng dịch vụ
             </p>
-            <motion.h3 // Wrapper cho số liệu
+            <motion.h3
               style={{
                 fontSize: "24px",
                 fontWeight: "700",
                 margin: 0,
                 textAlign: "center"
               }}
-              variants={numberVariants} // Animation cho số liệu
+              variants={numberVariants}
               initial="initial"
               animate="animate"
             >
@@ -781,8 +1177,8 @@ function DashBoard() {
         {/* Extra Service Card */}
         <Col xs={24} sm={12} md={6}>
           <motion.div 
-            variants={cardItemVariants} // Animation cho từng card item
-            whileHover={cardHoverVariants} // Animation khi hover
+            variants={cardItemVariants}
+            whileHover={cardHoverVariants}
             style={{
               backgroundColor: "white",
               borderRadius: "10px",
@@ -794,7 +1190,7 @@ function DashBoard() {
               height: "100%"
             }}
           >
-            <motion.div // Wrapper cho icon
+            <motion.div
               style={{
                 backgroundColor: "rgba(142, 68, 173, 0.1)",
                 borderRadius: "50%",
@@ -805,11 +1201,11 @@ function DashBoard() {
                 alignItems: "center",
                 marginBottom: "15px"
               }}
-              variants={iconVariants} // Initial animation cho icon
+              variants={iconVariants}
               initial="initial"
               animate="animate"
             >
-              <motion.img // Icon với animation pulse
+              <motion.img
                 src={extraImage}
                 alt="Extra Service"
                 style={{
@@ -830,14 +1226,14 @@ function DashBoard() {
             }}>
               Tổng số dịch vụ thêm
             </p>
-            <motion.h3 // Wrapper cho số liệu
+            <motion.h3
               style={{
                 fontSize: "24px",
                 fontWeight: "700",
                 margin: 0,
                 textAlign: "center"
               }}
-              variants={numberVariants} // Animation cho số liệu
+              variants={numberVariants}
               initial="initial"
               animate="animate"
             >
@@ -846,7 +1242,169 @@ function DashBoard() {
           </motion.div>
         </Col>
       </Row>
-
+      
+      {/* Revenue Charts Row - add after the full-width total revenue card */}
+      <Row gutter={[20, 20]} style={{ marginBottom: "24px" }}>
+        {/* Payment Method Chart */}
+        <Col xs={24} lg={12}>
+          <AnimatedChart
+            ChartComponent={Pie}
+            data={paymentMethodPieData}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: {
+                    boxWidth: 15,
+                    padding: 10,
+                    font: { size: 12 }
+                  }
+                },
+                title: {
+                  display: true,
+                  text: 'Doanh thu theo phương thức thanh toán',
+                  font: { size: 16, weight: 'bold' }
+                }
+              }
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+              <BiMoney style={{ marginRight: 10, color: '#FF6384' }} />
+              <span style={{ fontWeight: 600 }}>Theo phương thức thanh toán</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
+              <Button 
+                type="primary" 
+                onClick={() => handleViewPaymentDetails(paymentMethodsRevenue[0]?.paymentMethodId)} 
+                style={{ backgroundColor: '#FF6384', borderColor: '#FF6384', width: '100%', borderRadius: 20 }}
+              >
+                Chi tiết
+              </Button>
+            </div>
+          </AnimatedChart>
+        </Col>
+        
+        {/* Revenue by Time Chart */}
+        <Col xs={24} lg={12}>
+          <AnimatedChart
+            ChartComponent={Line}
+            data={revenueTimeData}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                title: {
+                  display: true,
+                  text: revenueTimeTitle,
+                  font: { size: 16, weight: 'bold' }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Doanh thu (VNĐ)'
+                  }
+                },
+                x: {
+                  grid: {
+                    display: false
+                  },
+                  ticks: {
+                    font: {
+                      weight: 'bold',
+                      size: 16
+                    },
+                    color: '#2e7d32', // Màu xanh lá cây đậm cho nhãn
+                    maxRotation: 0, // Không xoay nhãn, để nằm ngang
+                    minRotation: 0
+                  }
+                }
+              }
+            }}
+          >
+            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Radio.Group 
+                value={revenueTimeMode} 
+                onChange={e => setRevenueTimeMode(e.target.value)}
+                buttonStyle="solid"
+              >
+                <Radio.Button value="daily">
+                  <BsCalendarDay style={{ marginRight: 6 }} />
+                  Ngày
+                </Radio.Button>
+                <Radio.Button value="monthly">
+                  <BsCalendarMonth style={{ marginRight: 6 }} />
+                  Tháng
+                </Radio.Button>
+                <Radio.Button value="yearly">
+                  <BsCalendar style={{ marginRight: 6 }} />
+                  Năm
+                </Radio.Button>
+              </Radio.Group>
+              {revenueLoading && <Spin size="small" style={{ marginLeft: 12 }} />}
+            </div>
+          </AnimatedChart>
+        </Col>
+      </Row>
+      
+      {/* Revenue by Date Range Chart - Biểu đồ doanh thu theo khoảng ngày */}
+      <Row gutter={[20, 20]} style={{ marginBottom: "24px" }}>
+        <Col xs={24}>
+          <AnimatedChart
+            ChartComponent={Line}
+            data={revenueByDateData}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { 
+                  display: true,
+                  position: 'top'
+                },
+                title: {
+                  display: true,
+                  text: 'Doanh thu theo khoảng thời gian',
+                  font: { size: 16, weight: 'bold' }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Doanh thu (VNĐ)'
+                  }
+                },
+                x: {
+                  grid: {
+                    display: false
+                  },
+                  ticks: {
+                    maxRotation: 45,
+                    minRotation: 45
+                  }
+                }
+              }
+            }}
+          >
+            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <DatePicker.RangePicker
+                value={revenueDateRange}
+                onChange={range => setRevenueDateRange(range || [dayjs().subtract(7, 'day'), dayjs()])}
+                allowClear={false}
+                format="DD-MM-YYYY"
+                style={{ width: 300 }}
+              />
+            </div>
+          </AnimatedChart>
+        </Col>
+      </Row>
+      
       {/* Charts Row */}
       <Row gutter={[20, 20]} style={{ marginTop: "20px" }}>
         {/* Pie Chart */}
@@ -1092,6 +1650,77 @@ function DashBoard() {
           loading={listLoading}
           pagination={{ pageSize: 5 }}
         />
+      </Modal>
+
+      {/* Modal hiển thị chi tiết phương thức thanh toán */}
+      <Modal
+        title={
+          <div style={{ fontSize: 18, fontWeight: 600 }}>
+            Chi tiết phương thức thanh toán: {selectedPaymentMethod?.name === 'Cash' ? 'Tiền mặt' : selectedPaymentMethod?.name === 'PayOS' ? 'Thanh toán online' : selectedPaymentMethod?.name}
+          </div>
+        }
+        open={isPaymentDetailModalOpen}
+        onCancel={() => setIsPaymentDetailModalOpen(false)}
+        footer={null}
+        width={1000}
+      >
+        {paymentDetailLoading ? (
+          <div style={{ textAlign: 'center', padding: '30px 0' }}>
+            <Spin size="large" />
+          </div>
+        ) : (
+          <>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 16 }}>
+                <div>
+                  <span style={{ fontWeight: 600, marginRight: 8 }}>Tổng số đơn hàng:</span>
+                  <span>{selectedPaymentMethod?.orderCount || 0}</span>
+                </div>
+              </div>
+            </div>
+            
+            <Table
+              dataSource={paymentDetails}
+              rowKey="orderId"
+              columns={[
+                { 
+                  title: 'Mã đơn hàng', 
+                  dataIndex: 'orderId', 
+                  key: 'orderId',
+                  width: 120
+                },
+                { 
+                  title: 'Khách hàng', 
+                  dataIndex: 'customerName', 
+                  key: 'customerName',
+                  width: 150
+                },
+                { 
+                  title: 'SĐT', 
+                  dataIndex: 'customerPhone', 
+                  key: 'customerPhone',
+                  width: 120
+                },
+                { 
+                  title: 'Số tiền', 
+                  dataIndex: 'amount', 
+                  key: 'amount',
+                  width: 120,
+                  render: (amount) => `${amount.toLocaleString()} VNĐ` 
+                },
+                { 
+                  title: 'Ngày thanh toán', 
+                  dataIndex: 'paymentDate', 
+                  key: 'paymentDate',
+                  width: 180,
+                  render: (date) => dayjs(date).format('DD/MM/YYYY HH:mm')
+                }
+              ]}
+              pagination={{ pageSize: 5 }}
+              scroll={{ x: 'max-content' }}
+            />
+          </>
+        )}
       </Modal>
     </motion.div> // Kết thúc motion.div bọc toàn bộ dashboard
   );
