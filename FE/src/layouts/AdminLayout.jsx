@@ -324,18 +324,18 @@ const AdminLayout = () => {
       label: createLabelWithTooltip("Quản lý người dùng(chăm sóc khách hàng)"),
       allowedRoles: ["CustomerStaff"],
     },
-    {
-      key: endPoints.CHAT,
-      icon: <MessageOutlined />,
-      label: createLabelWithTooltip("Chat"),
-      allowedRoles: ["Admin", "Staff", "CustomerStaff"],
-    },
-    {
-      key: endPoints.CHATWIITHAI,
-      icon: <RobotOutlined />,
-      label: createLabelWithTooltip("Chat Với AI Support"),
-      allowedRoles: ["Admin"],
-    },
+    // {
+    //   key: endPoints.CHAT,
+    //   icon: <MessageOutlined />,
+    //   label: createLabelWithTooltip("Chat"),
+    //   allowedRoles: ["Admin", "Staff", "CustomerStaff"],
+    // },
+    // {
+    //   key: endPoints.CHATWIITHAI,
+    //   icon: <RobotOutlined />,
+    //   label: createLabelWithTooltip("Chat Với AI Support"),
+    //   allowedRoles: ["Admin"],
+    // },
     {
       key: endPoints.POLICY,
       icon: <FlagOutlined />,
