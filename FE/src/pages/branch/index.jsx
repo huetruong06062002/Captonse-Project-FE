@@ -243,7 +243,7 @@ export default function Branch() {
         <div>Không lấy được thông tin chi nhánh.</div>
       ) : (
         <>
-          <h2 style={{ color: '#1677ff', marginBottom: 16 }}>Danh sách chi nhánh</h2>
+          <h2 style={{ color: '#1677ff', marginBottom: 16 }}>Địa chỉ cửa hàng</h2>
           <ul style={{ paddingLeft: 18, marginBottom: 18 }}>
             {branches.map((b) => (
               <li key={b.brachid || b.branchid || b.id} style={{ marginBottom: 4 }}>
