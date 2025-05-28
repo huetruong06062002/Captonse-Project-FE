@@ -28,6 +28,20 @@ const Complaint = () => {
   const [createForm] = Form.useForm();
   const [orderIdInput, setOrderIdInput] = useState("");
 
+  // Define complaint types array
+  const complaintTypes = [
+    { label: "Hàng bị hư hỏng", value: "DAMAGED_ITEM" },
+    { label: "Sai đơn hàng", value: "WRONG_ITEM" },
+    { label: "Chất lượng kém", value: "POOR_QUALITY" },
+    { label: "Khác", value: "OTHER" },
+  ];
+
+  // Create mapping from complaint types array
+  const complaintTypeMap = complaintTypes.reduce((acc, type) => {
+    acc[type.value] = type.label;
+    return acc;
+  }, {});
+
   const [complaintPending, setComplaintPending] = useState([]);
   const [compaintInProgress, setComplaintInProgress] = useState([]);
   const [complaintResolved, setComplaintResolved] = useState([]);
@@ -353,14 +367,9 @@ const Complaint = () => {
       dataIndex: "complaintType",
       key: "complaintType",
       ...getColumnSearchProps('complaintType', 'loại khiếu nại'),
-      filters: [
-        { text: 'Sai dịch vụ', value: 'Sai dịch vụ' },
-        { text: 'Dịch vụ kém', value: 'Dịch vụ kém' },
-        { text: 'Nhân viên thái độ', value: 'Nhân viên thái độ' },
-        { text: 'Giao hàng chậm', value: 'Giao hàng chậm' },
-        { text: 'Khác', value: 'Khác' },
-      ],
+      filters: complaintTypes.map(type => ({ text: type.label, value: type.value })),
       onFilter: (value, record) => record.complaintType === value,
+      render: (text) => complaintTypeMap[text] || text,
     },
     {
       title: "Trạng thái",
@@ -494,14 +503,9 @@ const Complaint = () => {
       dataIndex: "complaintType",
       key: "complaintType",
       ...getColumnSearchProps('complaintType', 'loại khiếu nại'),
-      filters: [
-        { text: 'Sai dịch vụ', value: 'Sai dịch vụ' },
-        { text: 'Dịch vụ kém', value: 'Dịch vụ kém' },
-        { text: 'Nhân viên thái độ', value: 'Nhân viên thái độ' },
-        { text: 'Giao hàng chậm', value: 'Giao hàng chậm' },
-        { text: 'Khác', value: 'Khác' },
-      ],
+      filters: complaintTypes.map(type => ({ text: type.label, value: type.value })),
       onFilter: (value, record) => record.complaintType === value,
+      render: (text) => complaintTypeMap[text] || text,
     },
     {
       title: "Trạng thái",
@@ -638,14 +642,9 @@ const Complaint = () => {
       dataIndex: "complaintType",
       key: "complaintType",
       ...getColumnSearchProps('complaintType', 'loại khiếu nại'),
-      filters: [
-        { text: 'Sai dịch vụ', value: 'Sai dịch vụ' },
-        { text: 'Dịch vụ kém', value: 'Dịch vụ kém' },
-        { text: 'Nhân viên thái độ', value: 'Nhân viên thái độ' },
-        { text: 'Giao hàng chậm', value: 'Giao hàng chậm' },
-        { text: 'Khác', value: 'Khác' },
-      ],
+      filters: complaintTypes.map(type => ({ text: type.label, value: type.value })),
       onFilter: (value, record) => record.complaintType === value,
+      render: (text) => complaintTypeMap[text] || text,
     },
     {
       title: "Trạng thái",
@@ -1118,9 +1117,13 @@ const Complaint = () => {
           <Form.Item
             name="complaintType"
             label="Loại khiếu nại"
-            rules={[{ required: true, message: 'Vui lòng nhập loại khiếu nại!' }]}
+            rules={[{ required: true, message: 'Vui lòng chọn loại khiếu nại!' }]}
           >
-            <Input placeholder="Nhập loại khiếu nại" />
+            <Select placeholder="Chọn loại khiếu nại">
+              {complaintTypes.map(type => (
+                <Option key={type.value} value={type.value}>{type.label}</Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item
