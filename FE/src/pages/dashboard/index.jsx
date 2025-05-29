@@ -128,7 +128,7 @@ const exportButtonVariants = {
 };
 
 // Component cho Chart với animation khi scroll vào view
-const AnimatedChart = ({ children, options, data, ChartComponent }) => {
+const AnimatedChart = ({ children, options, data, ChartComponent, footerContent }) => {
   const controls = useAnimation();
   const [ref, inView] = useInView({
     triggerOnce: true, // Chỉ trigger animation một lần
@@ -152,13 +152,22 @@ const AnimatedChart = ({ children, options, data, ChartComponent }) => {
         backgroundColor: "white",
         borderRadius: "10px",
         padding: "20px",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        height: "100%",
+        minHeight: "430px",
+        display: "flex",
+        flexDirection: "column"
       }}
     >
       {children}
-      <div style={{ height: "300px" }}>
+      <div style={{ height: "340px", flex: 1 }}>
         <ChartComponent data={data} options={options} />
       </div>
+      {footerContent && (
+        <div style={{ marginTop: "auto", paddingTop: "15px" }}>
+          {footerContent}
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -579,14 +588,14 @@ function DashBoard() {
   }, [ratingListMode, dayPicker, weekPicker, monthPicker, isRatingModalOpen]);
 
   // Thêm hàm để lấy chi tiết phương thức thanh toán
-  const fetchPaymentMethodDetails = async (paymentMethodId) => {
+  const fetchPaymentMethodDetails = async () => {
     setPaymentDetailLoading(true);
     try {
       const response = await getRequest(`DashBoard/get-all-payment-methods?activeOnly=true`);
       if (response.data && response.data.length > 0) {
-        const selectedMethod = response.data.find(method => method.paymentMethodId === paymentMethodId);
-        setSelectedPaymentMethod(selectedMethod);
-        setPaymentDetails(selectedMethod?.orderDetails || []);
+        // Lưu toàn bộ dữ liệu từ API
+        setPaymentDetails(response.data);
+        setSelectedPaymentMethod(null); // Không cần select method cụ thể nữa
       }
     } catch (error) {
       console.error("Error fetching payment method details:", error);
@@ -598,8 +607,8 @@ function DashBoard() {
   };
 
   // Hàm xử lý khi nhấp vào nút chi tiết
-  const handleViewPaymentDetails = (paymentMethodId) => {
-    fetchPaymentMethodDetails(paymentMethodId);
+  const handleViewPaymentDetails = () => {
+    fetchPaymentMethodDetails();
     setIsPaymentDetailModalOpen(true);
   };
 
@@ -1243,7 +1252,7 @@ function DashBoard() {
         </Col>
       </Row>
       
-      {/* Revenue Charts Row - add after the full-width total revenue card */}
+      {/* Revenue Charts Row - Biểu đồ doanh thu theo phương thức thanh toán và doanh thu theo thời gian */}
       <Row gutter={[20, 20]} style={{ marginBottom: "24px" }}>
         {/* Payment Method Chart */}
         <Col xs={24} lg={12}>
@@ -1269,19 +1278,21 @@ function DashBoard() {
                 }
               }
             }}
+            footerContent={
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <Button 
+                  type="primary" 
+                  onClick={handleViewPaymentDetails} 
+                  style={{ backgroundColor: '#FF6384', borderColor: '#FF6384', width: '100%', borderRadius: 20 }}
+                >
+                  Chi tiết
+                </Button>
+              </div>
+            }
           >
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
               <BiMoney style={{ marginRight: 10, color: '#FF6384' }} />
               <span style={{ fontWeight: 600 }}>Theo phương thức thanh toán</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
-              <Button 
-                type="primary" 
-                onClick={() => handleViewPaymentDetails(paymentMethodsRevenue[0]?.paymentMethodId)} 
-                style={{ backgroundColor: '#FF6384', borderColor: '#FF6384', width: '100%', borderRadius: 20 }}
-              >
-                Chi tiết
-              </Button>
             </div>
           </AnimatedChart>
         </Col>
@@ -1657,70 +1668,157 @@ function DashBoard() {
       <Modal
         title={
           <div style={{ fontSize: 18, fontWeight: 600 }}>
-            Chi tiết phương thức thanh toán: {selectedPaymentMethod?.name === 'Cash' ? 'Tiền mặt' : selectedPaymentMethod?.name === 'PayOS' ? 'Thanh toán online' : selectedPaymentMethod?.name}
+            Chi tiết tất cả phương thức thanh toán
           </div>
         }
         open={isPaymentDetailModalOpen}
         onCancel={() => setIsPaymentDetailModalOpen(false)}
         footer={null}
-        width={1000}
+        width={1200}
+        style={{ top: 20 }}
       >
         {paymentDetailLoading ? (
           <div style={{ textAlign: 'center', padding: '30px 0' }}>
             <Spin size="large" />
           </div>
         ) : (
-          <>
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 16 }}>
-                <div>
-                  <span style={{ fontWeight: 600, marginRight: 8 }}>Tổng số đơn hàng:</span>
-                  <span>{selectedPaymentMethod?.orderCount || 0}</span>
+          <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            {paymentDetails.map((paymentMethod, index) => (
+              <div key={paymentMethod.paymentMethodId} style={{ marginBottom: 32 }}>
+                {/* Header cho mỗi phương thức thanh toán */}
+                <div style={{ 
+                  backgroundColor: '#f8f9fa', 
+                  padding: '16px 20px', 
+                  borderRadius: '8px',
+                  marginBottom: 16,
+                  border: '1px solid #e9ecef'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#333' }}>
+                        {paymentMethod.name === 'Cash' ? 'Tiền mặt' : 
+                         paymentMethod.name === 'PayOS' ? 'Thanh toán online' : 
+                         paymentMethod.name}
+                      </h3>
+                      <p style={{ margin: '4px 0 0 0', color: '#666', fontSize: 14 }}>
+                        {paymentMethod.description}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 24 }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: '#1890ff' }}>
+                          {paymentMethod.orderCount}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#666' }}>Đơn hàng</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: '#52c41a' }}>
+                          {paymentMethod.totalRevenue.toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#666' }}>VNĐ</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <Tag color={paymentMethod.isActive ? 'green' : 'red'}>
+                          {paymentMethod.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                        </Tag>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Bảng chi tiết đơn hàng */}
+                <Table
+                  dataSource={paymentMethod.orderDetails}
+                  rowKey="orderId"
+                  size="small"
+                  pagination={{ 
+                    pageSize: 5,
+                    showSizeChanger: false,
+                    showQuickJumper: false,
+                    showTotal: (total) => `Tổng ${total} đơn hàng`
+                  }}
+                  columns={[
+                    { 
+                      title: 'Mã đơn hàng', 
+                      dataIndex: 'orderId', 
+                      key: 'orderId',
+                      width: 130,
+                      render: (text) => <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{text}</span>
+                    },
+                    { 
+                      title: 'Khách hàng', 
+                      dataIndex: 'customerName', 
+                      key: 'customerName',
+                      width: 150
+                    },
+                    { 
+                      title: 'SĐT', 
+                      dataIndex: 'customerPhone', 
+                      key: 'customerPhone',
+                      width: 120
+                    },
+                    { 
+                      title: 'Số tiền', 
+                      dataIndex: 'amount', 
+                      key: 'amount',
+                      width: 120,
+                      render: (amount) => (
+                        <span style={{ fontWeight: 600, color: '#52c41a' }}>
+                          {amount.toLocaleString()} VNĐ
+                        </span>
+                      )
+                    },
+                    { 
+                      title: 'Trạng thái TT', 
+                      dataIndex: 'paymentStatus', 
+                      key: 'paymentStatus',
+                      width: 120,
+                      render: (status) => (
+                        <Tag color={status === 'PAID' ? 'green' : 'orange'}>
+                          {status === 'PAID' ? 'Đã thanh toán' : status}
+                        </Tag>
+                      )
+                    },
+                    { 
+                      title: 'Trạng thái đơn', 
+                      dataIndex: 'orderStatus', 
+                      key: 'orderStatus',
+                      width: 120,
+                      render: (status) => {
+                        const statusColors = {
+                          'COMPLETED': 'green',
+                          'DELIVERED': 'blue', 
+                          'COMPLAINT': 'red',
+                          'PROCESSING': 'orange',
+                          'CANCELLED': 'red'
+                        };
+                        const statusTexts = {
+                          'COMPLETED': 'Hoàn thành',
+                          'DELIVERED': 'Đã giao',
+                          'COMPLAINT': 'Khiếu nại',
+                          'PROCESSING': 'Đang xử lý',
+                          'CANCELLED': 'Đã hủy'
+                        };
+                        return (
+                          <Tag color={statusColors[status] || 'default'}>
+                            {statusTexts[status] || status}
+                          </Tag>
+                        );
+                      }
+                    },
+                    { 
+                      title: 'Ngày thanh toán', 
+                      dataIndex: 'paymentDate', 
+                      key: 'paymentDate',
+                      width: 150,
+                      render: (date) => dayjs(date).format('DD/MM/YYYY HH:mm')
+                    }
+                  ]}
+                  scroll={{ x: 'max-content' }}
+                />
               </div>
-            </div>
-            
-            <Table
-              dataSource={paymentDetails}
-              rowKey="orderId"
-              columns={[
-                { 
-                  title: 'Mã đơn hàng', 
-                  dataIndex: 'orderId', 
-                  key: 'orderId',
-                  width: 120
-                },
-                { 
-                  title: 'Khách hàng', 
-                  dataIndex: 'customerName', 
-                  key: 'customerName',
-                  width: 150
-                },
-                { 
-                  title: 'SĐT', 
-                  dataIndex: 'customerPhone', 
-                  key: 'customerPhone',
-                  width: 120
-                },
-                { 
-                  title: 'Số tiền', 
-                  dataIndex: 'amount', 
-                  key: 'amount',
-                  width: 120,
-                  render: (amount) => `${amount.toLocaleString()} VNĐ` 
-                },
-                { 
-                  title: 'Ngày thanh toán', 
-                  dataIndex: 'paymentDate', 
-                  key: 'paymentDate',
-                  width: 180,
-                  render: (date) => dayjs(date).format('DD/MM/YYYY HH:mm')
-                }
-              ]}
-              pagination={{ pageSize: 5 }}
-              scroll={{ x: 'max-content' }}
-            />
-          </>
+            ))}
+          </div>
         )}
       </Modal>
     </motion.div> // Kết thúc motion.div bọc toàn bộ dashboard
