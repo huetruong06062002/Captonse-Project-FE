@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Pie, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -233,6 +233,14 @@ function DashBoard() {
   const [revenueByDate, setRevenueByDate] = useState({});
   const [revenueDateRange, setRevenueDateRange] = useState([dayjs().subtract(7, 'day'), dayjs()]);
 
+  // Thêm state riêng cho biểu đồ doanh thu theo thời gian
+  const [timeChartData, setTimeChartData] = useState([]);
+  const [timeChartLoading, setTimeChartLoading] = useState(false);
+  
+  // Thêm state riêng cho biểu đồ doanh thu theo khoảng ngày
+  const [dateRangeChartData, setDateRangeChartData] = useState({});
+  const [dateRangeChartLoading, setDateRangeChartLoading] = useState(false);
+
   // Thêm state cho modal chi tiết phương thức thanh toán
   const [isPaymentDetailModalOpen, setIsPaymentDetailModalOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
@@ -379,21 +387,6 @@ function DashBoard() {
       }
     };
 
-    // Fetch chi tiết doanh thu theo khoảng thời gian
-    const fetchRevenueDetail = async () => {
-      try {
-        const startDate = dayjs().subtract(30, 'day').format("YYYY-MM-DD");
-        const endDate = dayjs().format("YYYY-MM-DD");
-        const response = await getRequest(
-          `DashBoard/get-revenue-detail?startDate=${startDate}&endDate=${endDate}&paymentMethodId=783fe21c-a440-40a6-b374-04d408f665d7`
-        );
-        setRevenueByDate(response.data.revenueByDate || {});
-      } catch (error) {
-        console.error("Error fetching revenue detail:", error);
-        setRevenueByDate({});
-      }
-    };
-
     fetchNumberOfCustomer();
     fetchNumberOfOrders();
     fetchNumberOfServices();
@@ -410,32 +403,49 @@ function DashBoard() {
     fetchDailyRevenue();
     fetchMonthlyRevenue();
     fetchYearlyRevenue();
-    fetchRevenueDetail();
   }, [selectedDate, selectedWeekDate]);
 
   // Fetch doanh thu theo thời gian dựa vào mode
   useEffect(() => {
     const fetchRevenueByTime = async () => {
-      setRevenueLoading(true);
+      setTimeChartLoading(true);
       try {
+        let finalRevenue = 0;
         if (revenueTimeMode === "daily") {
           const today = dayjs().format("YYYY-MM-DD");
           const response = await getRequest(`DashBoard/get-daily-revenue?date=${today}`);
-          setDailyRevenue([response.data]);
+          finalRevenue = response.data.revenue || 0;
         } else if (revenueTimeMode === "monthly") {
           const currentYear = dayjs().year();
           const currentMonth = dayjs().month() + 1;
           const response = await getRequest(`DashBoard/get-monthly-revenue?month=${currentMonth}&year=${currentYear}`);
-          setMonthlyRevenue([response.data]);
+          finalRevenue = response.data.revenue || 0;
         } else if (revenueTimeMode === "yearly") {
           const currentYear = dayjs().year();
           const response = await getRequest(`DashBoard/get-yearly-revenue?year=${currentYear}`);
-          setYearlyRevenue([response.data]);
+          finalRevenue = response.data.revenue || 0;
         }
+        
+        // Tạo dữ liệu tăng dần từ 0 đến finalRevenue cho biểu đồ thời gian
+        const createGrowingData = (finalValue) => {
+          const result = [0];
+          const pointCount = 10;
+          
+          for (let i = 1; i < pointCount - 1; i++) {
+            const factor = Math.pow(i / (pointCount - 1), 1.5);
+            result.push(Math.round(finalValue * factor));
+          }
+          
+          result.push(finalValue);
+          return result;
+        };
+        
+        setTimeChartData(createGrowingData(finalRevenue));
       } catch (error) {
         console.error(`Error fetching ${revenueTimeMode} revenue:`, error);
+        setTimeChartData([]);
       }
-      setRevenueLoading(false);
+      setTimeChartLoading(false);
     };
 
     fetchRevenueByTime();
@@ -446,6 +456,7 @@ function DashBoard() {
     const fetchRevenueDetail = async () => {
       if (!revenueDateRange[0] || !revenueDateRange[1]) return;
       
+      setDateRangeChartLoading(true);
       try {
         const startDate = revenueDateRange[0].format("YYYY-MM-DD");
         const endDate = revenueDateRange[1].format("YYYY-MM-DD");
@@ -453,11 +464,12 @@ function DashBoard() {
         const response = await getRequest(
           `DashBoard/get-revenue-detail?startDate=${startDate}&endDate=${endDate}&paymentMethodId=783fe21c-a440-40a6-b374-04d408f665d7`
         );
-        setRevenueByDate(response.data.revenueByDate || {});
+        setDateRangeChartData(response.data.revenueByDate || {});
       } catch (error) {
         console.error("Error fetching revenue detail:", error);
-        setRevenueByDate({});
+        setDateRangeChartData({});
       }
+      setDateRangeChartLoading(false);
     };
 
     fetchRevenueDetail();
@@ -612,6 +624,117 @@ function DashBoard() {
     setIsPaymentDetailModalOpen(true);
   };
 
+  // Memoize dữ liệu cho biểu đồ doanh thu theo thời gian để tránh re-render không cần thiết
+  const { revenueTimeData, revenueTimeTitle } = useMemo(() => {
+    let label = "";
+    let title = "";
+
+    if (revenueTimeMode === "daily") {
+      label = dayjs().format('DD/MM/YYYY');
+      title = "Doanh thu hôm nay";
+    } else if (revenueTimeMode === "monthly") {
+      label = dayjs().format('MM/YYYY');
+      title = "Doanh thu tháng này";
+    } else if (revenueTimeMode === "yearly") {
+      label = dayjs().format('YYYY');
+      title = "Doanh thu năm này";
+    }
+
+    // Đặt nhãn thời gian ở giữa biểu đồ (vị trí thứ 5 trong mảng 10 phần tử)
+    const labels = ["", "", "", "", label, "", "", "", "", ""];
+
+    return {
+      revenueTimeData: {
+        labels,
+        datasets: [
+          {
+            label: 'Doanh thu (VNĐ)',
+            data: timeChartData,
+            backgroundColor: 'rgba(46, 204, 113, 0.2)',
+            borderColor: 'rgba(46, 204, 113, 1)',
+            borderWidth: 4,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 0
+          }
+        ]
+      },
+      revenueTimeTitle: title
+    };
+  }, [revenueTimeMode, timeChartData]); // Chỉ re-calculate khi revenueTimeMode hoặc timeChartData thay đổi
+  
+  // Memoize dữ liệu cho biểu đồ phương thức thanh toán
+  const paymentMethodPieData = useMemo(() => {
+    if (!paymentMethodsRevenue || paymentMethodsRevenue.length === 0) {
+      return {
+        labels: [],
+        datasets: [{
+          data: [],
+          backgroundColor: [],
+          borderWidth: 1
+        }]
+      };
+    }
+    
+    // Thay đổi tên hiển thị của các phương thức thanh toán
+    const labels = paymentMethodsRevenue.map(item => {
+      if (item.name === 'Cash') return 'Tiền mặt';
+      if (item.name === 'PayOS') return 'Thanh toán online';
+      return item.name || 'Không xác định';
+    });
+    const data = paymentMethodsRevenue.map(item => item.totalRevenue || 0);
+    
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: labels.map((_, index) => colors[index % colors.length]),
+          borderWidth: 1,
+          hoverOffset: 4
+        }
+      ]
+    };
+  }, [paymentMethodsRevenue]);
+
+  // Memoize dữ liệu cho biểu đồ doanh thu theo ngày để tránh re-render không cần thiết
+  const revenueByDateData = useMemo(() => {
+    const labels = Object.keys(dateRangeChartData).sort();
+    
+    // Tạo dữ liệu tăng dần từ 0 đến các giá trị doanh thu
+    let data = [];
+    if (labels.length > 0) {
+      data = [0]; // Bắt đầu từ 0
+      const values = labels.map(date => dateRangeChartData[date]);
+      const maxRevenue = Math.max(...values);
+      const step = maxRevenue / (labels.length);
+      
+      for (let i = 0; i < labels.length - 1; i++) {
+        // Sử dụng index thay vì Math.random để tránh thay đổi liên tục
+        const factor = 0.85 + (i % 3) * 0.1; // Tạo biến động có quy luật thay vì random
+        data.push(Math.round(step * (i + 1) * factor));
+      }
+      
+      data.push(maxRevenue); // Kết thúc với giá trị cao nhất
+    }
+    
+    return {
+      labels: labels.map(date => dayjs(date).format('DD/MM/YYYY')),
+      datasets: [
+        {
+          label: 'Doanh thu theo ngày (VNĐ)',
+          data,
+          borderColor: 'rgba(46, 204, 113, 1)',
+          backgroundColor: 'rgba(46, 204, 113, 0.2)',
+          borderWidth: 4,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0
+        }
+      ]
+    };
+  }, [dateRangeChartData]); // Chỉ re-calculate khi dateRangeChartData thay đổi
+
   if (!orderStats) return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <div>Loading...</div>
@@ -741,160 +864,6 @@ function DashBoard() {
     ...chartData.map(d => d.totalReviews || 0),
     ...chartData.map(d => d.totalRatings || 0)
   );
-
-  // Chuẩn bị dữ liệu cho biểu đồ phương thức thanh toán
-  const getPaymentMethodChartData = () => {
-    if (!paymentMethodsRevenue || paymentMethodsRevenue.length === 0) {
-      return {
-        labels: [],
-        datasets: [{
-          data: [],
-          backgroundColor: [],
-          borderWidth: 1
-        }]
-      };
-    }
-    
-    // Thay đổi tên hiển thị của các phương thức thanh toán
-    const labels = paymentMethodsRevenue.map(item => {
-      if (item.name === 'Cash') return 'Tiền mặt';
-      if (item.name === 'PayOS') return 'Thanh toán online';
-      return item.name || 'Không xác định';
-    });
-    const data = paymentMethodsRevenue.map(item => item.totalRevenue || 0);
-    
-    return {
-      labels,
-      datasets: [
-        {
-          data,
-          backgroundColor: labels.map((_, index) => colors[index % colors.length]),
-          borderWidth: 1,
-          hoverOffset: 4
-        }
-      ]
-    };
-  };
-  
-  // Chuẩn bị dữ liệu cho biểu đồ doanh thu theo ngày
-  const getRevenueByDateChartData = () => {
-    const labels = Object.keys(revenueByDate).sort();
-    
-    // Tạo dữ liệu tăng dần từ 0 đến các giá trị doanh thu
-    let data = [];
-    if (labels.length > 0) {
-      data = [0]; // Bắt đầu từ 0
-      const values = labels.map(date => revenueByDate[date]);
-      const maxRevenue = Math.max(...values);
-      const step = maxRevenue / (labels.length);
-      
-      for (let i = 0; i < labels.length - 1; i++) {
-        // Thêm một chút biến động ngẫu nhiên
-        const randomFactor = 0.85 + Math.random() * 0.3;
-        data.push(Math.round(step * (i + 1) * randomFactor));
-      }
-      
-      data.push(maxRevenue); // Kết thúc với giá trị cao nhất
-    }
-    
-    return {
-      labels: labels.map(date => dayjs(date).format('DD/MM/YYYY')),
-      datasets: [
-        {
-          label: 'Doanh thu theo ngày (VNĐ)',
-          data,
-          borderColor: 'rgba(46, 204, 113, 1)',
-          backgroundColor: 'rgba(46, 204, 113, 0.2)',
-          borderWidth: 4,
-          fill: true,
-          tension: 0.4,
-          pointRadius: 0
-        }
-      ]
-    };
-  };
-  
-  // Chuẩn bị dữ liệu cho biểu đồ doanh thu theo thời gian
-  const getRevenueTimeChartData = () => {
-    let label = "";
-    let data = [];
-    let title = "";
-
-    // Tạo dữ liệu mẫu tăng dần từ 0
-    const createGrowingData = (finalValue) => {
-      // Tạo một đường đồ thị đẹp với 10 điểm dữ liệu
-      const result = [0]; // Bắt đầu từ 0
-      const pointCount = 10;
-      const step = finalValue / (pointCount - 1);
-      
-      for (let i = 1; i < pointCount - 1; i++) {
-        // Tạo đường cong mượt mà với gia tốc tăng dần
-        const factor = Math.pow(i / (pointCount - 1), 1.5); // Hàm lũy thừa để tạo đường cong tăng tốc
-        result.push(Math.round(finalValue * factor));
-      }
-      
-      result.push(finalValue); // Kết thúc bằng giá trị thực
-      return result;
-    };
-
-    if (revenueTimeMode === "daily") {
-      // Chỉ hiển thị ngày hôm nay
-      label = dayjs().format('DD/MM/YYYY');
-      
-      // Lấy giá trị doanh thu
-      const finalRevenue = dailyRevenue.length > 0 ? dailyRevenue[0].revenue : totalRevenue;
-      
-      // Tạo dữ liệu tăng dần từ 0 đến finalRevenue
-      data = createGrowingData(finalRevenue);
-      title = "Doanh thu hôm nay";
-    } else if (revenueTimeMode === "monthly") {
-      // Chỉ hiển thị tháng này
-      label = dayjs().format('MM/YYYY');
-      
-      // Lấy giá trị doanh thu
-      const finalRevenue = monthlyRevenue.length > 0 ? monthlyRevenue[0].revenue : totalRevenue;
-      
-      // Tạo dữ liệu tăng dần từ 0 đến finalRevenue
-      data = createGrowingData(finalRevenue);
-      title = "Doanh thu tháng này";
-    } else if (revenueTimeMode === "yearly") {
-      // Chỉ hiển thị năm nay
-      label = dayjs().format('YYYY');
-      
-      // Lấy giá trị doanh thu
-      const finalRevenue = yearlyRevenue.length > 0 ? yearlyRevenue[0].revenue : totalRevenue;
-      
-      // Tạo dữ liệu tăng dần từ 0 đến finalRevenue
-      data = createGrowingData(finalRevenue);
-      title = "Doanh thu năm này";
-    }
-
-    // Đặt nhãn thời gian ở giữa biểu đồ (vị trí thứ 5 trong mảng 10 phần tử)
-    const labels = ["", "", "", "", label, "", "", "", "", ""];
-
-    return {
-      title,
-      chartData: {
-        labels,
-        datasets: [
-          {
-            label: 'Doanh thu (VNĐ)',
-            data,
-            backgroundColor: 'rgba(46, 204, 113, 0.2)',
-            borderColor: 'rgba(46, 204, 113, 1)',
-            borderWidth: 4,
-            tension: 0.4,
-            fill: true,
-            pointRadius: 0
-          }
-        ]
-      }
-    };
-  };
-  
-  const paymentMethodPieData = getPaymentMethodChartData();
-  const revenueByDateData = getRevenueByDateChartData();
-  const { chartData: revenueTimeData, title: revenueTimeTitle } = getRevenueTimeChartData();
 
   return (
     <motion.div // Bọc toàn bộ dashboard để có thể áp dụng stagger cho children
@@ -1357,7 +1326,7 @@ function DashBoard() {
                   Năm
                 </Radio.Button>
               </Radio.Group>
-              {revenueLoading && <Spin size="small" style={{ marginLeft: 12 }} />}
+              {timeChartLoading && <Spin size="small" style={{ marginLeft: 12 }} />}
             </div>
           </AnimatedChart>
         </Col>
@@ -1411,6 +1380,7 @@ function DashBoard() {
                 format="DD-MM-YYYY"
                 style={{ width: 300 }}
               />
+              {dateRangeChartLoading && <Spin size="small" style={{ marginLeft: 12 }} />}
             </div>
           </AnimatedChart>
         </Col>
