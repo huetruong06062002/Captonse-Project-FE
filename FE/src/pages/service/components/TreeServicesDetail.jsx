@@ -116,6 +116,7 @@ const TreeServicesDetail = ({
 
     console.log("check serviceToEdit", serviceToEdit);
     setEditingService(serviceToEdit);
+    setUploadedFile(null); // Reset uploaded file khi mở modal
     setIsEditModalVisible(true); // Show the modal
   };
 
@@ -124,14 +125,21 @@ const TreeServicesDetail = ({
     try {
       // Tạo FormData để gửi dữ liệu
       const formData = new FormData();
-      const { name, price, description, imageUrl } = values;
+      const { name, price, description } = values;
 
       // Thêm các trường dữ liệu vào FormData
       formData.append("ServiceId", editingService.serviceId);
       formData.append("Name", name);
       formData.append("Price", price);
       formData.append("Description", description || "");
-      formData.append("Image", imageUrl);
+      
+      // Sử dụng uploadedFile state thay vì imageUrl từ values
+      if (uploadedFile) {
+        formData.append("Image", uploadedFile);
+      } else if (editingService?.imageUrl) {
+        // Nếu không có file mới, giữ nguyên URL cũ
+        formData.append("ImageUrl", editingService.imageUrl);
+      }
 
       // Gửi request với FormData
       const response = await axiosClientVer2.put(`/service-details`, formData, {
@@ -610,8 +618,6 @@ const TreeServicesDetail = ({
 
           <Form.Item
             label="Hình ảnh"
-            name="imageUrl"
-            valuePropName="file"
             tooltip={{ title: "Tải lên hình ảnh cho dịch vụ", icon: <InfoCircleOutlined /> }}
           >
             <Upload
@@ -619,23 +625,31 @@ const TreeServicesDetail = ({
               maxCount={1}
               beforeUpload={(file) => {
                 setUploadedFile(file);
-                return false;
+                return false; // Ngăn upload tự động
               }}
-              customRequest={({ file, onSuccess }) => {
-                setTimeout(() => {
-                  onSuccess("ok");
-                }, 0);
+              onRemove={() => {
+                setUploadedFile(null);
               }}
+              fileList={uploadedFile ? [
+                {
+                  uid: '-1',
+                  name: uploadedFile.name,
+                  status: 'done',
+                  originFileObj: uploadedFile,
+                }
+              ] : []}
               listType="picture-card"
               showUploadList={{
                 showPreviewIcon: true,
                 showRemoveIcon: true,
               }}
             >
-              <div>
-                <UploadOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
-                <div style={{ marginTop: 8, color: '#666' }}>Tải ảnh</div>
-              </div>
+              {!uploadedFile && (
+                <div>
+                  <UploadOutlined style={{ fontSize: '24px', color: '#1890ff' }} />
+                  <div style={{ marginTop: 8, color: '#666' }}>Tải ảnh</div>
+                </div>
+              )}
             </Upload>
           </Form.Item>
 
