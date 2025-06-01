@@ -428,7 +428,7 @@ function QuanLiDonHangDaKiemTraChatLuong() {
                         key: "pickupAddressDetail",
                       },
                       {
-                        title: "Thời gian lấy hàng",
+                        title: "Thời gian giao hàng",
                         dataIndex: "pickupTime",
                         key: "pickupTime",
                         render: (time) => new Date(time).toLocaleString("vi-VN"),
@@ -510,7 +510,7 @@ function QuanLiDonHangDaKiemTraChatLuong() {
                         key: "pickupAddressDetail",
                       },
                       {
-                        title: "Thời gian lấy hàng",
+                        title: "Thời gian giao hàng",
                         dataIndex: "pickupTime",
                         key: "pickupTime",
                         render: (time) => new Date(time).toLocaleString("vi-VN"),
@@ -606,7 +606,7 @@ function QuanLiDonHangDaKiemTraChatLuong() {
                         key: "pickupAddressDetail",
                       },
                       {
-                        title: "Thời gian lấy hàng",
+                        title: "Thời gian giao hàng",
                         dataIndex: "pickupTime",
                         key: "pickupTime",
                         render: (time) => new Date(time).toLocaleString("vi-VN"),
