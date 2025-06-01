@@ -590,7 +590,7 @@ function ListAllOrders() {
                             <Text>Dịch vụ thêm:</Text>
                             {item.extras.map((extra, idx) => (
                               <div key={idx}>
-                                <Text>{extra.name} - {formatCurrency(extra.price)}</Text>
+                                <Text>{extra.extraName} - {formatCurrency(extra.extraPrice)}</Text>
                               </div>
                             ))}
                           </div>

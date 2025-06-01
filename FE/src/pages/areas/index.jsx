@@ -258,6 +258,8 @@ const Areas = () => {
             onClick={() => showAddDistrictModal(record)}
             style={{ marginLeft: 8 }}
             className="area-add-district-btn"
+            disabled={getAvailableDistrictsForArea(record).length === 0}
+            title={getAvailableDistrictsForArea(record).length === 0 ? "Không còn quận/huyện nào để thêm" : "Thêm quận/huyện"}
           >
             Thêm
           </Button>
@@ -317,6 +319,47 @@ const Areas = () => {
     );
   };
 
+  // Hàm lấy tất cả quận/huyện đã được sử dụng trong tất cả các khu vực
+  const getAllUsedDistricts = () => {
+    const usedDistricts = new Set();
+    areas.forEach(area => {
+      area.districts.forEach(district => {
+        usedDistricts.add(district);
+      });
+    });
+    return Array.from(usedDistricts);
+  };
+
+  // Hàm lấy quận/huyện chưa được sử dụng trong bất kỳ khu vực nào
+  const getUnusedDistricts = () => {
+    const usedDistricts = getAllUsedDistricts();
+    return allDistricts.filter(district => !usedDistricts.includes(district));
+  };
+
+  // Hàm lấy quận/huyện có thể thêm vào khu vực cụ thể (chưa dùng + đã có trong khu vực đó)
+  const getAvailableDistrictsForArea = (area) => {
+    if (!area) return allDistricts;
+    
+    const usedInOtherAreas = new Set();
+    
+    areas.forEach((otherArea) => {
+      // Sử dụng name làm identifier chính vì nó unique và dễ debug
+      const isSameArea = otherArea.name === area.name;
+      
+      if (!isSameArea) {
+        if (otherArea.districts && Array.isArray(otherArea.districts)) {
+          otherArea.districts.forEach(district => {
+            usedInOtherAreas.add(district);
+          });
+        }
+      }
+    });
+    
+    const availableDistricts = allDistricts.filter(district => !usedInOtherAreas.has(district));
+    
+    return availableDistricts;
+  };
+
   // Thêm hàm submit import
   const handleImportSubmit = async () => {
     try {
@@ -362,14 +405,33 @@ const Areas = () => {
       const values = await addDistrictForm.validateFields();
       const newDistricts = values.districts;
       const area = addDistrictModal.area;
-      const newAreas = areas.map(a =>
-        a.id === area.id
-          ? { ...a, districts: [...a.districts, ...newDistricts.filter(d => !a.districts.includes(d))] }
-          : a
+      
+      console.log('🔧 handleAddDistrictModalOk called');
+      console.log('📍 Area to update:', area);
+      console.log('🏠 New districts to add:', newDistricts);
+      console.log('🔑 Area comparison - id:', area.id, 'areaId:', area.areaId, 'name:', area.name);
+      
+      // Tạo danh sách districts mới cho khu vực này
+      const updatedDistricts = [...area.districts, ...newDistricts.filter(d => !area.districts.includes(d))];
+      
+      console.log('📋 Updated districts for this area:', updatedDistricts);
+      
+      // Sử dụng API PUT riêng cho khu vực cụ thể thay vì updateAllAreas
+      await putRequest(
+        `/admin/areas/${area.areaId}?name=${encodeURIComponent(area.name)}&shippingFee=${area.shippingFee || 0}`,
+        updatedDistricts
       );
+      
+      message.success('Thêm quận/huyện thành công!');
       setAddDistrictModal({ visible: false, area: null });
-      updateAllAreas(newAreas);
-    } catch {}
+      
+      // Refresh data từ server
+      fetchAreas();
+      
+    } catch (error) {
+      console.error('Error adding districts:', error);
+      message.error('Không thể thêm quận/huyện');
+    }
   };
 
   // Mở modal chỉnh sửa khu vực
@@ -495,6 +557,7 @@ const Areas = () => {
         title={`Thêm quận/huyện vào ${currentArea?.name || ''}`}
         open={districtModalVisible}
         onOk={handleAddDistrict}
+        onCancel={handleDistrictModalCancel}
         okText="Thêm"
       >
         <Form form={districtForm} layout="vertical">
@@ -504,7 +567,7 @@ const Areas = () => {
             rules={[{ required: true, message: 'Vui lòng chọn quận/huyện' }]}
           >
             <Select placeholder="Chọn quận/huyện">
-              {getAvailableDistricts().map(district => (
+              {getAvailableDistrictsForArea(currentArea).map(district => (
                 <Option key={district} value={district}>{district}</Option>
               ))}
             </Select>
@@ -598,23 +661,32 @@ const Areas = () => {
         okText="Thêm"
         cancelText="Hủy"
         footer={[
-          <Button key="submit" type="primary" onClick={handleAddDistrictModalOk} style={{ width: '100%' }}>
+          <Button key="submit" type="primary" onClick={handleAddDistrictModalOk} style={{ width: '100%' }}
+            disabled={addDistrictModal.area && getAvailableDistrictsForArea(addDistrictModal.area).length === 0}
+          >
             Thêm
           </Button>
         ]}
       >
         <Form form={addDistrictForm} layout="vertical">
-          <Form.Item
-            name="districts"
-            label="Chọn quận/huyện"
-            rules={[{ required: true, message: 'Vui lòng chọn ít nhất 1 quận/huyện' }]}
-          >
-            <Select
-              mode="multiple"
-              placeholder="Chọn quận/huyện"
-              options={addDistrictModal.area ? allDistricts.filter(d => !addDistrictModal.area.districts.includes(d)).map(d => ({ label: d, value: d })) : []}
-            />
-          </Form.Item>
+          {addDistrictModal.area && getAvailableDistrictsForArea(addDistrictModal.area).length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#999', padding: '20px' }}>
+              ❌ Không còn quận/huyện nào để thêm vào khu vực này. 
+              Tất cả quận/huyện đã được phân bổ cho các khu vực khác.
+            </div>
+          ) : (
+            <Form.Item
+              name="districts"
+              label="Chọn quận/huyện"
+              rules={[{ required: true, message: 'Vui lòng chọn ít nhất 1 quận/huyện' }]}
+            >
+              <Select
+                mode="multiple"
+                placeholder="Chọn quận/huyện"
+                options={addDistrictModal.area ? getAvailableDistrictsForArea(addDistrictModal.area).map(d => ({ label: d, value: d })) : []}
+              />
+            </Form.Item>
+          )}
         </Form>
       </Modal>
 
@@ -647,7 +719,7 @@ const Areas = () => {
             <Select
               mode="multiple"
               placeholder="Chọn quận/huyện"
-              options={allDistricts.map(d => ({ label: d, value: d }))}
+              options={editAreaModal.area ? getAvailableDistrictsForArea(editAreaModal.area).map(d => ({ label: d, value: d })) : allDistricts.map(d => ({ label: d, value: d }))}
             />
           </Form.Item>
           <Form.Item

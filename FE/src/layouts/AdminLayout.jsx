@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   DownOutlined,
@@ -202,27 +202,6 @@ const AdminLayout = () => {
 
   const [userInfo, setUserInfo] = useState(null);
 
-
-  useEffect(() => {
-    const currentPath = location.pathname;
-    let activeKey = currentPath;
-    dispatch(setActiveKey(activeKey));
-    const parentKey = menuItems.find(
-      (item) =>
-        item.children && item.children.some((child) => child.key === activeKey)
-    )?.key;
-    if (parentKey) dispatch(setOpenKeys([parentKey]));
-  }, [location.pathname, dispatch]);
-
-  const handleMenuClick = ({ key }) => {
-    dispatch(setActiveKey(key));
-    navigate(key);
-  };
-
-  const onOpenChange = (keys) => {
-    dispatch(setOpenKeys(keys));
-  };
-
   // Hàm tạo label với tooltip
   const createLabelWithTooltip = (text) => (
     // <Tooltip
@@ -243,7 +222,8 @@ const AdminLayout = () => {
     // </Tooltip>
   );
 
-  const menuItems = [
+  // Memoize menuItems để tránh re-creation không cần thiết
+  const menuItems = useMemo(() => [
     {
       key: endPoints.DASHBOARD,
       icon: <DashboardOutlined />,
@@ -324,27 +304,71 @@ const AdminLayout = () => {
       label: createLabelWithTooltip("Quản lý người dùng(chăm sóc khách hàng)"),
       allowedRoles: ["CustomerStaff"],
     },
-    // {
-    //   key: endPoints.CHAT,
-    //   icon: <MessageOutlined />,
-    //   label: createLabelWithTooltip("Chat"),
-    //   allowedRoles: ["Admin", "Staff", "CustomerStaff"],
-    // },
-    // {
-    //   key: endPoints.CHATWIITHAI,
-    //   icon: <RobotOutlined />,
-    //   label: createLabelWithTooltip("Chat Với AI Support"),
-    //   allowedRoles: ["Admin"],
-    // },
     {
       key: endPoints.POLICY,
       icon: <FlagOutlined />,
       label: createLabelWithTooltip("Chính sách"),
       allowedRoles: ["Admin"],
     },
-  ];
+  ], [collapsed]);
 
-  const filteredMenuItems = menuItems
+  const menuItemsRef = useRef(menuItems);
+  const isNavigatingRef = useRef(false);
+
+  // Sync menuItemsRef with menuItems
+  useEffect(() => {
+    menuItemsRef.current = menuItems;
+  }, [menuItems]);
+
+  useEffect(() => {
+    const currentPath = location.pathname;
+    
+    // Chỉ cập nhật activeKey nếu không phải do navigate từ menu
+    if (!isNavigatingRef.current) {
+      dispatch(setActiveKey(currentPath));
+    }
+    
+    // Reset flag
+    isNavigatingRef.current = false;
+    
+    // Tìm parent menu cho submenu items
+    const parentKey = menuItemsRef.current.find(
+      (item) =>
+        item.children && item.children.some((child) => child.key === currentPath)
+    )?.key;
+    
+    if (parentKey) {
+      dispatch(setOpenKeys([parentKey]));
+    }
+  }, [location.pathname, dispatch]);
+
+  const handleMenuClick = ({ key }) => {
+    // Set flag để useEffect biết đây là navigation từ menu click
+    isNavigatingRef.current = true;
+    
+    // Cập nhật activeKey ngay lập tức để có feedback tức thì
+    dispatch(setActiveKey(key));
+    
+    // Tìm parent key trước khi dispatch
+    const parentKey = menuItemsRef.current.find(
+      (item) =>
+        item.children && item.children.some((child) => child.key === key)
+    )?.key;
+    
+    // Cập nhật openKeys nếu cần
+    if (parentKey) {
+      dispatch(setOpenKeys([parentKey]));
+    }
+    
+    // Navigate
+    navigate(key);
+  };
+
+  const onOpenChange = (keys) => {
+    dispatch(setOpenKeys(keys));
+  };
+
+  const filteredMenuItems = menuItemsRef.current
     .filter((item) => {
       if (item.children) {
         item.children = item.children.filter((child) =>
