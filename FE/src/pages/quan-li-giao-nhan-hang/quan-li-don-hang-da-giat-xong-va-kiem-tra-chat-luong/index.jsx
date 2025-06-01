@@ -440,6 +440,11 @@ function QuanLiDonHangDaKiemTraChatLuong() {
                         render: (price) => `${price.toLocaleString()} VND`,
                       },
                       {
+                        title: "Số lần người dùng hủy",
+                        dataIndex: "userDeclineCount",
+                        key: "userDeclineCount",
+                      },
+                      {
                         title: 'Thao tác',
                         key: 'action',
                         width: 120,
