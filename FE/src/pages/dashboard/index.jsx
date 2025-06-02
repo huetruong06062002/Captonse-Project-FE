@@ -1465,7 +1465,7 @@ function DashBoard() {
             <Rate disabled allowHalf value={ratingStats.averageStar} style={{ fontSize: 28, color: "#FFD700" }} />
             <div style={{ fontSize: 22, fontWeight: 700, color: "#222", margin: "8px 0 0 0" }}>{ratingStats.averageStar}/5</div>
             <div style={{ color: "#888", fontSize: 15, margin: "8px 0 0 0" }}>
-              Tổng số sao đánh giá trung bình: <b style={{ color: "#222" }}>{ratingStats.totalReviews}</b> <br/>
+              Tổng số nhận xét: <b style={{ color: "#222" }}>{ratingStats.totalReviews}</b> <br/>
               Số lượng đánh giá: <b style={{ color: "#222" }}>{ratingStats.totalRatings}</b>
             </div>
             <Button
