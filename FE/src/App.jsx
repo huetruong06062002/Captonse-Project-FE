@@ -25,6 +25,30 @@ import Areas from '@pages/areas';
 import Policy from '@pages/policy';
 import Branch from '@pages/branch';
 import UserManagementCustomerStaff from '@pages/user-management-customer-staff';
+import { useSelector } from "react-redux";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+// Component để redirect dựa trên role
+const RoleBasedRedirect = () => {
+  const { role } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    switch (role) {
+      case "Admin":
+        navigate(endPoints.DASHBOARD, { replace: true });
+        break;
+      case "CustomerStaff":
+        navigate(endPoints.CONFIRMCUSTOMERPENDING, { replace: true });
+        break;
+      default:
+        navigate(endPoints.CHAT, { replace: true });
+    }
+  }, [role, navigate]);
+
+  return <div>Đang chuyển hướng...</div>;
+};
 
 function App() {
   useComplaintNotification();
@@ -32,18 +56,34 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to={endPoints.LOGIN} replace />} />
-        {/* PrivateRoute cho Admin và Staff, CustomerStaff */}
-        <Route
-          element={
-            <PrivateRoute allowedRoles={["Admin", "Staff", "CustomerStaff"]} />
-          }
-        >
+
+        {/* PrivateRoute cho tất cả authenticated users */}
+        <Route element={<PrivateRoute allowedRoles={["Admin", "Staff", "CustomerStaff"]} />}>
           <Route path={endPoints.ALL} element={<AdminLayout />}>
-            <Route index element={<Chat />} />
+            {/* Index route - redirect dựa trên role */}
+            <Route index element={<RoleBasedRedirect />} />
+
+            {/* Các routes chung cho tất cả roles */}
             <Route
               path={endPoints.PROFILE}
               element={<Profile />}
             />
+            <Route path={endPoints.CHAT} element={<Chat />} />
+
+            {/* Routes cho Admin */}
+            <Route path={endPoints.DASHBOARD} element={<DashBoard />} />
+            <Route path={endPoints.BRANCH} element={<Branch />} />
+            <Route path={endPoints.AREAS} element={<Areas />} />
+            <Route path={endPoints.POLICY} element={<Policy />} />
+            <Route path={endPoints.SERVICES} element={<Services />} />
+            <Route
+              path={endPoints.EXTRACATEGORIES}
+              element={<ExtraCategories />}
+            />
+            <Route path={endPoints.USERS} element={<Users />} />
+            <Route path={endPoints.CHATWIITHAI} element={<ChatWithAi />} />
+
+            {/* Routes cho Admin & Staff */}
             <Route
               path={endPoints.DANH_SACH_TAT_CA_DON_HANG}
               element={<ListAllOrders />}
@@ -56,52 +96,16 @@ function App() {
               path={endPoints.DANH_SACH_DON_HANG_DA_KIEM_TRA_CHAT_LUONG}
               element={<QuanLiDonHangDaKiemTraChatLuong />}
             />
-            {/* <Route path={endPoints.ORDER} element={<Order />} /> */}
-            <Route path={endPoints.CHAT} element={<Chat />} />
-          </Route>
-        </Route>
-        
-        {/* PrivateRoute cho Admin và CustomerStaff */}
 
-        <Route element={<PrivateRoute allowedRoles={["Admin", "CustomerStaff"]} />}>
-          <Route path={endPoints.ALL} element={<AdminLayout />}>
+            {/* Routes cho Admin & CustomerStaff */}
             <Route path={endPoints.COMPLAINT} element={<Complaint />} />
-          </Route>
-        </Route>
 
-        {/* PrivateRoute chỉ dành cho CustomerStaff */}
-        <Route element={<PrivateRoute allowedRoles={["CustomerStaff"]} />}>
-          <Route path={endPoints.ALL} element={<AdminLayout />}>
-            <Route index element={<ConfirmOrderPending />} />
+            {/* Routes cho CustomerStaff */}
             <Route
               path={endPoints.CONFIRMCUSTOMERPENDING}
               element={<ConfirmOrderPending />}
             />
-            <Route path={endPoints.CHAT} element={<Chat />} />
             <Route path={endPoints.USERMANAGEMENTCUSTOMERSTAFF} element={<UserManagementCustomerStaff />} />
-          </Route>
-        </Route>
-
-        {/* PrivateRoute chỉ dành cho Admin */}
-        <Route element={<PrivateRoute allowedRoles={["Admin"]} />}>
-          <Route path={endPoints.ALL} element={<AdminLayout />}>
-            <Route index element={<DashBoard />} />
-            <Route path={endPoints.DASHBOARD} element={<DashBoard />} />
-            <Route path={endPoints.BRANCH} element={<Branch />} />
-
-            <Route path={endPoints.AREAS} element={<Areas />} />
-
-            <Route path={endPoints.POLICY} element={<Policy />} />
-
-
-
-            <Route path={endPoints.SERVICES} element={<Services />} />
-            <Route
-              path={endPoints.EXTRACATEGORIES}
-              element={<ExtraCategories />}
-            />
-            <Route path={endPoints.USERS} element={<Users />} />
-            <Route path={endPoints.CHATWIITHAI} element={<ChatWithAi />} />
           </Route>
         </Route>
         <Route path={endPoints.LOGIN} element={<Login />} />

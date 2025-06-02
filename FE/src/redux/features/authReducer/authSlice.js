@@ -19,6 +19,36 @@ export const login = createAsyncThunk(
   }
 );
 
+// Helper function để load initial state từ localStorage
+const loadAuthFromStorage = () => {
+  try {
+    const accessToken = localStorage.getItem("accessToken");
+    const refreshToken = localStorage.getItem("refreshToken");
+    const role = localStorage.getItem("role");
+    const userId = localStorage.getItem("userId");
+    const fullName = localStorage.getItem("fullName");
+    const phoneNumber = localStorage.getItem("phoneNumber");
+    const image = localStorage.getItem("image");
+    
+    if (accessToken) {
+      return {
+        accessToken,
+        refreshToken,
+        role,
+        user: {
+          userId,
+          fullName,
+          phoneNumber,
+        },
+        image,
+      };
+    }
+  } catch (error) {
+    console.error("Error loading auth from storage:", error);
+  }
+  return {};
+};
+
 // Slice cho auth
 const authSlice = createSlice({
   name: "auth",
@@ -27,10 +57,12 @@ const authSlice = createSlice({
     fullName: null,
     phoneNumber: null,
     rewardpoints: null,
-    role: false,
+    role: null,
     image: null,
+    accessToken: null,
     refreshToken: null,
     isLoading: false,
+    ...loadAuthFromStorage(),
   },
   reducers: {
     logout: (state) => {
@@ -42,6 +74,7 @@ const authSlice = createSlice({
       state.image = null;
       state.accessToken = null;
       state.refreshToken = null;
+      state.user = null;
       localStorage.clear();
     },
   },
@@ -51,8 +84,9 @@ const authSlice = createSlice({
         state.isLoading = true;
       })
       .addCase(login.fulfilled, (state, action) => {
-        const data  = action.payload;
-        console.log("check login", data);
+        const data = action.payload;
+        console.log("🔑 Login success:", data);
+        
         state.user = {
           userId: data.userId,
           fullName: data.fullName,
@@ -63,8 +97,16 @@ const authSlice = createSlice({
         state.refreshToken = data.refreshToken;
         state.role = data.role;
         state.image = data.image;
+        
+        // Persist to localStorage
         localStorage.setItem("accessToken", data.token);
         localStorage.setItem("refreshToken", data.refreshToken);
+        localStorage.setItem("role", data.role);
+        localStorage.setItem("userId", data.userId);
+        localStorage.setItem("fullName", data.fullName);
+        localStorage.setItem("phoneNumber", data.phoneNumber);
+        if (data.image) localStorage.setItem("image", data.image);
+        
         state.isLoading = false;
 
         // Set redirectPath based on role
