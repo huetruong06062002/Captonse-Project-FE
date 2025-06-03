@@ -11,7 +11,7 @@ const endPoints = {
   POLICY: "policy",
   EXTRACATEGORIES: "extra-categories",
   USERS: "users",
-  USERMANAGEMENTCUSTOMERSTAFF: "user-management-customer-staff",
+  ORDERMANAGEMENTCUSTOMERSTAFF: "user-management-customer-staff",
   BRANCH: "branch",
   CHAT: "chat",
   AREAS: "areas",

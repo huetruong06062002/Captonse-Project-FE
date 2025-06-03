@@ -299,9 +299,9 @@ const AdminLayout = () => {
       allowedRoles: ["CustomerStaff"],
     },
     {
-      key: endPoints.USERMANAGEMENTCUSTOMERSTAFF,
-      icon: <UsergroupAddOutlined />,
-      label: createLabelWithTooltip("Quản lý người dùng(chăm sóc khách hàng)"),
+      key: endPoints.ORDERMANAGEMENTCUSTOMERSTAFF,
+      icon: <ShoppingCartOutlined />,
+      label: createLabelWithTooltip("Quản lý giỏ hàng khách hàng"),
       allowedRoles: ["CustomerStaff"],
     },
     {
