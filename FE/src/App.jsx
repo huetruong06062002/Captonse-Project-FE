@@ -24,7 +24,7 @@ import useComplaintNotification from '@pages/notification';
 import Areas from '@pages/areas';
 import Policy from '@pages/policy';
 import Branch from '@pages/branch';
-import ORDERMANAGEMENTCUSTOMERSTAFF from '@pages/user-management-customer-staff';
+import ORDERMANAGEMENTCUSTOMERSTAFF from '@pages/order-management-customer-staff';
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
