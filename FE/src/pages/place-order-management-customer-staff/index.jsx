@@ -75,6 +75,9 @@ export default function PlaceOrderManagementCustomerStaff() {
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [placingOrderUserId, setPlacingOrderUserId] = useState(null);
   const [isSelectAddressModalVisible, setIsSelectAddressModalVisible] = useState(false);
+  const [cartData, setCartData] = useState(null);
+  const [placeOrderForm] = Form.useForm();
+  const [calculatingShipping, setCalculatingShipping] = useState(false);
 
   // Fetch data from paginated API
   const fetchData = async (params = {}) => {
@@ -364,6 +367,28 @@ export default function PlaceOrderManagementCustomerStaff() {
               setAddressOptions(addresses);
               setSelectedAddressId(addresses[0].addressId); // chọn mặc định
               setPlacingOrderUserId(record.userId);
+              
+              // Gọi API cart để lấy thông tin
+              try {
+                const cartRes = await getRequest(`/customer-staff/cart?userId=${record.userId}`);
+                setCartData(cartRes.data);
+                
+                // Set initial values for form
+                placeOrderForm.setFieldsValue({
+                  deliveryAddressId: addresses[0].addressId,
+                  shippingFee: 0,
+                  applicableFee: cartRes.data.applicableFee || 0,
+                  discount: 0,
+                  serviceName: cartRes.data.serviceName || "",
+                  estimatedTotal: cartRes.data.estimatedTotal || 0,
+                  total: (cartRes.data.estimatedTotal || 0) + (cartRes.data.applicableFee || 0),
+                  note: "",
+                });
+              } catch (e) {
+                message.error('Không thể tải thông tin giỏ hàng!');
+                return;
+              }
+              
               setIsSelectAddressModalVisible(true);
             }}
           >
@@ -386,6 +411,43 @@ export default function PlaceOrderManagementCustomerStaff() {
       message.error('Không thể tải địa chỉ khách hàng');
     }
     setAddressLoading(false);
+  };
+
+  const calculateShippingFee = async () => {
+    setCalculatingShipping(true);
+    try {
+      const formValues = placeOrderForm.getFieldsValue();
+      const shippingRes = await postRequest(`/customer-staff/shipping-fee`, {
+        deliveryAddressId: formValues.deliveryAddressId !== 'store' ? formValues.deliveryAddressId : undefined,
+        deliveryTime: formValues.deliveryTime ? formValues.deliveryTime.format('YYYY-MM-DDTHH:mm:ss') : undefined,
+        serviceName: formValues.serviceName,
+        minCompleteTime: cartData?.minCompleteTime,
+        estimatedTotal: formValues.estimatedTotal
+      });
+      
+      // Cập nhật form với shippingFee và applicableFee từ response
+      const newShippingFee = shippingRes.data.shippingFee || 0;
+      const newApplicableFee = shippingRes.data.applicableFee || 0;
+      
+      placeOrderForm.setFieldsValue({
+        shippingFee: newShippingFee,
+        applicableFee: newApplicableFee,
+      });
+      
+      // Tính lại total với giá trị mới
+      const estimatedTotal = formValues.estimatedTotal || 0;
+      const discount = formValues.discount || 0;
+      const newTotal = estimatedTotal + newShippingFee + newApplicableFee - discount;
+      
+      placeOrderForm.setFieldValue('total', newTotal);
+      message.success('Tính phí ship thành công!');
+    } catch (error) {
+      // Lấy message lỗi từ response
+      const errorMessage = error?.response?.data?.message || error?.data?.message || 'Không thể tính phí ship!';
+      message.error(errorMessage);
+    } finally {
+      setCalculatingShipping(false);
+    }
   };
 
   return (
@@ -839,21 +901,27 @@ export default function PlaceOrderManagementCustomerStaff() {
         width={700}
       >
         <Form
+          form={placeOrderForm}
           layout="vertical"
           onFinish={async (values) => {
             try {
+              const payload = {
+                deliveryTime: values.deliveryTime ? values.deliveryTime.format('YYYY-MM-DDTHH:mm:ss') : undefined,
+                shippingFee: values.shippingFee || 0,
+                applicableFee: values.applicableFee || 0,
+                discount: values.discount || 0,
+                total: values.total || 0,
+                note: values.note || "",
+              };
+              
+              // Chỉ thêm deliveryAddressId nếu không chọn "Tại cửa hàng"
+              if (values.deliveryAddressId !== 'store') {
+                payload.deliveryAddressId = values.deliveryAddressId;
+              }
+              
               await postRequest(
                 `/customer-staff/place-order?userId=${placingOrderUserId}`,
-                {
-                  deliveryAddressId: values.deliveryAddressId,
-                  deliveryTime: values.deliveryTime ? values.deliveryTime.format('YYYY-MM-DDTHH:mm:ss') : undefined,
-                  shippingFee: values.shippingFee || 0,
-                  shippingDiscount: values.shippingDiscount || 0,
-                  applicableFee: values.applicableFee || 0,
-                  discount: values.discount || 0,
-                  total: values.total || 0,
-                  note: values.note || "",
-                }
+                payload
               );
               message.success('Tạo đơn hàng thành công!');
               setIsSelectAddressModalVisible(false);
@@ -861,14 +929,17 @@ export default function PlaceOrderManagementCustomerStaff() {
               message.error('Tạo đơn hàng thất bại!');
             }
           }}
-          initialValues={{
-            deliveryAddressId: selectedAddressId,
-            shippingFee: 0,
-            shippingDiscount: 0,
-            applicableFee: 0,
-            discount: 0,
-            total: 0,
-            note: "",
+          onValuesChange={(changedValues, allValues) => {
+            // Tự động tính total khi các giá trị thay đổi
+            if (changedValues.estimatedTotal || changedValues.shippingFee || changedValues.applicableFee || changedValues.discount) {
+              const estimatedTotal = allValues.estimatedTotal || 0;
+              const shippingFee = allValues.shippingFee || 0;
+              const applicableFee = allValues.applicableFee || 0;
+              const discount = allValues.discount || 0;
+              
+              const total = estimatedTotal + shippingFee + applicableFee - discount;
+              placeOrderForm.setFieldValue('total', total);
+            }
           }}
         >
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
@@ -885,6 +956,9 @@ export default function PlaceOrderManagementCustomerStaff() {
                       <b>{addr.addressLabel}</b>: {addr.detailAddress}
                     </Radio>
                   ))}
+                  <Radio value="store" style={{ display: 'block', margin: '8px 0' }}>
+                    <b>Tại cửa hàng</b>
+                  </Radio>
                 </Radio.Group>
               </Form.Item>
               <Form.Item label="Thời gian giao (tùy chọn)" name="deliveryTime">
@@ -895,22 +969,36 @@ export default function PlaceOrderManagementCustomerStaff() {
                   placeholder="Chọn ngày giờ giao hàng"
                 />
               </Form.Item>
-              <Form.Item label="Phí vận chuyển" name="shippingFee">
-                <Input type="number" min={0} />
+              <Form.Item name="serviceName">
+                <div style={{ padding: '8px 0', fontSize: '14px' }}>
+                  <span style={{ fontWeight: 'normal' }}>Tên dịch vụ: </span>
+                  <span style={{ fontWeight: '500' }}>{placeOrderForm.getFieldValue('serviceName') || 'Đang tải...'}</span>
+                </div>
               </Form.Item>
-              <Form.Item label="Giảm giá vận chuyển" name="shippingDiscount">
-                <Input type="number" min={0} />
-              </Form.Item>
+              <Button 
+                type="default" 
+                onClick={calculateShippingFee}
+                loading={calculatingShipping}
+                style={{ width: '100%', marginBottom: 16 }}
+              >
+                Tính phí ship
+              </Button>
             </div>
             <div>
+              <Form.Item label="Tổng tạm tính" name="estimatedTotal">
+                <Input type="number" min={0} disabled />
+              </Form.Item>
+              <Form.Item label="Phí vận chuyển" name="shippingFee">
+                <Input type="number" min={0} disabled />
+              </Form.Item>
               <Form.Item label="Phí phát sinh" name="applicableFee">
-                <Input type="number" min={0} />
+                <Input type="number" min={0} disabled />
               </Form.Item>
               <Form.Item label="Giảm giá" name="discount">
                 <Input type="number" min={0} />
               </Form.Item>
               <Form.Item label="Tổng cộng" name="total">
-                <Input type="number" min={0} />
+                <Input type="number" min={0} disabled style={{ fontWeight: 'bold', fontSize: '16px', color: '#f5222d' }} />
               </Form.Item>
               <Form.Item label="Ghi chú" name="note">
                 <Input.TextArea />
