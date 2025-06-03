@@ -29,6 +29,7 @@ import { useSelector } from "react-redux";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PlaceOrderManagementCustomerStaff from '@pages/place-order-management-customer-staff';
+import AbsenDriverMangement from '@pages/quan-li-giao-nhan-hang/quan-li-lich-vang-tai-xe';
 
 // Component để redirect dựa trên role
 const RoleBasedRedirect = () => {
@@ -77,6 +78,7 @@ function App() {
             <Route path={endPoints.AREAS} element={<Areas />} />
             <Route path={endPoints.POLICY} element={<Policy />} />
             <Route path={endPoints.SERVICES} element={<Services />} />
+            <Route path={endPoints.QUAN_LI_LICH_VANG_TAI_XE} element={<AbsenDriverMangement />} />
             <Route
               path={endPoints.EXTRACATEGORIES}
               element={<ExtraCategories />}
@@ -106,7 +108,7 @@ function App() {
               path={endPoints.CONFIRMCUSTOMERPENDING}
               element={<ConfirmOrderPending />}
             />
-            
+
             <Route path={endPoints.ORDERMANAGEMENTCUSTOMERSTAFF} element={<ORDERMANAGEMENTCUSTOMERSTAFF />} />
           </Route>
         </Route>

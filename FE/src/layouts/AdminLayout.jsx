@@ -243,6 +243,12 @@ const AdminLayout = () => {
           allowedRoles: ["Admin", "Staff"],
         },
         {
+          key: `${endPoints.QUAN_LI_LICH_VANG_TAI_XE}`,
+          icon: <CalendarOutlined />,
+          label: createLabelWithTooltip("Quản lý lịch vắng tài xế"),
+          allowedRoles: ["Admin"],
+        },    
+        ,{
           key: `${endPoints.AREAS}`,
           icon: <EnvironmentOutlined />,
           label: createLabelWithTooltip("Quản lý khu vực"),
