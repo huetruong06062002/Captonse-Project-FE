@@ -422,7 +422,7 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
               loading={loadingDetail}
             />
           </Tooltip>
-          <Tooltip title="Thêm vào giỏ hàng">
+          <Tooltip title="Thêm sản phẩm vào giỏ hàng">
             <Button 
               type="link" 
               icon={<PlusOutlined />} 

@@ -212,13 +212,13 @@ const AdminLayout = () => {
     //     maxWidth: "300px"
     //   }}
     // >
-      <div style={{
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        ...(collapsed ? { width: 0, height: 0, opacity: 0 } : {})
-      }}>
-        {text}
-      </div>
+    <div style={{
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      ...(collapsed ? { width: 0, height: 0, opacity: 0 } : {})
+    }}>
+      {text}
+    </div>
     // </Tooltip>
   );
 
@@ -305,6 +305,12 @@ const AdminLayout = () => {
       allowedRoles: ["CustomerStaff"],
     },
     {
+      key: endPoints.PLACEORDERMANAGEMENTCUSTOMERSTAFF,
+      icon: <SolutionOutlined />,
+      label: createLabelWithTooltip("Quản lý đơn hàng khách hàng"),
+      allowedRoles: ["CustomerStaff"],
+    },
+    {
       key: endPoints.POLICY,
       icon: <FlagOutlined />,
       label: createLabelWithTooltip("Chính sách"),
@@ -322,21 +328,21 @@ const AdminLayout = () => {
 
   useEffect(() => {
     const currentPath = location.pathname;
-    
+
     // Chỉ cập nhật activeKey nếu không phải do navigate từ menu
     if (!isNavigatingRef.current) {
       dispatch(setActiveKey(currentPath));
     }
-    
+
     // Reset flag
     isNavigatingRef.current = false;
-    
+
     // Tìm parent menu cho submenu items
     const parentKey = menuItemsRef.current.find(
       (item) =>
         item.children && item.children.some((child) => child.key === currentPath)
     )?.key;
-    
+
     if (parentKey) {
       dispatch(setOpenKeys([parentKey]));
     }
@@ -345,21 +351,21 @@ const AdminLayout = () => {
   const handleMenuClick = ({ key }) => {
     // Set flag để useEffect biết đây là navigation từ menu click
     isNavigatingRef.current = true;
-    
+
     // Cập nhật activeKey ngay lập tức để có feedback tức thì
     dispatch(setActiveKey(key));
-    
+
     // Tìm parent key trước khi dispatch
     const parentKey = menuItemsRef.current.find(
       (item) =>
         item.children && item.children.some((child) => child.key === key)
     )?.key;
-    
+
     // Cập nhật openKeys nếu cần
     if (parentKey) {
       dispatch(setOpenKeys([parentKey]));
     }
-    
+
     // Navigate
     navigate(key);
   };

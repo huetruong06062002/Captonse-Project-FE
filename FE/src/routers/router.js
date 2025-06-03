@@ -12,6 +12,7 @@ const endPoints = {
   EXTRACATEGORIES: "extra-categories",
   USERS: "users",
   ORDERMANAGEMENTCUSTOMERSTAFF: "user-management-customer-staff",
+  PLACEORDERMANAGEMENTCUSTOMERSTAFF: "order-user-management-customer-staff",
   BRANCH: "branch",
   CHAT: "chat",
   AREAS: "areas",

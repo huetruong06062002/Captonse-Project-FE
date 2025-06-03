@@ -28,6 +28,7 @@ import ORDERMANAGEMENTCUSTOMERSTAFF from '@pages/order-management-customer-staff
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import PlaceOrderManagementCustomerStaff from '@pages/place-order-management-customer-staff';
 
 // Component để redirect dựa trên role
 const RoleBasedRedirect = () => {
@@ -99,12 +100,13 @@ function App() {
 
             {/* Routes cho Admin & CustomerStaff */}
             <Route path={endPoints.COMPLAINT} element={<Complaint />} />
-
+            <Route path={endPoints.PLACEORDERMANAGEMENTCUSTOMERSTAFF} element={<PlaceOrderManagementCustomerStaff />} />
             {/* Routes cho CustomerStaff */}
             <Route
               path={endPoints.CONFIRMCUSTOMERPENDING}
               element={<ConfirmOrderPending />}
             />
+            
             <Route path={endPoints.ORDERMANAGEMENTCUSTOMERSTAFF} element={<ORDERMANAGEMENTCUSTOMERSTAFF />} />
           </Route>
         </Route>
