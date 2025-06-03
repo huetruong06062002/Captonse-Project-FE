@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Card, Spin, Empty, Typography, Tag, Descriptions, Space, Button, Tooltip, Collapse, InputNumber, Modal, Divider, Select, Image, Form, Row, Col, Checkbox, message } from 'antd';
-import { getRequestParams, getRequest, postRequestParams, postRequest } from '@services/api';
-import { EyeOutlined, ShoppingCartOutlined, UserOutlined, PhoneOutlined, HomeOutlined, ClockCircleOutlined, CarOutlined, PlusOutlined } from '@ant-design/icons';
+import { getRequestParams, getRequest, postRequestParams, postRequest, putRequest } from '@services/api';
+import { EyeOutlined, ShoppingCartOutlined, UserOutlined, PhoneOutlined, HomeOutlined, ClockCircleOutlined, CarOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons';
 import "./index.css";
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
@@ -36,6 +36,15 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
 
   // Add state for selected user
   const [selectedUserId, setSelectedUserId] = useState(null);
+
+  // States for update cart functionality
+  const [isUpdateCartModalVisible, setIsUpdateCartModalVisible] = useState(false);
+  const [updatingCart, setUpdatingCart] = useState(false);
+  const [updateCartData, setUpdateCartData] = useState(null);
+  const [currentUserExtras, setCurrentUserExtras] = useState([]);
+
+  // Add state to track pending extras selection for update modal
+  const [pendingExtrasSelection, setPendingExtrasSelection] = useState(null);
 
   useEffect(() => {
     fetchCarts();
@@ -81,7 +90,7 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
     }
   };
 
-  // New API functions for add to cart workflow
+  //  API functions for add to cart workflow
   const fetchCategories = async () => {
     setLoadingCategories(true);
     try {
@@ -120,7 +129,7 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
     }
   };
 
-  const fetchServiceDetail = async (serviceId) => {
+  const fetchServiceDetail = async (serviceId, preserveExtras = false) => {
     setLoadingServiceDetail(true);
     try {
       const response = await getRequestParams(`/service-details/${serviceId}`, {});
@@ -128,7 +137,9 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
       
       if (response.data) {
         setServiceDetail(response.data);
-        setSelectedExtras([]);
+        if (!preserveExtras) {
+          setSelectedExtras([]);
+        }
       }
     } catch (error) {
       console.error("Error fetching service detail:", error);
@@ -169,6 +180,55 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
     }
   };
 
+  // Update cart function using putRequest
+  const updateCart = async (userId, orderItemId) => {
+    if (!orderItemId || !userId) {
+      message.error("Vui lòng chọn đầy đủ thông tin");
+      return;
+    }
+
+    setUpdatingCart(true);
+    try {
+      const payload = {
+        orderItemId: orderItemId,
+        quantity: quantity,
+        extraIds: selectedExtras
+      };
+      
+      console.log("Updating cart payload:", payload);
+      console.log("Selected extras:", selectedExtras);
+      console.log("Current user extras:", currentUserExtras);
+      console.log("Service extras available:", getServiceExtras().map(e => ({id: e.extraId, name: e.name, price: e.price})));
+      
+      // Debug price calculation
+      const newlyAddedExtras = getServiceExtras().filter(extra => 
+        selectedExtras.includes(extra.extraId) && 
+        !currentUserExtras.some(userExtra => (userExtra.extraId || userExtra.id) === extra.extraId)
+      );
+      const removedExtras = currentUserExtras.filter(userExtra => 
+        !selectedExtras.includes(userExtra.extraId || userExtra.id)
+      );
+      
+      console.log("Newly added extras:", newlyAddedExtras);
+      console.log("Removed extras:", removedExtras);
+      console.log("Current total extras price:", currentUserExtras.reduce((sum, extra) => sum + (extra.extraPrice || extra.price || 0), 0));
+      console.log("New total extras price:", getServiceExtras().filter(extra => selectedExtras.includes(extra.extraId)).reduce((sum, extra) => sum + extra.price, 0));
+      
+      const response = await putRequest(`/customer-staff/cart?userId=${userId}`, payload);
+      console.log("Update cart response:", response.data);
+      
+      message.success("Cập nhật giỏ hàng thành công!");
+      setIsUpdateCartModalVisible(false);
+      resetUpdateCartForm();
+      fetchCarts(); // Refresh the cart list
+    } catch (error) {
+      console.error("Error updating cart:", error);
+      message.error("Không thể cập nhật giỏ hàng");
+    } finally {
+      setUpdatingCart(false);
+    }
+  };
+
   const resetAddToCartForm = () => {
     setSelectedCategory(null);
     setCategoryDetail(null);
@@ -177,6 +237,14 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
     setServiceDetail(null);
     setSelectedExtras([]);
     setQuantity(1);
+  };
+
+  const resetUpdateCartForm = () => {
+    setUpdateCartData(null);
+    setSelectedExtras([]);
+    setQuantity(1);
+    setCurrentUserExtras([]);
+    setPendingExtrasSelection(null);
   };
 
   const handleOpenAddToCartModal = () => {
@@ -343,7 +411,7 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
       title: 'Thao tác',
       key: 'action',
       fixed: 'right',
-      width: 120,
+      width: 160,
       render: (_, record) => (
         <Space size="middle">
           <Tooltip title="Xem chi tiết">
@@ -362,6 +430,15 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
               style={{ color: '#52c41a' }}
             />
           </Tooltip>
+          <Tooltip title="Cập nhật giỏ hàng">
+            <Button 
+              type="link" 
+              icon={<EditOutlined />} 
+              onClick={() => handleEditCartItems(record)}
+              style={{ color: '#1890ff' }}
+              disabled={!record.items || record.items.length === 0}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -376,6 +453,20 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
     console.log("Add to cart for user:", userId);
     setSelectedUserId(userId);
     handleOpenAddToCartModal();
+  };
+
+  const handleEditCartItems = (record) => {
+    console.log("Edit cart items for user:", record.userInfo.userId);
+    if (record.items && record.items.length > 0) {
+      // For simplicity, edit the first item. You can modify this to show a selection if needed
+      const firstItem = record.items[0];
+      const itemWithUserId = {
+        ...firstItem,
+        userId: record.userInfo.userId,
+        orderItemId: firstItem.orderItemId // Assuming serviceId is the orderItemId
+      };
+      handleOpenUpdateCartModal(itemWithUserId, record.userInfo.userId);
+    }
   };
 
   const handleCloseDetailModal = () => {
@@ -403,6 +494,51 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
     );
   };
 
+  const handleOpenUpdateCartModal = async (cartItem, userId) => {
+    console.log("Opening update modal with cart item:", cartItem);
+    
+    setUpdateCartData({ ...cartItem, userId });
+    setQuantity(cartItem.quantity || 1);
+    setIsUpdateCartModalVisible(true);
+    
+    // Store current user extras
+    const userExtras = cartItem.extras || [];
+    setCurrentUserExtras(userExtras);
+    console.log("Current user extras:", userExtras);
+    
+    // Extract current extra IDs from cart item
+    const currentExtraIds = cartItem.extras?.map(extra => {
+      const id = extra.extraId || extra.id;
+      console.log("Mapping extra:", extra, "to ID:", id);
+      return id;
+    }) || [];
+    console.log("Current extra IDs before setting:", currentExtraIds);
+    
+    // Fetch service details to get all available extras, preserving current selection
+    if (cartItem.serviceId) {
+      // Set pending selection first
+      setPendingExtrasSelection(currentExtraIds);
+      await fetchServiceDetail(cartItem.serviceId, true);
+      // useEffect will handle setting selectedExtras after serviceDetail is loaded
+    } else {
+      setSelectedExtras(currentExtraIds);
+    }
+  };
+
+  const handleCloseUpdateCartModal = () => {
+    setIsUpdateCartModalVisible(false);
+    resetUpdateCartForm();
+  };
+
+  // Add useEffect to handle setting selected extras after service detail is loaded
+  useEffect(() => {
+    if (serviceDetail && pendingExtrasSelection && isUpdateCartModalVisible) {
+      console.log("Setting selected extras from useEffect:", pendingExtrasSelection);
+      setSelectedExtras(pendingExtrasSelection);
+      setPendingExtrasSelection(null);
+    }
+  }, [serviceDetail, pendingExtrasSelection, isUpdateCartModalVisible]);
+
   return (
     <Card style={{ margin: '24px' }}>
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -429,7 +565,7 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
           columns={columns}
           dataSource={carts}
           rowKey="orderId"
-          scroll={{ x: 1300 }}
+          scroll={{ x: 1400 }}
           size="middle"
           pagination={{
             current: currentPage,
@@ -680,6 +816,7 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
                         height={20} 
                         preview={false}
                         style={{ borderRadius: '4px' }}
+                        fallback="https://via.placeholder.com/20x20?text=Cat"
                       />
                       {category.name}
                     </Space>
@@ -732,6 +869,7 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
                         height={30} 
                         preview={false}
                         style={{ borderRadius: '4px', objectFit: 'cover' }}
+                        fallback="https://via.placeholder.com/30x30?text=Service"
                       />
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 'bold' }}>{service.name}</div>
@@ -759,6 +897,7 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
                     src={serviceDetail.imageUrl}
                     style={{ width: '100%', borderRadius: '8px' }}
                     preview={false}
+                    fallback="https://via.placeholder.com/200x200?text=Service+Detail"
                   />
                 </Col>
                 <Col span={16}>
@@ -782,56 +921,128 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
             </Card>
           )}
 
-          {/* Chọn dịch vụ thêm */}
+          {/* Cập nhật dịch vụ thêm */}
           {serviceDetail && getServiceExtras().length > 0 && (
-            <Form.Item label="Dịch vụ thêm (tùy chọn)">
-              <Spin spinning={loadingServiceDetail}>
-                <Checkbox.Group 
-                  value={selectedExtras}
-                  onChange={handleExtraChange}
-                  style={{ width: '100%' }}
-                >
-                  <Row gutter={[8, 8]}>
-                    {getServiceExtras().map(extra => (
+            <Card
+              title={
+                <Space>
+                  <Text strong style={{ color: '#52c41a' }}>🔧 Dịch vụ thêm</Text>
+                  <Tag color="green">{getServiceExtras().length} dịch vụ có sẵn</Tag>
+                </Space>
+              }
+              size="small"
+              style={{ marginBottom: '16px' }}
+            >
+              <div style={{ marginBottom: '12px' }}>
+                <Text type="secondary">
+                  Chọn các dịch vụ thêm mà bạn muốn cập nhật. Những dịch vụ đã chọn trước đó sẽ hiển thị với nền xanh.
+                </Text>
+              </div>
+              
+              <Checkbox.Group 
+                value={selectedExtras}
+                onChange={handleExtraChange}
+                style={{ width: '100%' }}
+              >
+                <Row gutter={[8, 8]}>
+                  {getServiceExtras().map(extra => {
+                    const isCurrentlySelected = currentUserExtras.some(userExtra => 
+                      (userExtra.extraId || userExtra.id) === extra.extraId
+                    );
+                    const isNewlySelected = selectedExtras.includes(extra.extraId) && !isCurrentlySelected;
+                    const isBeingRemoved = !selectedExtras.includes(extra.extraId) && isCurrentlySelected;
+                    
+                    return (
                       <Col span={24} key={extra.extraId}>
-                        <Card size="small" style={{ marginBottom: '8px' }}>
+                        <Card 
+                          size="small" 
+                          style={{ 
+                            marginBottom: '8px',
+                            backgroundColor: isCurrentlySelected ? '#f6ffed' : isNewlySelected ? '#e6f7ff' : isBeingRemoved ? '#fff1f0' : '#fff',
+                            border: isCurrentlySelected ? '1px solid #52c41a' : isNewlySelected ? '1px solid #1890ff' : isBeingRemoved ? '1px solid #ff4d4f' : '1px solid #d9d9d9'
+                          }}
+                        >
                           <Checkbox value={extra.extraId}>
                             <Row gutter={[8, 0]} align="middle">
                               <Col>
                                 <Image 
-                                  src={extra.imageUrl} 
-                                  width={40} 
-                                  height={40} 
+                                  src={extra.imageUrl || 'https://via.placeholder.com/50x50?text=Extra'}
+                                  width={50} 
+                                  height={50} 
                                   preview={false}
-                                  style={{ borderRadius: '4px', objectFit: 'cover' }}
+                                  style={{ borderRadius: '6px', objectFit: 'cover' }}
+                                  fallback="https://via.placeholder.com/50x50?text=Extra"
                                 />
                               </Col>
                               <Col flex={1}>
-                                <div>
-                                  <Text strong>{extra.name}</Text>
+                                <Space direction="vertical" size="small" style={{ width: '100%' }}>
                                   <div>
-                                    <Text style={{ color: '#f5222d' }}>
+                                    <Space>
+                                      <Text strong style={{ fontSize: '15px' }}>{extra.name}</Text>
+                                      {isCurrentlySelected && (
+                                        <Tag color="green" size="small">Đã chọn</Tag>
+                                      )}
+                                      {isNewlySelected && (
+                                        <Tag color="blue" size="small">Mới thêm</Tag>
+                                      )}
+                                      {isBeingRemoved && (
+                                        <Tag color="red" size="small">Sẽ xóa</Tag>
+                                      )}
+                                    </Space>
+                                  </div>
+                                  <div>
+                                    <Text strong style={{ color: '#f5222d', fontSize: '16px' }}>
                                       +{formatCurrency(extra.price)}
                                     </Text>
                                   </div>
                                   {extra.description && (
                                     <div>
-                                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                                      <Text type="secondary" style={{ fontSize: '13px' }}>
                                         {extra.description}
                                       </Text>
                                     </div>
                                   )}
-                                </div>
+                                </Space>
                               </Col>
                             </Row>
                           </Checkbox>
                         </Card>
                       </Col>
-                    ))}
-                  </Row>
-                </Checkbox.Group>
-              </Spin>
-            </Form.Item>
+                    );
+                  })}
+                </Row>
+              </Checkbox.Group>
+              <Spin spinning={loadingServiceDetail} />
+              
+              {/* Thống kê nhanh */}
+              <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#fafafa', borderRadius: '6px' }}>
+                <Row gutter={16}>
+                  <Col span={8}>
+                    <div style={{ textAlign: 'center' }}>
+                      <Text type="secondary">Đã chọn trước</Text>
+                      <div><Text strong style={{ color: '#fa8c16' }}>{currentUserExtras.length}</Text></div>
+                    </div>
+                  </Col>
+                  <Col span={8}>
+                    <div style={{ textAlign: 'center' }}>
+                      <Text type="secondary">Đang chọn</Text>
+                      <div><Text strong style={{ color: '#1890ff' }}>{selectedExtras.length}</Text></div>
+                    </div>
+                  </Col>
+                  <Col span={8}>
+                    <div style={{ textAlign: 'center' }}>
+                      <Text type="secondary">Thay đổi</Text>
+                      <div>
+                        <Text strong style={{ color: selectedExtras.length > currentUserExtras.length ? '#52c41a' : selectedExtras.length < currentUserExtras.length ? '#ff4d4f' : '#595959' }}>
+                          {selectedExtras.length > currentUserExtras.length && '+'}
+                          {selectedExtras.length - currentUserExtras.length}
+                        </Text>
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+              </div>
+            </Card>
           )}
 
           {/* Số lượng */}
@@ -883,6 +1094,611 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
             </Card>
           )}
         </Form>
+      </Modal>
+
+      {/* Modal Cập nhật giỏ hàng */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <EditOutlined style={{ color: '#1890ff' }} />
+            <Text strong style={{ fontSize: '18px' }}>
+              Cập nhật giỏ hàng
+            </Text>
+          </div>
+        }
+        open={isUpdateCartModalVisible}
+        onCancel={handleCloseUpdateCartModal}
+        width={1400}
+        style={{ top: 20 }}
+        footer={[
+          <Button 
+            key="submit" 
+            type="primary" 
+            onClick={() => updateCart(updateCartData?.userId, updateCartData?.orderItemId)}
+            disabled={!updateCartData}
+            loading={updatingCart}
+            size="large"
+          >
+            Cập nhật giỏ hàng
+          </Button>
+        ]}
+      >
+        <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+          <Row gutter={[24, 16]}>
+            {/* Cột trái: Thông tin sản phẩm và số lượng */}
+            <Col span={10}>
+              {/* Thông tin sản phẩm hiện tại */}
+              {updateCartData && (
+                <Card 
+                  title={
+                    <Space>
+                      <EditOutlined style={{ color: '#1890ff' }} />
+                      <Text strong>Thông tin sản phẩm hiện tại</Text>
+                    </Space>
+                  }
+                  size="small"
+                  style={{ marginBottom: '16px', backgroundColor: '#f6ffed' }}
+                >
+                  <Row gutter={[16, 8]}>
+                    <Col span={10}>
+                      <Image 
+                        src={updateCartData.imageUrl || updateCartData.serviceImageUrl || serviceDetail?.imageUrl || 'https://via.placeholder.com/150x150?text=No+Image'}
+                        style={{ width: '100%', borderRadius: '8px', maxHeight: '120px', objectFit: 'cover' }}
+                        preview={true}
+                        fallback="https://via.placeholder.com/150x150?text=No+Image"
+                      />
+                    </Col>
+                    <Col span={14}>
+                      <Descriptions column={1} size="small" layout="horizontal" labelStyle={{ fontWeight: 'bold', width: '80px' }}>
+                        <Descriptions.Item label="Tên">
+                          <Text strong style={{ fontSize: '14px', color: '#1890ff' }}>
+                            {updateCartData.serviceName}
+                          </Text>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Giá">
+                          <Text strong style={{ fontSize: '14px', color: '#f5222d' }}>
+                            {formatCurrency(updateCartData.servicePrice)}
+                          </Text>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="SL hiện tại">
+                          <Tag color="blue">{updateCartData.quantity}</Tag>
+                        </Descriptions.Item>
+                      </Descriptions>
+                    </Col>
+                  </Row>
+                </Card>
+              )}
+
+              {/* Cập nhật số lượng */}
+              <Card 
+                title={
+                  <Space>
+                    <Text strong style={{ color: '#722ed1' }}>📊 Cập nhật số lượng</Text>
+                  </Space>
+                }
+                size="small"
+                style={{ marginBottom: '16px' }}
+              >
+                <Row gutter={[16, 8]} align="middle">
+                  <Col span={12}>
+                    <Form.Item label="Số lượng mới" required style={{ marginBottom: 0 }}>
+                      <InputNumber
+                        min={1}
+                        max={999}
+                        value={quantity}
+                        onChange={(value) => setQuantity(value || 1)}
+                        style={{ width: '100%' }}
+                        size="large"
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <div style={{ padding: '8px', backgroundColor: '#f0f2ff', borderRadius: '6px' }}>
+                      <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                        <div>
+                          <Text type="secondary">Hiện tại: </Text>
+                          <Tag color="blue">{updateCartData?.quantity || 0}</Tag>
+                        </div>
+                        <div>
+                          <Text type="secondary">Thay đổi: </Text>
+                          <Tag color={quantity > (updateCartData?.quantity || 0) ? 'green' : quantity < (updateCartData?.quantity || 0) ? 'red' : 'default'}>
+                            {quantity > (updateCartData?.quantity || 0) && '+'}
+                            {quantity - (updateCartData?.quantity || 0)}
+                          </Tag>
+                        </div>
+                      </Space>
+                    </div>
+                  </Col>
+                </Row>
+              </Card>
+
+              {/* Tổng kết cập nhật */}
+              {updateCartData && (
+                <Card 
+                  title="💰 Tổng kết cập nhật"
+                  size="small"
+                  style={{ backgroundColor: '#e6f7ff', border: '1px solid #91d5ff' }}
+                >
+                  <Descriptions column={1} size="small">
+                    <Descriptions.Item label="Giá sản phẩm">
+                      {formatCurrency(updateCartData.servicePrice)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Số lượng mới">
+                      <Tag color="blue">{quantity}</Tag>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Dịch vụ thêm hiện tại">
+                      {formatCurrency(
+                        currentUserExtras.reduce((sum, extra) => sum + (extra.extraPrice || extra.price || 0), 0)
+                      )}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Dịch vụ thêm mới">
+                      <Text style={{ color: '#52c41a' }}>
+                        +{formatCurrency(
+                          getServiceExtras()
+                            .filter(extra => 
+                              selectedExtras.includes(extra.extraId) && 
+                              !currentUserExtras.some(userExtra => (userExtra.extraId || userExtra.id) === extra.extraId)
+                            )
+                            .reduce((sum, extra) => sum + extra.price, 0)
+                        )}
+                      </Text>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Dịch vụ thêm bị xóa">
+                      <Text style={{ color: '#ff4d4f' }}>
+                        -{formatCurrency(
+                          currentUserExtras
+                            .filter(userExtra => 
+                              !selectedExtras.includes(userExtra.extraId || userExtra.id)
+                            )
+                            .reduce((sum, extra) => sum + (extra.extraPrice || extra.price || 0), 0)
+                        )}
+                      </Text>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Tổng extras sau cập nhật">
+                      {formatCurrency(
+                        getServiceExtras()
+                          .filter(extra => selectedExtras.includes(extra.extraId))
+                          .reduce((sum, extra) => sum + extra.price, 0)
+                      )}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Tổng cộng mới">
+                      <Text strong style={{ fontSize: '18px', color: '#f5222d' }}>
+                        {formatCurrency(
+                          (updateCartData.servicePrice + 
+                           getServiceExtras()
+                             .filter(extra => selectedExtras.includes(extra.extraId))
+                             .reduce((sum, extra) => sum + extra.price, 0)
+                          ) * quantity
+                        )}
+                      </Text>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="So sánh với hiện tại">
+                      <Text strong style={{ 
+                        fontSize: '16px', 
+                        color: 
+                          ((updateCartData.servicePrice + 
+                            getServiceExtras()
+                              .filter(extra => selectedExtras.includes(extra.extraId))
+                              .reduce((sum, extra) => sum + extra.price, 0)
+                           ) * quantity) > (updateCartData.subTotal || 0) ? '#52c41a' : 
+                          ((updateCartData.servicePrice + 
+                            getServiceExtras()
+                              .filter(extra => selectedExtras.includes(extra.extraId))
+                              .reduce((sum, extra) => sum + extra.price, 0)
+                           ) * quantity) < (updateCartData.subTotal || 0) ? '#ff4d4f' : '#595959'
+                      }}>
+                        {(getServiceExtras()
+                          .filter(extra => 
+                            selectedExtras.includes(extra.extraId) && 
+                            !currentUserExtras.some(userExtra => (userExtra.extraId || userExtra.id) === extra.extraId)
+                          )
+                          .reduce((sum, extra) => sum + extra.price, 0) -
+                        currentUserExtras
+                          .filter(userExtra => 
+                            !selectedExtras.includes(userExtra.extraId || userExtra.id)
+                          )
+                          .reduce((sum, extra) => sum + (extra.extraPrice || extra.price || 0), 0)) > 0 && '+'}
+                        {formatCurrency(
+                          ((updateCartData.servicePrice + 
+                            getServiceExtras()
+                              .filter(extra => selectedExtras.includes(extra.extraId))
+                              .reduce((sum, extra) => sum + extra.price, 0)
+                           ) * quantity) - (updateCartData.subTotal || 0)
+                        )}
+                      </Text>
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Card>
+              )}
+            </Col>
+
+            {/* Cột phải: Dịch vụ thêm */}
+            <Col span={14}>
+              {/* Loading indicator for service details */}
+              {loadingServiceDetail && updateCartData && (
+                <Card size="small" style={{ marginBottom: '16px', textAlign: 'center' }}>
+                  <Spin />
+                  <div style={{ marginTop: '8px' }}>
+                    <Text type="secondary">Đang tải thông tin dịch vụ thêm...</Text>
+                  </div>
+                </Card>
+              )}
+
+              {/* Cập nhật dịch vụ thêm */}
+              {serviceDetail && getServiceExtras().length > 0 && (
+                <Card
+                  title={
+                    <Space>
+                      <Text strong style={{ color: '#52c41a' }}>🔧 Dịch vụ thêm</Text>
+                      <Tag color="green">{getServiceExtras().length} dịch vụ có sẵn</Tag>
+                    </Space>
+                  }
+                  size="small"
+                  style={{ marginBottom: '16px' }}
+                >
+                  <div style={{ marginBottom: '12px' }}>
+                    <Text type="secondary">
+                      Chọn các dịch vụ thêm mà bạn muốn cập nhật. Những dịch vụ đã chọn trước đó sẽ hiển thị với nền xanh.
+                    </Text>
+                  </div>
+                  
+                  <Checkbox.Group 
+                    value={selectedExtras}
+                    onChange={handleExtraChange}
+                    style={{ width: '100%' }}
+                  >
+                    <Row gutter={[8, 8]}>
+                      {getServiceExtras().map(extra => {
+                        const isCurrentlySelected = currentUserExtras.some(userExtra => 
+                          (userExtra.extraId || userExtra.id) === extra.extraId
+                        );
+                        const isNewlySelected = selectedExtras.includes(extra.extraId) && !isCurrentlySelected;
+                        const isBeingRemoved = !selectedExtras.includes(extra.extraId) && isCurrentlySelected;
+                        
+                        return (
+                          <Col span={12} key={extra.extraId}>
+                            <Card 
+                              size="small" 
+                              style={{ 
+                                marginBottom: '8px',
+                                backgroundColor: isCurrentlySelected ? '#f6ffed' : isNewlySelected ? '#e6f7ff' : isBeingRemoved ? '#fff1f0' : '#fff',
+                                border: isCurrentlySelected ? '1px solid #52c41a' : isNewlySelected ? '1px solid #1890ff' : isBeingRemoved ? '1px solid #ff4d4f' : '1px solid #d9d9d9'
+                              }}
+                            >
+                              <Checkbox value={extra.extraId}>
+                                <Row gutter={[8, 0]} align="middle">
+                                  <Col>
+                                    <Image 
+                                      src={extra.imageUrl || 'https://via.placeholder.com/40x40?text=Extra'}
+                                      width={40} 
+                                      height={40} 
+                                      preview={false}
+                                      style={{ borderRadius: '6px', objectFit: 'cover' }}
+                                      fallback="https://via.placeholder.com/40x40?text=Extra"
+                                    />
+                                  </Col>
+                                  <Col flex={1}>
+                                    <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                                      <div>
+                                        <Space>
+                                          <Text strong style={{ fontSize: '13px' }}>{extra.name}</Text>
+                                          {isCurrentlySelected && (
+                                            <Tag color="green" size="small">Đã chọn</Tag>
+                                          )}
+                                          {isNewlySelected && (
+                                            <Tag color="blue" size="small">Mới thêm</Tag>
+                                          )}
+                                          {isBeingRemoved && (
+                                            <Tag color="red" size="small">Sẽ xóa</Tag>
+                                          )}
+                                        </Space>
+                                      </div>
+                                      <div>
+                                        <Text strong style={{ color: '#f5222d', fontSize: '14px' }}>
+                                          +{formatCurrency(extra.price)}
+                                        </Text>
+                                      </div>
+                                      {extra.description && (
+                                        <div>
+                                          <Text type="secondary" style={{ fontSize: '11px' }}>
+                                            {extra.description.length > 50 ? extra.description.substring(0, 50) + '...' : extra.description}
+                                          </Text>
+                                        </div>
+                                      )}
+                                    </Space>
+                                  </Col>
+                                </Row>
+                              </Checkbox>
+                            </Card>
+                          </Col>
+                        );
+                      })}
+                    </Row>
+                  </Checkbox.Group>
+                  
+                  {/* Thống kê nhanh */}
+                  <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#fafafa', borderRadius: '6px' }}>
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <div style={{ textAlign: 'center' }}>
+                          <Text type="secondary">Đã chọn trước</Text>
+                          <div><Text strong style={{ color: '#fa8c16' }}>{currentUserExtras.length}</Text></div>
+                        </div>
+                      </Col>
+                      <Col span={8}>
+                        <div style={{ textAlign: 'center' }}>
+                          <Text type="secondary">Đang chọn</Text>
+                          <div><Text strong style={{ color: '#1890ff' }}>{selectedExtras.length}</Text></div>
+                        </div>
+                      </Col>
+                      <Col span={8}>
+                        <div style={{ textAlign: 'center' }}>
+                          <Text type="secondary">Thay đổi</Text>
+                          <div>
+                            <Text strong style={{ color: selectedExtras.length > currentUserExtras.length ? '#52c41a' : selectedExtras.length < currentUserExtras.length ? '#ff4d4f' : '#595959' }}>
+                              {selectedExtras.length > currentUserExtras.length && '+'}
+                              {selectedExtras.length - currentUserExtras.length}
+                            </Text>
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
+                  </div>
+                </Card>
+              )}
+
+              {/* Tóm tắt thay đổi */}
+              {updateCartData && currentUserExtras.length > 0 && (
+                <Card 
+                  title="📋 Tóm tắt thay đổi dịch vụ thêm"
+                  size="small"
+                  style={{ backgroundColor: '#fff7e6', border: '1px solid #ffec99' }}
+                >
+                  <Row gutter={[16, 8]}>
+                    <Col span={12}>
+                      <Text strong style={{ color: '#fa8c16' }}>Hiện tại:</Text>
+                      <div style={{ marginTop: '4px' }}>
+                        {currentUserExtras.map((extra, index) => (
+                          <Tag key={index} color="orange" style={{ margin: '2px', fontSize: '11px' }}>
+                            {extra.extraName || extra.name}
+                          </Tag>
+                        ))}
+                        {currentUserExtras.length === 0 && (
+                          <Text type="secondary">Không có</Text>
+                        )}
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <Text strong style={{ color: '#1890ff' }}>Mới:</Text>
+                      <div style={{ marginTop: '4px' }}>
+                        {getServiceExtras()
+                          .filter(extra => selectedExtras.includes(extra.extraId))
+                          .map((extra, index) => (
+                            <Tag key={index} color="blue" style={{ margin: '2px', fontSize: '11px' }}>
+                              {extra.name}
+                            </Tag>
+                          ))}
+                        {selectedExtras.length === 0 && (
+                          <Text type="secondary">Không có</Text>
+                        )}
+                      </div>
+                    </Col>
+                  </Row>
+                </Card>
+              )}
+
+              {/* Chi tiết thay đổi extras */}
+              {updateCartData && (
+                <Card 
+                  title="🔄 Chi tiết thay đổi dịch vụ thêm"
+                  size="small"
+                  style={{ backgroundColor: '#f6ffed', border: '1px solid #b7eb8f', marginTop: '16px' }}
+                >
+                  {/* Extras mới thêm */}
+                  {getServiceExtras().filter(extra => 
+                    selectedExtras.includes(extra.extraId) && 
+                    !currentUserExtras.some(userExtra => (userExtra.extraId || userExtra.id) === extra.extraId)
+                  ).length > 0 && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <Text strong style={{ color: '#52c41a' }}>✅ Thêm mới:</Text>
+                      <div style={{ marginTop: '4px' }}>
+                        {getServiceExtras()
+                          .filter(extra => 
+                            selectedExtras.includes(extra.extraId) && 
+                            !currentUserExtras.some(userExtra => (userExtra.extraId || userExtra.id) === extra.extraId)
+                          )
+                          .map((extra, index) => (
+                            <div key={index} style={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center',
+                              padding: '4px 8px',
+                              backgroundColor: '#f6ffed',
+                              border: '1px solid #b7eb8f',
+                              borderRadius: '4px',
+                              marginBottom: '4px'
+                            }}>
+                              <Text style={{ fontSize: '12px' }}>{extra.name}</Text>
+                              <Text strong style={{ color: '#52c41a', fontSize: '12px' }}>
+                                +{formatCurrency(extra.price)}
+                              </Text>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Extras bị xóa */}
+                  {currentUserExtras.filter(userExtra => 
+                    !selectedExtras.includes(userExtra.extraId || userExtra.id)
+                  ).length > 0 && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <Text strong style={{ color: '#ff4d4f' }}>❌ Xóa bỏ:</Text>
+                      <div style={{ marginTop: '4px' }}>
+                        {currentUserExtras
+                          .filter(userExtra => 
+                            !selectedExtras.includes(userExtra.extraId || userExtra.id)
+                          )
+                          .map((extra, index) => (
+                            <div key={index} style={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center',
+                              padding: '4px 8px',
+                              backgroundColor: '#fff1f0',
+                              border: '1px solid #ffccc7',
+                              borderRadius: '4px',
+                              marginBottom: '4px'
+                            }}>
+                              <Text style={{ fontSize: '12px' }}>{extra.extraName || extra.name}</Text>
+                              <Text strong style={{ color: '#ff4d4f', fontSize: '12px' }}>
+                                -{formatCurrency(extra.extraPrice || extra.price || 0)}
+                              </Text>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Extras giữ nguyên */}
+                  {currentUserExtras.filter(userExtra => 
+                    selectedExtras.includes(userExtra.extraId || userExtra.id)
+                  ).length > 0 && (
+                    <div>
+                      <Text strong style={{ color: '#595959' }}>🔄 Giữ nguyên:</Text>
+                      <div style={{ marginTop: '4px' }}>
+                        {currentUserExtras
+                          .filter(userExtra => 
+                            selectedExtras.includes(userExtra.extraId || userExtra.id)
+                          )
+                          .map((extra, index) => (
+                            <div key={index} style={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center',
+                              padding: '4px 8px',
+                              backgroundColor: '#f5f5f5',
+                              border: '1px solid #d9d9d9',
+                              borderRadius: '4px',
+                              marginBottom: '4px'
+                            }}>
+                              <Text style={{ fontSize: '12px' }}>{extra.extraName || extra.name}</Text>
+                              <Text style={{ color: '#595959', fontSize: '12px' }}>
+                                {formatCurrency(extra.extraPrice || extra.price || 0)}
+                              </Text>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tổng kết thay đổi */}
+                  <Divider style={{ margin: '12px 0' }} />
+                  <div style={{ 
+                    padding: '8px',
+                    backgroundColor: '#e6f7ff',
+                    borderRadius: '6px',
+                    border: '1px solid #91d5ff'
+                  }}>
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <div style={{ textAlign: 'center' }}>
+                          <Text type="secondary" style={{ fontSize: '11px' }}>Thêm mới</Text>
+                          <div>
+                            <Text strong style={{ color: '#52c41a', fontSize: '13px' }}>
+                              +{formatCurrency(
+                                getServiceExtras()
+                                  .filter(extra => 
+                                    selectedExtras.includes(extra.extraId) && 
+                                    !currentUserExtras.some(userExtra => (userExtra.extraId || userExtra.id) === extra.extraId)
+                                  )
+                                  .reduce((sum, extra) => sum + extra.price, 0)
+                              )}
+                            </Text>
+                          </div>
+                        </div>
+                      </Col>
+                      <Col span={8}>
+                        <div style={{ textAlign: 'center' }}>
+                          <Text type="secondary" style={{ fontSize: '11px' }}>Xóa bỏ</Text>
+                          <div>
+                            <Text strong style={{ color: '#ff4d4f', fontSize: '13px' }}>
+                              -{formatCurrency(
+                                currentUserExtras
+                                  .filter(userExtra => 
+                                    !selectedExtras.includes(userExtra.extraId || userExtra.id)
+                                  )
+                                  .reduce((sum, extra) => sum + (extra.extraPrice || extra.price || 0), 0)
+                              )}
+                            </Text>
+                          </div>
+                        </div>
+                      </Col>
+                      <Col span={8}>
+                        <div style={{ textAlign: 'center' }}>
+                          <Text type="secondary" style={{ fontSize: '11px' }}>Chênh lệch</Text>
+                          <div>
+                            <Text strong style={{ 
+                              color: 
+                                (getServiceExtras()
+                                  .filter(extra => 
+                                    selectedExtras.includes(extra.extraId) && 
+                                    !currentUserExtras.some(userExtra => (userExtra.extraId || userExtra.id) === extra.extraId)
+                                  )
+                                  .reduce((sum, extra) => sum + extra.price, 0) -
+                                currentUserExtras
+                                  .filter(userExtra => 
+                                    !selectedExtras.includes(userExtra.extraId || userExtra.id)
+                                  )
+                                  .reduce((sum, extra) => sum + (extra.extraPrice || extra.price || 0), 0)) > 0 ? '#52c41a' : 
+                                (getServiceExtras()
+                                  .filter(extra => 
+                                    selectedExtras.includes(extra.extraId) && 
+                                    !currentUserExtras.some(userExtra => (userExtra.extraId || userExtra.id) === extra.extraId)
+                                  )
+                                  .reduce((sum, extra) => sum + extra.price, 0) -
+                                currentUserExtras
+                                  .filter(userExtra => 
+                                    !selectedExtras.includes(userExtra.extraId || userExtra.id)
+                                  )
+                                  .reduce((sum, extra) => sum + (extra.extraPrice || extra.price || 0), 0)) < 0 ? '#ff4d4f' : '#595959',
+                              fontSize: '13px'
+                            }}>
+                              {(getServiceExtras()
+                                .filter(extra => 
+                                  selectedExtras.includes(extra.extraId) && 
+                                  !currentUserExtras.some(userExtra => (userExtra.extraId || userExtra.id) === extra.extraId)
+                                )
+                                .reduce((sum, extra) => sum + extra.price, 0) -
+                              currentUserExtras
+                                .filter(userExtra => 
+                                  !selectedExtras.includes(userExtra.extraId || userExtra.id)
+                                )
+                                .reduce((sum, extra) => sum + (extra.extraPrice || extra.price || 0), 0)) > 0 && '+'}
+                              {formatCurrency(
+                                getServiceExtras()
+                                  .filter(extra => 
+                                    selectedExtras.includes(extra.extraId) && 
+                                    !currentUserExtras.some(userExtra => (userExtra.extraId || userExtra.id) === extra.extraId)
+                                  )
+                                  .reduce((sum, extra) => sum + extra.price, 0) -
+                                currentUserExtras
+                                  .filter(userExtra => 
+                                    !selectedExtras.includes(userExtra.extraId || userExtra.id)
+                                  )
+                                  .reduce((sum, extra) => sum + (extra.extraPrice || extra.price || 0), 0)
+                              )}
+                            </Text>
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
+                  </div>
+                </Card>
+              )}
+            </Col>
+          </Row>
+        </div>
       </Modal>
 
       <style jsx>{`
