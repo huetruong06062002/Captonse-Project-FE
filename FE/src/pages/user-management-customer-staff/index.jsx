@@ -641,20 +641,20 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
             >
               <Descriptions column={2} size="small">
                 <Descriptions.Item label="Tên liên hệ" span={1}>
-                  <Text strong>{cartDetail.addressCartResponse?.contactName}</Text>
+                  <Text strong>{cartDetail.addressCartResponse?.contactName || 'Không có'} </Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="Số điện thoại" span={1}>
-                  <Text strong>{cartDetail.addressCartResponse?.contactPhone}</Text>
+                  <Text strong>{cartDetail.addressCartResponse?.contactPhone || 'Không có'}</Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="Nhãn địa chỉ" span={1}>
-                  <Tag color="blue">{cartDetail.addressCartResponse?.addressLabel}</Tag>
+                  <Tag color="blue">{cartDetail.addressCartResponse?.addressLabel || 'Không có'}</Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="Địa chỉ chi tiết" span={1}>
-                  {cartDetail.addressCartResponse?.detailAddress}
+                  <Text strong>{cartDetail.addressCartResponse?.detailAddress || 'Không có'}</Text>
                 </Descriptions.Item>
                 {cartDetail.addressCartResponse?.description && (
                   <Descriptions.Item label="Mô tả" span={2}>
-                    <Text italic>{cartDetail.addressCartResponse.description}</Text>
+                    <Text italic>{cartDetail.addressCartResponse.description || 'Không có'}</Text>
                   </Descriptions.Item>
                 )}
               </Descriptions>
