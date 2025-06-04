@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Card, Typography, Avatar, Tag, Space, message, Spin, Tabs } from 'antd';
-import { UserOutlined, TruckOutlined, ShoppingCartOutlined, FileTextOutlined } from '@ant-design/icons';
-import { getRequestParams } from '../../../services/api';
+import { Table, Card, Typography, Avatar, Tag, Space, message, Spin, Tabs, Button, Modal } from 'antd';
+import { UserOutlined, TruckOutlined, ShoppingCartOutlined, FileTextOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { getRequestParams, postRequest, postRequestParams } from '../../../services/api';
 import moment from 'moment';
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
+const { confirm } = Modal;
 
 export default function ListOrderAssignment() {
   const [drivers, setDrivers] = useState([]);
@@ -73,6 +74,33 @@ export default function ListOrderAssignment() {
     } finally {
       setDeliveryLoading(false);
     }
+  };
+
+  // Handle cancel assignment
+  const handleCancelAssignment = async (assignmentId, orderId) => {
+    confirm({
+      title: 'Xác nhận hủy phân công',
+      icon: <ExclamationCircleOutlined />,
+      content: `Bạn có chắc chắn muốn hủy phân công cho đơn hàng ${orderId}?`,
+      okText: 'Hủy phân công',
+      okType: 'danger',
+      cancelText: 'Đóng',
+      onOk: async () => {
+        try {
+          await postRequest('/admin/cancel-assignment', {
+            assignmentIds: [assignmentId]
+          });
+          message.success('Hủy phân công thành công!');
+          // Refresh data
+          fetchPickupOrders();
+          fetchDeliveryOrders();
+          fetchAvailableDrivers();
+        } catch (error) {
+          console.error('Error canceling assignment:', error);
+          message.error(error.response.data.message);
+        }
+      },
+    });
   };
 
   // Determine work status based on order counts
@@ -252,6 +280,21 @@ export default function ListOrderAssignment() {
         const text = status === 'ASSIGNED_PICKUP' ? 'Được phân công nhận' : 'Được phân công giao';
         return <Tag color={color}>{text}</Tag>;
       },
+    },
+    {
+      title: 'Hành động',
+      key: 'action',
+      width: 120,
+      render: (_, record) => (
+        <Button
+          type="primary"
+          danger
+          size="small"
+          onClick={() => handleCancelAssignment(record.assignmentId, record.orderId)}
+        >
+          Hủy giao
+        </Button>
+      ),
     },
   ];
 
