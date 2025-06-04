@@ -317,7 +317,7 @@ export default function ListOrderAssignment() {
         <TabPane tab={
           <span>
             <ShoppingCartOutlined />
-            Đơn hàng được phân công nhận ({pickupOrders.length})
+            Đơn hàng được phân công đi nhận ({pickupOrders.length})
           </span>
         } key="2">
           <Spin spinning={pickupLoading}>
@@ -349,7 +349,7 @@ export default function ListOrderAssignment() {
         <TabPane tab={
           <span>
             <TruckOutlined />
-            Đơn hàng được phân công giao ({deliveryOrders.length})
+            Đơn hàng được phân công đi giao ({deliveryOrders.length})
           </span>
         } key="3">
           <Spin spinning={deliveryLoading}>
