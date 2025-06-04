@@ -84,9 +84,9 @@ function ConfirmOrderPending() {
     if (currentAction === "confirm") {
       handleConfirmOrderSuccess(orderId);
     } else if (currentAction === "cancelOrder") {
-      handleCancelOrder(orderId);
+      handleCancelOrder(); // Gọi cancel-order API
     } else if (currentAction === "rejectOrder") {
-      handleRejectOrder(orderId);
+      handleRejectOrder(); // Gọi cancel-processing API
     }
 
     setIsModalOpen(false);
@@ -193,6 +193,7 @@ function ConfirmOrderPending() {
       if (response.data) {
         setAssignmentId(response.data.assignmentId); // Lưu assignmentId để xử lý sau này
         message.success(response.data.message);
+        fetchPendingOrder();
         return { success: true, data: response.data };
       }
       console.log("Response:", response); // Kiểm tra phản hồi từ API
@@ -254,6 +255,7 @@ function ConfirmOrderPending() {
     }
     console.log("check response", response); // Kiểm tra phản hồi từ API
   };
+  // API: cancel-order - Xác nhận hủy đơn hàng (khách hàng muốn hủy)
   const handleCancelOrder = async () => {
     const response = await postRequest(
       `/customer-staff/cancel-order?assignmentId=${assignmentId}&notes=${note}`
@@ -261,10 +263,10 @@ function ConfirmOrderPending() {
     if (response.data) {
       message.success(response.data.message);
       fetchPendingOrder();
-
     }
   };
 
+  // API: cancel-processing - Hủy nhận xử lý (staff không thể xử lý tiếp)
   const handleRejectOrder = async () => {
     const response = await postRequest(
       `/customer-staff/cancel-processing?assignmentId=${assignmentId}&note=${note}`
@@ -272,7 +274,6 @@ function ConfirmOrderPending() {
     if (response.data) {
       message.success(response.data.message);
       fetchPendingOrder();
-
     }
   };
 
@@ -456,71 +457,82 @@ function ConfirmOrderPending() {
       align: 'center',
       width: 200,
       render: (_, record) => (
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Button
-            type="primary"
-            style={{ 
-              backgroundColor: '#52c41a', 
-              borderColor: '#52c41a', 
-              width: '100%',
-              position: 'relative'
-            }}
-            onClick={() => {
-              showModal(
-                "Xác nhận đơn hàng thành công",
-                "Vui lòng nhập ghi chú xác nhận (nếu có):",
-                () => {
-                  console.log("Xác nhận đơn hàng thành công");
-                  setIsModalOpen(false);
-                },
-                "confirm"
-              );
-              setOrderId(record.orderId);
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Badge count={3} style={{ backgroundColor: '#faad14', marginRight: 5 }} />
-              Xác nhận thành công
-            </div>
-          </Button>
-          <Button
-            danger
-            icon={<CloseCircleOutlined />}
-            style={{ width: '100%' }}
-            onClick={() =>
-              showModal(
-                "Xác nhận hủy đơn hàng",
-                "Vui lòng nhập lý do hủy đơn hàng:",
-                () => {
-                  console.log("Xác nhận hủy đơn hàng thành công");
-                  setIsModalOpen(false);
-                },
-                "rejectOrder"
-              )
-            }
-          >
-            Xác nhận hủy đơn
-          </Button>
-          <Button
-            danger
-            ghost
-            icon={<StopOutlined />}
-            style={{ width: '100%' }}
-            onClick={() =>
-              showModal(
-                "Hủy nhận đơn hàng",
-                "Vui lòng nhập lý do hủy nhận đơn hàng:",
-                () => {
-                  console.log("Hủy nhận đơn hàng");
-                  setIsModalOpen(false);
-                },
-                "cancelOrder"
-              )
-            }
-          >
-            Hủy nhận đơn hàng
-          </Button>
-        </Space>
+        record.assignmentId ? (
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Button
+              type="primary"
+              style={{ 
+                backgroundColor: '#52c41a', 
+                borderColor: '#52c41a', 
+                width: '100%',
+                position: 'relative'
+              }}
+              onClick={() => {
+                showModal(
+                  "Xác nhận đơn hàng thành công",
+                  "Vui lòng nhập ghi chú xác nhận (nếu có):",
+                  () => {
+                    console.log("Xác nhận đơn hàng thành công");
+                    setIsModalOpen(false);
+                  },
+                  "confirm"
+                );
+                setOrderId(record.orderId);
+                setAssignmentId(record.assignmentId);
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Badge count={3} style={{ backgroundColor: '#faad14', marginRight: 5 }} />
+                Xác nhận thành công
+              </div>
+            </Button>
+            <Button
+              danger
+              icon={<CloseCircleOutlined />}
+              style={{ width: '100%' }}
+              onClick={() => {
+                showModal(
+                  "Xác nhận hủy đơn hàng",
+                  "Vui lòng nhập lý do hủy đơn hàng:",
+                  () => {
+                    console.log("Xác nhận hủy đơn hàng thành công");
+                    setIsModalOpen(false);
+                  },
+                  "cancelOrder"
+                );
+                setOrderId(record.orderId);
+                setAssignmentId(record.assignmentId);
+              }}
+            >
+              Xác nhận hủy đơn
+            </Button>
+            <Button
+              danger
+              ghost
+              icon={<StopOutlined />}
+              style={{ width: '100%' }}
+              onClick={() => {
+                showModal(
+                  "Hủy nhận xử lý",
+                  "Vui lòng nhập lý do hủy nhận xử lý:",
+                  () => {
+                    console.log("Hủy nhận xử lý");
+                    setIsModalOpen(false);
+                  },
+                  "rejectOrder"
+                );
+                setOrderId(record.orderId);
+                setAssignmentId(record.assignmentId);
+              }}
+            >
+              Hủy nhận xử lý
+            </Button>
+          </Space>
+        ) : (
+          <Text type="secondary" style={{ fontStyle: 'italic' }}>
+            Cần nhận xử lý trước
+          </Text>
+        )
       ),
     },
   ];
@@ -613,7 +625,7 @@ function ConfirmOrderPending() {
                 <ul style={{ marginTop: "5px" }}>
                   <li><span style={{ backgroundColor: "#f6ffed", padding: "2px 5px", borderRadius: "3px", color: "#52c41a" }}>Xác nhận thành công</span> - Khi khách hàng đồng ý đơn hàng</li>
                   <li><span style={{ backgroundColor: "#fff2f0", padding: "2px 5px", borderRadius: "3px", color: "#ff4d4f" }}>Xác nhận hủy đơn</span> - Khi khách hàng muốn hủy đơn</li>
-                  <li><span style={{ backgroundColor: "#fff", padding: "2px 5px", borderRadius: "3px", color: "#ff4d4f", border: "1px solid #ffccc7" }}>Hủy nhận đơn hàng</span> - Khi bạn không thể xử lý tiếp đơn này</li>
+                  <li><span style={{ backgroundColor: "#fff", padding: "2px 5px", borderRadius: "3px", color: "#ff4d4f", border: "1px solid #ffccc7" }}>Hủy nhận xử lý</span> - Khi bạn không thể xử lý tiếp đơn này</li>
                 </ul>
               </li>
             </ol>
