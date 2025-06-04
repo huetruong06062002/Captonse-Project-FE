@@ -320,7 +320,7 @@ const AdminLayout = () => {
     {
       key: endPoints.PLACEORDERMANAGEMENTCUSTOMERSTAFF,
       icon: <SolutionOutlined />,
-      label: createLabelWithTooltip("Quản lý đơn hàng khách hàng"),
+      label: createLabelWithTooltip("Đặt đơn tại cửa hàng"),
       allowedRoles: ["CustomerStaff"],
     },
     {
