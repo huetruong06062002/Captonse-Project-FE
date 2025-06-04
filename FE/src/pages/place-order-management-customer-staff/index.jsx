@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Table, Input, Tag, Avatar, Space, Button, Card, Typography, message, Select, Modal, Form, DatePicker, Upload, Radio, InputNumber } from 'antd';
 import { getRequestParams, getRequest, postRequestMultipartFormData, postRequest, putRequest } from '../../services/api';
-import { SearchOutlined, UserOutlined, PhoneOutlined, SettingOutlined, PlusOutlined, UploadOutlined, EnvironmentOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { SearchOutlined, UserOutlined, PhoneOutlined, SettingOutlined, PlusOutlined, UploadOutlined, EnvironmentOutlined, ShoppingCartOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvent } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -97,6 +97,30 @@ export default function PlaceOrderManagementCustomerStaff() {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loadingCategories, setLoadingCategories] = useState(false);
+
+  // New state for edit cart modal - shows all items
+  const [isEditCartModalVisible, setIsEditCartModalVisible] = useState(false);
+  const [editCartData, setEditCartData] = useState(null);
+  const [updatingItems, setUpdatingItems] = useState({});
+  const [itemExtrasMap, setItemExtrasMap] = useState({}); // Map serviceId -> available extras
+  const [loadingExtrasFor, setLoadingExtrasFor] = useState({}); // Loading state for fetching extras
+
+  // Debounce timeout ref
+  const updateTimeoutRef = useRef({});
+
+  // Debounced update function
+  const debouncedUpdateItem = (orderItemId, newQuantity, newExtraIds, delay = 500) => {
+    // Clear existing timeout cho item này
+    if (updateTimeoutRef.current[orderItemId]) {
+      clearTimeout(updateTimeoutRef.current[orderItemId]);
+    }
+
+    // Set timeout mới
+    updateTimeoutRef.current[orderItemId] = setTimeout(() => {
+      updateItem(orderItemId, newQuantity, newExtraIds);
+      delete updateTimeoutRef.current[orderItemId];
+    }, delay);
+  };
 
   // Fetch data from paginated API
   const fetchData = async (params = {}) => {
@@ -605,42 +629,150 @@ export default function PlaceOrderManagementCustomerStaff() {
   const openCartManagementModal = async (userId, forceAddMode = false) => {
     setCurrentCartUserId(userId);
     
-    // Check if cart has items (only if not forced to add mode)
-    if (!forceAddMode) {
-      try {
-        const cartRes = await getRequest(`/customer-staff/cart?userId=${userId}`);
-        const hasItems = cartRes.data && cartRes.data.items && cartRes.data.items.length > 0;
-        setIsUpdatingCart(hasItems);
-        
-        if (hasItems) {
-          // Pre-fill form with first item for update
-          const firstItem = cartRes.data.items[0];
-          cartManagementForm.setFieldsValue({
-            orderItemId: firstItem.orderItemId,
-            quantity: firstItem.quantity,
-            extraIds: firstItem.extras?.map(e => e.extraId) || []
-          });
-          
-          // Fetch service details for the first item
-          await fetchServiceDetails(firstItem.serviceId);
-        } else {
-          cartManagementForm.resetFields();
-        }
-      } catch (e) {
-        setIsUpdatingCart(false);
-        cartManagementForm.resetFields();
-      }
-    } else {
-      // Force add mode - reset everything
-      setIsUpdatingCart(false);
-      cartManagementForm.resetFields();
-      setSelectedService(null);
-      setAvailableExtras([]);
-    }
+    // Luôn luôn là add mode - đơn giản hóa UX
+    setIsUpdatingCart(false);
+    cartManagementForm.resetFields();
+    setSelectedService(null);
+    setAvailableExtras([]);
+    setSelectedCategory(null);
+    setServices([]);
     
     await fetchCategories();
     setIsCartManagementModalVisible(true);
   };
+
+  // Open edit cart modal - shows all items for editing
+  const openEditCartModal = async (userId) => {
+    setCurrentCartUserId(userId); // Set userId ngay từ đầu
+    try {
+      const res = await getRequest(`/customer-staff/cart?userId=${userId}`);
+      if (res.data && res.data.items && res.data.items.length > 0) {
+        // Thêm userId vào editCartData để đảm bảo có userId
+        setEditCartData({
+          ...res.data,
+          userId: userId
+        });
+        
+        // Fetch extras for all services in cart
+        const extrasMap = {};
+        for (const item of res.data.items) {
+          if (!extrasMap[item.serviceId]) {
+            try {
+              setLoadingExtrasFor(prev => ({ ...prev, [item.serviceId]: true }));
+              const serviceRes = await getRequest(`/service-details/${item.serviceId}`);
+              
+              // Flatten all extras from extraCategories
+              const allExtras = [];
+              if (serviceRes.data.extraCategories) {
+                serviceRes.data.extraCategories.forEach(extraCategory => {
+                  if (extraCategory.extras) {
+                    extraCategory.extras.forEach(extra => {
+                      allExtras.push({
+                        ...extra,
+                        categoryName: extraCategory.categoryName
+                      });
+                    });
+                  }
+                });
+              }
+              
+              extrasMap[item.serviceId] = allExtras;
+            } catch (e) {
+              console.error(`Error fetching extras for service ${item.serviceId}:`, e);
+              extrasMap[item.serviceId] = [];
+            } finally {
+              setLoadingExtrasFor(prev => ({ ...prev, [item.serviceId]: false }));
+            }
+          }
+        }
+        
+        setItemExtrasMap(extrasMap);
+        setIsEditCartModalVisible(true);
+      } else {
+        message.info('Giỏ hàng trống, không có gì để chỉnh sửa');
+      }
+    } catch (e) {
+      message.error('Không thể tải dữ liệu giỏ hàng!');
+    }
+  };
+
+  // Update item quantity and extras
+  const updateItem = async (orderItemId, newQuantity, newExtraIds) => {
+    if (newQuantity < 1 || newQuantity > 100) {
+      message.error('Số lượng phải từ 1 đến 100');
+      return;
+    }
+
+    // Kiểm tra orderItemId có hợp lệ không
+    if (!orderItemId) {
+      message.error('Không tìm thấy ID đơn hàng');
+      return;
+    }
+
+    setUpdatingItems(prev => ({ ...prev, [orderItemId]: true }));
+    try {
+      const userId = currentCartUserId || editCartData.userId;
+      console.log('Updating cart for userId:', userId, 'orderItemId:', orderItemId); // Debug log
+      console.log('New quantity:', newQuantity, 'New extras:', newExtraIds); // Debug log
+      
+      const payload = {
+        orderItemId: orderItemId,
+        quantity: newQuantity,
+        extraIds: newExtraIds || []
+      };
+      
+      await putRequest(`/customer-staff/cart?userId=${userId}`, payload);
+      
+      // Update local state
+      setEditCartData(prev => ({
+        ...prev,
+        items: prev.items.map(item => {
+          if (item.orderItemId === orderItemId) {
+            // Recalculate subTotal based on new quantity and extras
+            const servicePrice = item.servicePrice;
+            const extrasPrice = newExtraIds?.reduce((sum, extraId) => {
+              const extra = itemExtrasMap[item.serviceId]?.find(e => e.extraId === extraId);
+              return sum + (extra?.price || 0);
+            }, 0) || 0;
+            
+            return {
+              ...item,
+              quantity: newQuantity,
+              extras: newExtraIds?.map(extraId => {
+                const extra = itemExtrasMap[item.serviceId]?.find(e => e.extraId === extraId);
+                return extra ? {
+                  extraId: extra.extraId,
+                  extraName: extra.name,
+                  extraPrice: extra.price
+                } : null;
+              }).filter(Boolean) || [],
+              subTotal: (servicePrice + extrasPrice) * newQuantity
+            };
+          }
+          return item;
+        })
+      }));
+      
+      message.success('Cập nhật thành công!');
+    } catch (e) {
+      console.error('Update error:', e); // Debug log
+      const errorMessage = e?.response?.data?.message || e?.message || 'Không thể cập nhật!';
+      message.error(errorMessage);
+      
+      // Reload cart data nếu có lỗi
+      if (e?.response?.status === 404) {
+        message.warning('Đang tải lại dữ liệu giỏ hàng...');
+        openEditCartModal(currentCartUserId);
+      }
+    } finally {
+      setUpdatingItems(prev => ({ ...prev, [orderItemId]: false }));
+    }
+  };
+
+  // Delete item from cart - REMOVED
+  // const deleteCartItem = async (orderItemId) => {
+  //   ... function removed as requested
+  // };
 
   return (
     <Card style={{ margin: '24px' }}>
@@ -1311,7 +1443,7 @@ export default function PlaceOrderManagementCustomerStaff() {
                     icon={<SettingOutlined />}
                     onClick={() => {
                       setIsCartModalVisible(false);
-                      openCartManagementModal(cartModalData.userId, false); // Update mode
+                      openEditCartModal(cartModalData.userId); // Gọi modal chỉnh sửa riêng
                     }}
                     style={{ backgroundColor: '#faad14', borderColor: '#faad14' }}
                     size="large"
@@ -1379,7 +1511,7 @@ export default function PlaceOrderManagementCustomerStaff() {
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ShoppingCartOutlined style={{ color: '#52c41a' }} />
-            <span>{isUpdatingCart ? 'Cập nhật giỏ hàng' : 'Thêm vào giỏ hàng'}</span>
+            <span>Thêm vào giỏ hàng</span>
           </div>
         }
         footer={null}
@@ -1389,132 +1521,118 @@ export default function PlaceOrderManagementCustomerStaff() {
           layout="vertical"
           onFinish={(values) => {
             console.log('Form submitted with values:', values); // Debug log
-            if (isUpdatingCart) {
-              updateCart(values);
-            } else {
-              addToCart(values);
-            }
+            addToCart(values); // Luôn gọi addToCart
           }}
           onFinishFailed={(errorInfo) => {
             console.log('Form validation failed:', errorInfo);
           }}
         >
-          {isUpdatingCart && (
-            <Form.Item name="orderItemId" style={{ display: 'none' }}>
-              <Input type="hidden" />
-            </Form.Item>
-          )}
+          <Form.Item
+            label="Chọn danh mục"
+            name="categoryId"
+            rules={[{ required: true, message: 'Vui lòng chọn danh mục!' }]}
+          >
+            <Select
+              placeholder="Chọn danh mục"
+              loading={loadingCategories}
+              onChange={(value) => {
+                const category = categories.find(c => c.categoryId === value);
+                setSelectedCategory(category);
+                fetchServicesByCategory(value);
+                // Reset service selection when category changes
+                cartManagementForm.setFieldValue('serviceDetailId', undefined);
+                setSelectedService(null);
+                setAvailableExtras([]);
+              }}
+              showSearch
+              filterOption={(input, option) =>
+                option.children.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {categories.map(category => (
+                <Option key={category.categoryId} value={category.categoryId}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <img 
+                      src={category.icon} 
+                      alt={category.name}
+                      style={{ width: '20px', height: '20px', objectFit: 'cover' }}
+                    />
+                    {category.name}
+                  </div>
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-          {!isUpdatingCart && (
-            <>
-              <Form.Item
-                label="Chọn danh mục"
-                name="categoryId"
-                rules={[{ required: true, message: 'Vui lòng chọn danh mục!' }]}
-              >
-                <Select
-                  placeholder="Chọn danh mục"
-                  loading={loadingCategories}
-                  onChange={(value) => {
-                    const category = categories.find(c => c.categoryId === value);
-                    setSelectedCategory(category);
-                    fetchServicesByCategory(value);
-                    // Reset service selection when category changes
-                    cartManagementForm.setFieldValue('serviceDetailId', undefined);
-                    setSelectedService(null);
-                    setAvailableExtras([]);
-                  }}
-                  showSearch
-                  filterOption={(input, option) =>
-                    option.children.toLowerCase().includes(input.toLowerCase())
-                  }
-                >
-                  {categories.map(category => (
-                    <Option key={category.categoryId} value={category.categoryId}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <img 
-                          src={category.icon} 
-                          alt={category.name}
-                          style={{ width: '20px', height: '20px', objectFit: 'cover' }}
-                        />
-                        {category.name}
-                      </div>
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                label="Chọn dịch vụ"
-                name="serviceDetailId"
-                rules={[{ required: true, message: 'Vui lòng chọn dịch vụ!' }]}
-              >
-                <Select
-                  placeholder="Chọn dịch vụ"
-                  loading={loadingServices}
-                  disabled={!selectedCategory}
-                  onChange={(value) => {
-                    console.log('Selected service ID:', value); // Debug log
-                    const service = services.find(s => s.serviceId === value);
-                    if (service) {
-                      console.log('Selected service:', service); // Debug log
-                      fetchServiceDetails(service.serviceId);
-                    }
-                  }}
-                  showSearch
-                  filterOption={(input, option) =>
-                    option.children.toLowerCase().includes(input.toLowerCase())
-                  }
-                  optionHeight={60}
-                  listHeight={300}
-                >
-                  {services.map(service => (
-                    <Option key={service.serviceId} value={service.serviceId}>
+          <Form.Item
+            label="Chọn dịch vụ"
+            name="serviceDetailId"
+            rules={[{ required: true, message: 'Vui lòng chọn dịch vụ!' }]}
+          >
+            <Select
+              placeholder="Chọn dịch vụ"
+              loading={loadingServices}
+              disabled={!selectedCategory}
+              onChange={(value) => {
+                console.log('Selected service ID:', value); // Debug log
+                const service = services.find(s => s.serviceId === value);
+                if (service) {
+                  console.log('Selected service:', service); // Debug log
+                  fetchServiceDetails(service.serviceId);
+                }
+              }}
+              showSearch
+              filterOption={(input, option) =>
+                option.children.toLowerCase().includes(input.toLowerCase())
+              }
+              optionHeight={60}
+              listHeight={300}
+            >
+              {services.map(service => (
+                <Option key={service.serviceId} value={service.serviceId}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    padding: '4px 0'
+                  }}>
+                    <img 
+                      src={service.imageUrl} 
+                      alt={service.name}
+                      style={{ 
+                        width: '40px', 
+                        height: '40px', 
+                        objectFit: 'cover',
+                        borderRadius: '4px',
+                        flexShrink: 0
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '8px',
-                        padding: '4px 0'
+                        fontWeight: '500', 
+                        color: '#1890ff',
+                        fontSize: '14px',
+                        lineHeight: '1.2',
+                        marginBottom: '2px'
                       }}>
-                        <img 
-                          src={service.imageUrl} 
-                          alt={service.name}
-                          style={{ 
-                            width: '40px', 
-                            height: '40px', 
-                            objectFit: 'cover',
-                            borderRadius: '4px',
-                            flexShrink: 0
-                          }}
-                        />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ 
-                            fontWeight: '500', 
-                            color: '#1890ff',
-                            fontSize: '14px',
-                            lineHeight: '1.2',
-                            marginBottom: '2px'
-                          }}>
-                            {service.name}
-                          </div>
-                          <div style={{ 
-                            fontSize: '12px', 
-                            color: '#666',
-                            lineHeight: '1.2'
-                          }}>
-                            {service.subCategoryName} • {new Intl.NumberFormat('vi-VN', {
-                              style: 'currency',
-                              currency: 'VND'
-                            }).format(service.price)}
-                          </div>
-                        </div>
+                        {service.name}
                       </div>
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </>
-          )}
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: '#666',
+                        lineHeight: '1.2'
+                      }}>
+                        {service.subCategoryName} • {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND'
+                        }).format(service.price)}
+                      </div>
+                    </div>
+                  </div>
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
 
           <Form.Item
             label="Số lượng"
@@ -1644,10 +1762,203 @@ export default function PlaceOrderManagementCustomerStaff() {
                 fontSize: '16px'
               }}
             >
-              {isUpdatingCart ? 'Cập nhật' : 'Thêm vào giỏ hàng'}
+              Thêm vào giỏ hàng
             </Button>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Edit Cart Modal - Shows all items for editing */}
+      <Modal
+        open={isEditCartModalVisible}
+        onCancel={() => {
+          // Clear all pending timeouts
+          Object.values(updateTimeoutRef.current).forEach(timeout => {
+            if (timeout) clearTimeout(timeout);
+          });
+          updateTimeoutRef.current = {};
+          
+          setIsEditCartModalVisible(false);
+          setEditCartData(null);
+          setUpdatingItems({});
+          setItemExtrasMap({});
+          setLoadingExtrasFor({});
+        }}
+        width={900}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <SettingOutlined style={{ color: '#faad14' }} />
+            <span>Chỉnh sửa giỏ hàng</span>
+          </div>
+        }
+        footer={[
+          <Button key="close" onClick={() => setIsEditCartModalVisible(false)}>
+            Đóng
+          </Button>
+        ]}
+      >
+        {editCartData && (
+          <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <div style={{ marginBottom: 16 }}>
+              <h3 style={{ margin: 0, color: '#1890ff' }}>
+                Danh sách sản phẩm ({editCartData.items?.length || 0} mục)
+              </h3>
+            </div>
+            
+            {editCartData.items?.map((item, index) => (
+              <Card 
+                key={item.orderItemId} 
+                size="small" 
+                style={{ 
+                  marginBottom: 16,
+                  border: '1px solid #f0f0f0',
+                  borderRadius: '8px'
+                }}
+                bodyStyle={{ padding: '16px' }}
+              >
+                <div style={{ marginBottom: 16 }}>
+                  <h4 style={{ margin: '0 0 8px 0', color: '#1890ff' }}>{item.serviceName}</h4>
+                  <div style={{ marginBottom: 8 }}>
+                    <span style={{ color: '#666' }}>Giá dịch vụ: </span>
+                    <Tag color="green">
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.servicePrice)}
+                    </Tag>
+                  </div>
+                </div>
+
+                <Form
+                  layout="vertical"
+                  initialValues={{
+                    quantity: item.quantity,
+                    extraIds: item.extras?.map(e => e.extraId) || []
+                  }}
+                  onValuesChange={(changedValues, allValues) => {
+                    // Auto-update when form values change
+                    debouncedUpdateItem(item.orderItemId, allValues.quantity, allValues.extraIds);
+                  }}
+                >
+                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr auto', gap: '12px', alignItems: 'end' }}>
+                    <Form.Item 
+                      label="Số lượng" 
+                      name="quantity"
+                      style={{ margin: 0 }}
+                      rules={[
+                        { required: true, message: 'Số lượng là bắt buộc!' },
+                        { type: 'number', min: 1, max: 100, message: 'Số lượng từ 1-100!' }
+                      ]}
+                    >
+                      <InputNumber
+                        min={1}
+                        max={100}
+                        style={{ width: '100%' }}
+                        loading={updatingItems[item.orderItemId]}
+                      />
+                    </Form.Item>
+
+                    <Form.Item 
+                      label="Dịch vụ đi kèm" 
+                      name="extraIds"
+                      style={{ margin: 0 }}
+                    >
+                      <Select
+                        mode="multiple"
+                        placeholder="Chọn dịch vụ đi kèm"
+                        allowClear
+                        loading={loadingExtrasFor[item.serviceId]}
+                        optionHeight={50}
+                        listHeight={200}
+                        style={{ minWidth: '200px' }}
+                      >
+                        {(itemExtrasMap[item.serviceId] || []).map(extra => (
+                          <Option key={extra.extraId} value={extra.extraId}>
+                            <div style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '8px',
+                              padding: '2px 0'
+                            }}>
+                              <img 
+                                src={extra.imageUrl} 
+                                alt={extra.name}
+                                style={{ 
+                                  width: '24px', 
+                                  height: '24px', 
+                                  objectFit: 'cover',
+                                  borderRadius: '4px',
+                                  flexShrink: 0
+                                }}
+                              />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ 
+                                  fontWeight: '500',
+                                  fontSize: '12px',
+                                  lineHeight: '1.2'
+                                }}>
+                                  {extra.name}
+                                </div>
+                                <div style={{ 
+                                  fontSize: '10px', 
+                                  color: '#666',
+                                  lineHeight: '1.2'
+                                }}>
+                                  {new Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND'
+                                  }).format(extra.price)}
+                                </div>
+                              </div>
+                            </div>
+                          </Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+
+                    <div style={{ 
+                      fontSize: '16px', 
+                      fontWeight: 'bold', 
+                      color: '#f5222d',
+                      padding: '8px 12px',
+                      backgroundColor: '#fff2f0',
+                      border: '1px solid #ffccc7',
+                      borderRadius: '4px',
+                      minWidth: '120px',
+                      textAlign: 'center'
+                    }}>
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.subTotal)}
+                    </div>
+                  </div>
+                </Form>
+              </Card>
+            ))}
+            
+            {editCartData.items?.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <p style={{ color: '#999', fontSize: '16px' }}>Không còn sản phẩm nào trong giỏ hàng</p>
+              </div>
+            )}
+            
+            <div style={{ 
+              marginTop: 24, 
+              padding: '16px', 
+              backgroundColor: '#f9f9f9', 
+              borderRadius: '8px',
+              textAlign: 'center'
+            }}>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setIsEditCartModalVisible(false);
+                  openCartManagementModal(editCartData.userId || currentCartUserId, true);
+                }}
+                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                size="large"
+              >
+                Thêm sản phẩm mới
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Create Address Modal */}
