@@ -104,22 +104,42 @@ export default function PlaceOrderManagementCustomerStaff() {
   const [updatingItems, setUpdatingItems] = useState({});
   const [itemExtrasMap, setItemExtrasMap] = useState({}); // Map serviceId -> available extras
   const [loadingExtrasFor, setLoadingExtrasFor] = useState({}); // Loading state for fetching extras
+  const [pendingChanges, setPendingChanges] = useState({}); // Track pending changes
+  const [hasChanges, setHasChanges] = useState(false); // Track if there are any changes
 
   // Debounce timeout ref
   const updateTimeoutRef = useRef({});
 
-  // Debounced update function
-  const debouncedUpdateItem = (orderItemId, newQuantity, newExtraIds, delay = 500) => {
-    // Clear existing timeout cho item này
-    if (updateTimeoutRef.current[orderItemId]) {
-      clearTimeout(updateTimeoutRef.current[orderItemId]);
-    }
+  // Track changes without auto-updating
+  const trackItemChanges = (orderItemId, newQuantity, newExtraIds) => {
+    const originalItem = editCartData?.items?.find(item => item.orderItemId === orderItemId);
+    if (!originalItem) return;
 
-    // Set timeout mới
-    updateTimeoutRef.current[orderItemId] = setTimeout(() => {
-      updateItem(orderItemId, newQuantity, newExtraIds);
-      delete updateTimeoutRef.current[orderItemId];
-    }, delay);
+    // Check if there are actual changes
+    const quantityChanged = newQuantity !== originalItem.quantity;
+    const extrasChanged = JSON.stringify(newExtraIds?.sort() || []) !== 
+                         JSON.stringify(originalItem.extras?.map(e => e.extraId)?.sort() || []);
+    
+    const hasItemChanges = quantityChanged || extrasChanged;
+    
+    // Update pending changes
+    setPendingChanges(prev => {
+      const newChanges = { ...prev };
+      if (hasItemChanges) {
+        newChanges[orderItemId] = {
+          quantity: newQuantity,
+          extraIds: newExtraIds || []
+        };
+      } else {
+        delete newChanges[orderItemId];
+      }
+      return newChanges;
+    });
+
+    // Update hasChanges flag
+    setHasChanges(Object.keys({ ...pendingChanges, [orderItemId]: hasItemChanges }).some(key => 
+      key === orderItemId ? hasItemChanges : pendingChanges[key]
+    ));
   };
 
   // Fetch data from paginated API
@@ -693,6 +713,59 @@ export default function PlaceOrderManagementCustomerStaff() {
       }
     } catch (e) {
       message.error('Không thể tải dữ liệu giỏ hàng!');
+    }
+  };
+
+  // Update all pending changes
+  const updateAllChanges = async () => {
+    if (!hasChanges || Object.keys(pendingChanges).length === 0) {
+      message.info('Không có thay đổi nào để cập nhật');
+      return;
+    }
+
+    setUpdatingItems(prev => {
+      const updating = {};
+      Object.keys(pendingChanges).forEach(orderItemId => {
+        updating[orderItemId] = true;
+      });
+      return { ...prev, ...updating };
+    });
+
+    try {
+      const userId = currentCartUserId || editCartData.userId;
+      
+      // Update all changed items sequentially
+      for (const [orderItemId, changes] of Object.entries(pendingChanges)) {
+        const payload = {
+          orderItemId: orderItemId,
+          quantity: changes.quantity,
+          extraIds: changes.extraIds
+        };
+        
+        await putRequest(`/customer-staff/cart?userId=${userId}`, payload);
+      }
+      
+      message.success(`Cập nhật thành công ${Object.keys(pendingChanges).length} sản phẩm!`);
+      
+      // Refresh cart data
+      const res = await getRequest(`/customer-staff/cart?userId=${userId}`);
+      if (res.data) {
+        setEditCartData({
+          ...res.data,
+          userId: userId
+        });
+      }
+      
+      // Clear pending changes
+      setPendingChanges({});
+      setHasChanges(false);
+      
+    } catch (e) {
+      console.error('Update error:', e);
+      const errorMessage = e?.response?.data?.message || e?.message || 'Không thể cập nhật!';
+      message.error(errorMessage);
+    } finally {
+      setUpdatingItems({});
     }
   };
 
@@ -1783,6 +1856,8 @@ export default function PlaceOrderManagementCustomerStaff() {
           setUpdatingItems({});
           setItemExtrasMap({});
           setLoadingExtrasFor({});
+          setPendingChanges({});
+          setHasChanges(false);
         }}
         width={900}
         title={
@@ -1792,8 +1867,15 @@ export default function PlaceOrderManagementCustomerStaff() {
           </div>
         }
         footer={[
-          <Button key="close" onClick={() => setIsEditCartModalVisible(false)}>
-            Đóng
+          <Button 
+            key="update" 
+            type="primary" 
+            onClick={updateAllChanges}
+            loading={Object.keys(updatingItems).length > 0}
+            disabled={!hasChanges}
+            style={{ backgroundColor: hasChanges ? '#52c41a' : undefined, borderColor: hasChanges ? '#52c41a' : undefined }}
+          >
+            {hasChanges ? `Cập nhật (${Object.keys(pendingChanges).length})` : 'Cập nhật'}
           </Button>
         ]}
       >
@@ -1803,6 +1885,20 @@ export default function PlaceOrderManagementCustomerStaff() {
               <h3 style={{ margin: 0, color: '#1890ff' }}>
                 Danh sách sản phẩm ({editCartData.items?.length || 0} mục)
               </h3>
+              {hasChanges && (
+                <div style={{ 
+                  marginTop: 8, 
+                  padding: '8px 12px', 
+                  backgroundColor: '#e6f7ff', 
+                  border: '1px solid #91d5ff',
+                  borderRadius: '6px',
+                  fontSize: '14px'
+                }}>
+                  <span style={{ color: '#1890ff' }}>
+                    ℹ️ Bạn có {Object.keys(pendingChanges).length} thay đổi chưa lưu. Nhấn "Cập nhật" để áp dụng.
+                  </span>
+                </div>
+              )}
             </div>
             
             {editCartData.items?.map((item, index) => (
@@ -1811,10 +1907,16 @@ export default function PlaceOrderManagementCustomerStaff() {
                 size="small" 
                 style={{ 
                   marginBottom: 16,
-                  border: '1px solid #f0f0f0',
-                  borderRadius: '8px'
+                  border: pendingChanges[item.orderItemId] ? '2px solid #52c41a' : '1px solid #f0f0f0',
+                  borderRadius: '8px',
+                  backgroundColor: pendingChanges[item.orderItemId] ? '#f6ffed' : undefined
                 }}
                 bodyStyle={{ padding: '16px' }}
+                extra={pendingChanges[item.orderItemId] && (
+                  <Tag color="green" size="small">
+                    Có thay đổi
+                  </Tag>
+                )}
               >
                 <div style={{ marginBottom: 16 }}>
                   <h4 style={{ margin: '0 0 8px 0', color: '#1890ff' }}>{item.serviceName}</h4>
@@ -1833,8 +1935,8 @@ export default function PlaceOrderManagementCustomerStaff() {
                     extraIds: item.extras?.map(e => e.extraId) || []
                   }}
                   onValuesChange={(changedValues, allValues) => {
-                    // Auto-update when form values change
-                    debouncedUpdateItem(item.orderItemId, allValues.quantity, allValues.extraIds);
+                    // Track changes without auto-updating
+                    trackItemChanges(item.orderItemId, allValues.quantity, allValues.extraIds);
                   }}
                 >
                   <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr auto', gap: '12px', alignItems: 'end' }}>
