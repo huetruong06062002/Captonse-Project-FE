@@ -250,6 +250,7 @@ function ConfirmOrderPending() {
     );
     if (response.data) {
       message.success(response.data.message);
+      fetchPendingOrder();
     }
     console.log("check response", response); // Kiểm tra phản hồi từ API
   };
@@ -259,6 +260,8 @@ function ConfirmOrderPending() {
     );
     if (response.data) {
       message.success(response.data.message);
+      fetchPendingOrder();
+
     }
   };
 
@@ -268,6 +271,8 @@ function ConfirmOrderPending() {
     );
     if (response.data) {
       message.success(response.data.message);
+      fetchPendingOrder();
+
     }
   };
 
