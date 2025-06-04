@@ -385,49 +385,6 @@ export default function PlaceOrderManagementCustomerStaff() {
               Xem giỏ hàng
             </Button>
           </Space>
-          <Space>
-            <Button
-              type="primary"
-              onClick={async () => {
-                // Lấy danh sách địa chỉ
-                const res = await getRequest(`/addresses/userId?userId=${record.userId}`);
-                const addresses = res.data || [];
-                if (!addresses.length) {
-                  message.error('Khách hàng chưa có địa chỉ!');
-                  return;
-                }
-                setAddressOptions(addresses);
-                setSelectedAddressId(addresses[0].addressId); // chọn mặc định
-                setPlacingOrderUserId(record.userId);
-
-                // Gọi API cart để lấy thông tin
-                try {
-                  const cartRes = await getRequest(`/customer-staff/cart?userId=${record.userId}`);
-                  setCartData(cartRes.data);
-
-                  // Set initial values for form
-                  placeOrderForm.setFieldsValue({
-                    deliveryAddressId: addresses[0].addressId,
-                    shippingFee: 0,
-                    applicableFee: cartRes.data.applicableFee || 0,
-                    discount: 0,
-                    serviceName: cartRes.data.serviceName || "",
-                    estimatedTotal: cartRes.data.estimatedTotal || 0,
-                    total: (cartRes.data.estimatedTotal || 0) + (cartRes.data.applicableFee || 0),
-                    note: "",
-                  });
-                } catch (e) {
-                  message.error('Không thể tải thông tin giỏ hàng!');
-                  return;
-                }
-
-                setIsSelectAddressModalVisible(true);
-              }}
-              size="small"
-            >
-              Tạo đơn hàng
-            </Button>
-          </Space>
         </Space>
       ),
     },
@@ -1067,6 +1024,14 @@ export default function PlaceOrderManagementCustomerStaff() {
               const total = estimatedTotal + shippingFee + applicableFee - discount;
               placeOrderForm.setFieldValue('total', total);
             }
+
+            // Tự động tính phí ship khi thay đổi thời gian giao hàng hoặc địa chỉ
+            if (changedValues.deliveryTime || changedValues.deliveryAddressId) {
+              // Delay một chút để form update xong
+              setTimeout(() => {
+                calculateShippingFee();
+              }, 100);
+            }
           }}
         >
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
@@ -1102,14 +1067,6 @@ export default function PlaceOrderManagementCustomerStaff() {
                   <span style={{ fontWeight: '500' }}>{placeOrderForm.getFieldValue('serviceName') || 'Đang tải...'}</span>
                 </div>
               </Form.Item>
-              <Button
-                type="default"
-                onClick={calculateShippingFee}
-                loading={calculatingShipping}
-                style={{ width: '100%', marginBottom: 16 }}
-              >
-                Tính phí ship
-              </Button>
             </div>
             <div>
               <Form.Item label="Tổng tạm tính" name="estimatedTotal">
