@@ -37,6 +37,7 @@ import {
 import moment from 'moment';
 import 'moment/locale/vi';
 import locale from 'antd/es/date-picker/locale/vi_VN';
+import { useSelector } from 'react-redux';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -67,6 +68,10 @@ function ConfirmOrderPending() {
     dateRange: [],
   });
   const [sortedInfo, setSortedInfo] = useState({});
+
+//   const {userId} = useSelector(state => state.auth.user);
+
+//  console.log("userId", userId);
 
   console.log("note", note);
 
@@ -216,9 +221,10 @@ function ConfirmOrderPending() {
     setDropdownVisible((prev) => (prev === orderId ? null : orderId));
   };
 
-  const handleViewDetails = (orderId) => {
-    setOrderId(orderId); // Lưu ID đơn hàng để hiển thị chi tiết
-    console.log("Xem chi tiết đơn hàng:", orderId);
+  const handleViewDetails = (order) => {
+    setOrderId(order.orderId); // Lưu ID đơn hàng để hiển thị chi tiết
+    setAssignmentId(order.assignmentId); // Lưu assignmentId nếu có
+    console.log("Xem chi tiết đơn hàng:", order.orderId);
     showDrawer(); // Mở drawer để xem chi tiết đơn hàng
     // Thêm logic xử lý xem chi tiết ở đây
   };
@@ -407,7 +413,7 @@ function ConfirmOrderPending() {
           <Button
             type="default"
             icon={<EyeOutlined />}
-            onClick={() => handleViewDetails(record.orderId)}
+            onClick={() => handleViewDetails(record)}
           >
             Xem chi tiết
           </Button>
@@ -428,13 +434,13 @@ function ConfirmOrderPending() {
             style={{
               borderColor: '#52c41a',
               color: '#52c41a',
-              backgroundColor: record.orderStatus === "PROCESSING" ? "#e6fffb" : undefined,
-              cursor: record.orderStatus === "PROCESSING" ? "not-allowed" : "pointer"
+              backgroundColor: (record.orderStatus === "PROCESSING" || record.assignmentId) ? "#e6fffb" : undefined,
+              cursor: (record.orderStatus === "PROCESSING" || record.assignmentId) ? "not-allowed" : "pointer"
             }}
             onClick={() => handleAcceptOrder(record.orderId)}
-            disabled={record.orderStatus === "PROCESSING"}
+            disabled={record.orderStatus === "PROCESSING" || record.assignmentId}
           >
-            {record.orderStatus === "PROCESSING" ? "Đang nhận xử lý" : "Nhận xử lý"}
+            {(record.orderStatus === "PROCESSING" || record.assignmentId) ? "Đang nhận xử lý" : "Nhận xử lý"}
           </Button>
         </Tooltip>
       ),
@@ -666,6 +672,7 @@ function ConfirmOrderPending() {
       )}
       <OrderDetailDrawer
         orderId={orderId}
+        assignmentId={assignmentId}
         visible={drawerVisible}
         onClose={onClose}
       />
