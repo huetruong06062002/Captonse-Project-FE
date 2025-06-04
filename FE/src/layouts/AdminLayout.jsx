@@ -25,6 +25,7 @@ import {
   FlagOutlined,
   EnvironmentOutlined,
   ShopOutlined,
+  TruckOutlined,
 } from "@ant-design/icons";
 import {
   Avatar,
@@ -248,7 +249,7 @@ const AdminLayout = () => {
           label: createLabelWithTooltip("Quản lý lịch vắng tài xế"),
           allowedRoles: ["Admin"],
         },    
-        ,{
+        {
           key: `${endPoints.AREAS}`,
           icon: <EnvironmentOutlined />,
           label: createLabelWithTooltip("Quản lý khu vực"),
@@ -265,6 +266,12 @@ const AdminLayout = () => {
           icon: <CheckCircleOutlined />,
           label: createLabelWithTooltip("Danh sách đơn hàng đã giặt xong và kiểm tra chất lượng"),
           allowedRoles: ["Admin", "Staff"],
+        },
+        {
+          key: `${endPoints.DANH_SACH_DON_HANG_DA_GIAO}`,
+          icon: <TruckOutlined />,
+          label: createLabelWithTooltip("Danh sách đơn hàng đã giao và danh sách tài xế cùng số đơn được giao"),
+          allowedRoles: ["Admin"],
         },
       ],
     },

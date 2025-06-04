@@ -7,6 +7,7 @@ const endPoints = {
   DANH_SACH_DON_HANG_DA_NHAN: "list-orders-receiver",
   DANH_SACH_DON_HANG_DA_KIEM_TRA_CHAT_LUONG: "list-orders-checked-quality",
   QUAN_LI_LICH_VANG_TAI_XE: "list-driver-absence",
+  DANH_SACH_DON_HANG_DA_GIAO: "list-order-assignment",
   SERVICES: "services",
   ORDER: "order",
   POLICY: "policy",

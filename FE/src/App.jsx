@@ -30,6 +30,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PlaceOrderManagementCustomerStaff from '@pages/place-order-management-customer-staff';
 import AbsenDriverMangement from '@pages/quan-li-giao-nhan-hang/quan-li-lich-vang-tai-xe';
+import ListOrderAssignment from '@pages/quan-li-giao-nhan-hang/danh-sach-don-hang-da-giao';
 
 // Component để redirect dựa trên role
 const RoleBasedRedirect = () => {
@@ -78,14 +79,15 @@ function App() {
             <Route path={endPoints.AREAS} element={<Areas />} />
             <Route path={endPoints.POLICY} element={<Policy />} />
             <Route path={endPoints.SERVICES} element={<Services />} />
-            <Route path={endPoints.QUAN_LI_LICH_VANG_TAI_XE} element={<AbsenDriverMangement />} />
+            <Route path={endPoints.QUAN_LI_LICH_VANG_TAI_XE} element=
+            {<AbsenDriverMangement />} />
             <Route
               path={endPoints.EXTRACATEGORIES}
               element={<ExtraCategories />}
             />
             <Route path={endPoints.USERS} element={<Users />} />
             <Route path={endPoints.CHATWIITHAI} element={<ChatWithAi />} />
-
+            <Route path={endPoints.DANH_SACH_DON_HANG_DA_GIAO} element={<ListOrderAssignment />} />
             {/* Routes cho Admin & Staff */}
             <Route
               path={endPoints.DANH_SACH_TAT_CA_DON_HANG}
