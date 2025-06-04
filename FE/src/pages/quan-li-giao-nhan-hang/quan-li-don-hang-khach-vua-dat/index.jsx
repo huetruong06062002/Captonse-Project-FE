@@ -1,31 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { 
-  Button, 
-  Col, 
-  Input, 
-  message, 
-  Row, 
-  Table, 
-  Tag, 
-  theme, 
-  Steps, 
-  Card, 
-  Typography, 
-  Space, 
-  Divider, 
-  Badge, 
+import {
+  Button,
+  Col,
+  Input,
+  message,
+  Row,
+  Table,
+  Tag,
+  theme,
+  Steps,
+  Card,
+  Typography,
+  Space,
+  Divider,
+  Badge,
   Checkbox,
   Modal,
   Descriptions,
   Timeline,
   Tooltip,
-  Image
+  Image,
+  Avatar
 } from "antd";
-import { 
-  CheckCircleFilled, 
-  UserOutlined, 
-  CarOutlined, 
-  CheckOutlined, 
+import {
+  CheckCircleFilled,
+  UserOutlined,
+  CarOutlined,
+  CheckOutlined,
   ReloadOutlined,
   LeftOutlined,
   RightOutlined,
@@ -52,12 +53,12 @@ function OrderBookingCustomer() {
   const [pageSize, setPageSize] = useState(5); // Số tài xế trên mỗi trang
   const [totalDrivers, setTotalDrivers] = useState(0); // Tổng số tài xế
   const [loading, setLoading] = useState(false); // Trạng thái loading
-  
+
   // State cho xem chi tiết đơn hàng
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
-  
+
   // State cho xem lịch sử đơn hàng
   const [orderHistory, setOrderHistory] = useState(null);
   const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
@@ -65,7 +66,7 @@ function OrderBookingCustomer() {
   const [selectedHistoryPhotos, setSelectedHistoryPhotos] = useState([]);
   const [isPhotoModalVisible, setIsPhotoModalVisible] = useState(false);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
-  
+
   useEffect(() => {
     fetchAreaOrders();
     fetchDrivers();
@@ -83,14 +84,13 @@ function OrderBookingCustomer() {
     }
   };
 
-  const fetchDrivers = async (page = 1, pageSize = 5) => {
+  const fetchDrivers = async () => {
     setLoading(true);
     try {
-      const response = await getRequest(
-        `users?role=Driver&page=${page}&pageSize=${pageSize}`
-      ); // Gọi API
+      const response = await getRequest("users/drivers/available"); // API mới
+      console.log("Dữ liệu tài xế trả về:", response);
       setDrivers(response.data.data); // Lưu danh sách tài xế vào state
-      setTotalDrivers(response.data.totalRecords);
+      setTotalDrivers(response.data.count); // Sử dụng count từ response
     } catch (error) {
       console.error("Lỗi khi lấy danh sách tài xế:", error);
       message.error("Lỗi khi tải danh sách tài xế!");
@@ -99,11 +99,46 @@ function OrderBookingCustomer() {
     }
   };
 
+  const getWorkStatus = (driver) => {
+    const { deliveryOrderCount, pickupOrderCount } = driver;
+    
+    if (deliveryOrderCount === 0 && pickupOrderCount === 0) {
+      return { text: "Không có đơn", color: "default" };
+    } else if (pickupOrderCount > 0 && deliveryOrderCount === 0) {
+      return { text: "Có đơn nhận", color: "processing" };
+    } else if (deliveryOrderCount > 0 && pickupOrderCount === 0) {
+      return { text: "Có đơn giao", color: "warning" };
+    } else {
+      return { text: "Có đơn nhận và giao", color: "error" };
+    }
+  };
+
   const columnsDriver = [
     {
+      title: "Avatar",
+      dataIndex: "avatar",
+      key: "avatar",
+      width: 80,
+      render: (avatar, record) => (
+        <Avatar 
+          src={avatar} 
+          size={50}
+          icon={<UserOutlined />}
+        />
+      ),
+    },
+    {
       title: "Tên tài xế",
-      dataIndex: "fullName",
-      key: "fullName",
+      dataIndex: "fullname", // Đổi từ fullName thành fullname
+      key: "fullname",
+    },
+    {
+      title: "Trạng thái công việc",
+      key: "workStatus",
+      render: (_, record) => {
+        const status = getWorkStatus(record);
+        return <Tag color={status.color}>{status.text}</Tag>;
+      },
     },
     {
       title: "Số điện thoại",
@@ -111,20 +146,23 @@ function OrderBookingCustomer() {
       key: "phoneNumber",
     },
     {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-    },
-    {
       title: "Giới tính",
       dataIndex: "gender",
       key: "gender",
+      render: (gender) => gender === "Male" ? "Nam" : "Nữ",
     },
     {
       title: "Ngày sinh",
       dataIndex: "dob",
       key: "dob",
       render: (dob) => new Date(dob).toLocaleDateString("vi-VN"),
+    },
+
+    {
+      title: "Số đơn hiện tại",
+      dataIndex: "currentOrderCount",
+      key: "currentOrderCount",
+      render: (count) => <Badge count={count} showZero />,
     },
   ];
 
@@ -157,7 +195,7 @@ function OrderBookingCustomer() {
   const next = () => {
     setCurrent(current + 1);
   };
-  
+
   const prev = () => {
     setCurrent(current - 1);
   };
@@ -393,17 +431,17 @@ function OrderBookingCustomer() {
                       render: (_, record) => (
                         <Space size="small">
                           <Tooltip title="Xem chi tiết">
-                            <Button 
-                              type="link" 
-                              icon={<EyeOutlined />} 
+                            <Button
+                              type="link"
+                              icon={<EyeOutlined />}
                               onClick={() => handleViewDetail(record.orderId)}
                               size="small"
                             />
                           </Tooltip>
                           <Tooltip title="Xem lịch sử">
-                            <Button 
-                              type="link" 
-                              icon={<HistoryOutlined />} 
+                            <Button
+                              type="link"
+                              icon={<HistoryOutlined />}
                               onClick={() => handleViewHistory(record.orderId)}
                               size="small"
                             />
@@ -473,17 +511,17 @@ function OrderBookingCustomer() {
                       render: (_, record) => (
                         <Space size="small">
                           <Tooltip title="Xem chi tiết">
-                            <Button 
-                              type="link" 
-                              icon={<EyeOutlined />} 
+                            <Button
+                              type="link"
+                              icon={<EyeOutlined />}
                               onClick={() => handleViewDetail(record.orderId)}
                               size="small"
                             />
                           </Tooltip>
                           <Tooltip title="Xem lịch sử">
-                            <Button 
-                              type="link" 
-                              icon={<HistoryOutlined />} 
+                            <Button
+                              type="link"
+                              icon={<HistoryOutlined />}
                               onClick={() => handleViewHistory(record.orderId)}
                               size="small"
                             />
@@ -503,8 +541,8 @@ function OrderBookingCustomer() {
             <Col span={12}>
               <Card title="Danh sách các tài xế" bordered={false}>
                 <Table
-                  rowSelection={{ 
-                    type: "radio", 
+                  rowSelection={{
+                    type: "radio",
                     ...rowSelectionDrivers,
                     columnWidth: 40
                   }}
@@ -518,10 +556,9 @@ function OrderBookingCustomer() {
                     current: currentPage,
                     pageSize: pageSize,
                     total: totalDrivers,
-                    onChange: (page, pageSize) => {
+                    onChange: (page, size) => {
                       setCurrentPage(page);
-                      setPageSize(pageSize);
-                      fetchDrivers(page, pageSize);
+                      setPageSize(size);
                     },
                   }}
                 />
@@ -533,8 +570,8 @@ function OrderBookingCustomer() {
         return (
           <Row gutter={[24, 24]}>
             <Col span={12}>
-              <Card 
-                title="Đơn hàng đã chọn" 
+              <Card
+                title="Đơn hàng đã chọn"
                 bordered={false}
                 style={{ height: '100%' }}
               >
@@ -558,7 +595,7 @@ function OrderBookingCustomer() {
                     {
                       title: "Địa chỉ lấy hàng",
                       dataIndex: "pickupAddressDetail",
-                      key: "pickupAddressDetail", 
+                      key: "pickupAddressDetail",
                       ellipsis: true,
                     },
                     {
@@ -580,17 +617,17 @@ function OrderBookingCustomer() {
                       render: (_, record) => (
                         <Space size="small">
                           <Tooltip title="Xem chi tiết">
-                            <Button 
-                              type="link" 
-                              icon={<EyeOutlined />} 
+                            <Button
+                              type="link"
+                              icon={<EyeOutlined />}
                               onClick={() => handleViewDetail(record.orderId)}
                               size="small"
                             />
                           </Tooltip>
                           <Tooltip title="Xem lịch sử">
-                            <Button 
-                              type="link" 
-                              icon={<HistoryOutlined />} 
+                            <Button
+                              type="link"
+                              icon={<HistoryOutlined />}
                               onClick={() => handleViewHistory(record.orderId)}
                               size="small"
                             />
@@ -608,16 +645,16 @@ function OrderBookingCustomer() {
               </Card>
             </Col>
             <Col span={12}>
-              <Card 
-                title="Danh sách các tài xế" 
+              <Card
+                title="Danh sách các tài xế"
                 bordered={false}
                 style={{ height: '100%' }}
               >
                 <Table
-                  rowSelection={{ 
-                    type: "radio", 
+                  rowSelection={{
+                    type: "radio",
                     ...rowSelectionDrivers,
-                    columnWidth: 40 
+                    columnWidth: 40
                   }}
                   columns={columnsDriver}
                   dataSource={drivers}
@@ -628,10 +665,9 @@ function OrderBookingCustomer() {
                     current: currentPage,
                     pageSize: pageSize,
                     total: totalDrivers,
-                    onChange: (page, pageSize) => {
+                    onChange: (page, size) => {
                       setCurrentPage(page);
-                      setPageSize(pageSize);
-                      fetchDrivers(page, pageSize);
+                      setPageSize(size);
                     },
                   }}
                 />
@@ -660,7 +696,7 @@ function OrderBookingCustomer() {
             </Text>
           ),
           description: (
-            <Text 
+            <Text
               type={current === index ? "primary" : "secondary"}
               style={{ fontSize: 12 }}
             >
@@ -675,8 +711,8 @@ function OrderBookingCustomer() {
 
       {/* Refresh button */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-        <Button 
-          type="primary" 
+        <Button
+          type="primary"
           icon={<ReloadOutlined />}
           onClick={fetchAreaOrders}
         >
@@ -693,7 +729,7 @@ function OrderBookingCustomer() {
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <div>
           {current > 0 && (
-            <Button 
+            <Button
               onClick={prev}
               icon={<LeftOutlined />}
             >
@@ -703,19 +739,19 @@ function OrderBookingCustomer() {
         </div>
         <div>
           {current < steps.length - 1 && (
-            (current === 0 && hasSelectedOrders) || 
+            (current === 0 && hasSelectedOrders) ||
             (current === 1 && hasSelectedOrders && selectedDriver)
           ) && (
-            <Button 
-              type="primary"
-              onClick={next}
-            >
-              Next <RightOutlined />
-            </Button>
-          )}
+              <Button
+                type="primary"
+                onClick={next}
+              >
+                Next <RightOutlined />
+              </Button>
+            )}
           {current === steps.length - 1 && (
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               onClick={assignOrdersToDriver}
               icon={<CheckOutlined />}
             >
@@ -859,8 +895,8 @@ function OrderBookingCustomer() {
                       <Text italic>Ghi chú: {item.notes}</Text>
                     )}
                     {item.containMedia && (
-                      <Tag 
-                        color="blue" 
+                      <Tag
+                        color="blue"
                         icon={<CameraOutlined />}
                         style={{ cursor: 'pointer' }}
                         onClick={() => fetchHistoryPhotos(item.statusHistoryId)}
@@ -901,11 +937,11 @@ function OrderBookingCustomer() {
                   width={200}
                   height={200}
                 />
-                <Text type="secondary" style={{ 
-                  display: 'block', 
+                <Text type="secondary" style={{
+                  display: 'block',
                   textAlign: 'center',
                   marginTop: '4px',
-                  fontSize: '0.9em' 
+                  fontSize: '0.9em'
                 }}>
                   {new Date(photo.createdAt).toLocaleString("vi-VN")}
                 </Text>
