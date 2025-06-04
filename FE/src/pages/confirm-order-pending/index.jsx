@@ -181,14 +181,19 @@ function ConfirmOrderPending() {
   };
 
   const postProcessOrder = async (orderId) => {
-    const response = await axiosClientVer2.post(
-      `/customer-staff/process-order/${orderId}`
-    );
-    console.log("Response:", response); // Kiểm tra phản hồi từ API
-
-    if (response.data) {
-      setAssignmentId(response.data.assignmentId); // Lưu assignmentId để xử lý sau này
-      message.success(response.data.message);
+    try {
+      const response = await axiosClientVer2.post(
+        `/customer-staff/process-order/${orderId}`
+      );
+      if (response.data) {
+        setAssignmentId(response.data.assignmentId); // Lưu assignmentId để xử lý sau này
+        message.success(response.data.message);
+        return { success: true, data: response.data };
+      }
+      console.log("Response:", response); // Kiểm tra phản hồi từ API
+    } catch (error) {
+      message.error(error.response?.data?.message || "Có lỗi xảy ra khi nhận xử lý đơn hàng");
+      return { success: false, error: error };
     }
   };
 
@@ -219,15 +224,18 @@ function ConfirmOrderPending() {
   };
 
   const handleAcceptOrder = async (orderId) => {
-    await postProcessOrder(orderId); // Gọi API
-    // Cập nhật trạng thái đơn hàng trong state
-    setOrders(prevOrders =>
-      prevOrders.map(order =>
-        order.orderId === orderId
-          ? { ...order, orderStatus: "PROCESSING" }
-          : order
-      )
-    );
+    const result = await postProcessOrder(orderId); // Gọi API
+    
+    // Chỉ cập nhật trạng thái đơn hàng trong state khi API thành công
+    if (result && result.success) {
+      setOrders(prevOrders =>
+        prevOrders.map(order =>
+          order.orderId === orderId
+            ? { ...order, orderStatus: "PROCESSING" }
+            : order
+        )
+      );
+    }
   };
 
   const handleConfirmOrderSuccess = async (orderId) => {
