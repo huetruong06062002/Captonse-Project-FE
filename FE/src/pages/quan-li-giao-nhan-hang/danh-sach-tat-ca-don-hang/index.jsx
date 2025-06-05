@@ -1,15 +1,101 @@
-import { Table, Tag, Input, Button, Space, Tooltip, message, Modal, Descriptions, Typography, Timeline, Image, Popconfirm } from "antd";
+import { Table, Tag, Input, Button, Space, Tooltip, message, Modal, Descriptions, Typography, Timeline, Image, Popconfirm, Row, Col } from "antd";
 import React, { useEffect, useState } from "react";
 import { getRequest, getRequestParams, deleteRequest } from "@services/api";
 import { SearchOutlined, ReloadOutlined, EyeOutlined, FilterFilled, EnvironmentOutlined, HistoryOutlined, CameraOutlined, DeleteOutlined } from '@ant-design/icons';
 import { axiosClientVer2 } from '../../../config/axiosInterceptor';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+// Fix for default markers in react-leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+// Create custom colored SVG icons for pickup and delivery
+const createColoredMarkerSVG = (color) => {
+  return `data:image/svg+xml;base64,${btoa(`
+    <svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.5 0C5.6 0 0 5.6 0 12.5c0 8.3 12.5 28.5 12.5 28.5s12.5-20.2 12.5-28.5C25 5.6 19.4 0 12.5 0z" fill="${color}" stroke="#ffffff" stroke-width="2"/>
+      <circle cx="12.5" cy="12.5" r="6" fill="#ffffff"/>
+    </svg>
+  `)}`;
+};
+
+const pickupIcon = new L.Icon({
+  iconUrl: createColoredMarkerSVG('#1890ff'),
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+const deliveryIcon = new L.Icon({
+  iconUrl: createColoredMarkerSVG('#52c41a'),
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// Combined icon for same location pickup and delivery
+const combinedIcon = new L.Icon({
+  iconUrl: createColoredMarkerSVG('#722ed1'),
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
 
 const { Search } = Input;
 const { Text } = Typography;
 
+// MapWrapper component to handle map rendering issues
+const MapWrapper = ({ children, ...props }) => {
+  const [mapKey, setMapKey] = React.useState(0);
+  
+  React.useEffect(() => {
+    // Force re-render when modal opens
+    const timer = setTimeout(() => {
+      setMapKey(prev => prev + 1);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [props.center]);
+
+  return (
+    <div key={mapKey} style={{ height: '100%', width: '100%' }}>
+      {children}
+    </div>
+  );
+};
+
 function ListAllOrders() {
   const [orders, setOrders] = useState([]);
+
+  // Function to check if pickup and delivery locations are the same
+  const isSameLocation = (order) => {
+    if (!order.pickupLatitude || !order.pickupLongitude || 
+        !order.deliveryLatitude || !order.deliveryLongitude) {
+      return false;
+    }
+    
+    // Check if coordinates are exactly the same or very close (within 0.001 degrees)
+    const latDiff = Math.abs(order.pickupLatitude - order.deliveryLatitude);
+    const lngDiff = Math.abs(order.pickupLongitude - order.deliveryLongitude);
+    
+    return latDiff < 0.001 && lngDiff < 0.001;
+  };
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -525,7 +611,8 @@ function ListAllOrders() {
         title={<Text strong>Chi tiết đơn hàng {selectedOrder?.orderId}</Text>}
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
-        width={1000}
+        width={1400}
+        style={{ top: 20 }}
         footer={[
           <Button key="back" onClick={() => setIsModalVisible(false)}>
             Đóng
@@ -536,104 +623,293 @@ function ListAllOrders() {
           <div style={{ textAlign: 'center', padding: '20px' }}>Đang tải...</div>
         ) : (
           selectedOrder && (
-            <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-              <Descriptions bordered column={2}>
-                <Descriptions.Item label="Trạng thái" span={2}>
-                  <Tag style={getStatusStyle(selectedOrder.currentOrderStatus?.currentStatus)}>
-                    {selectedOrder.currentOrderStatus?.currentStatus}
-                  </Tag>
-                  <Text type="secondary" style={{ marginLeft: 8 }}>
-                    {selectedOrder.currentOrderStatus?.statusDescription}
-                  </Text>
-                </Descriptions.Item>
+            <div style={{ maxHeight: '75vh', overflowY: 'auto' }}>
+              <Row gutter={24}>
+                <Col span={14}>
+                  <Descriptions bordered column={1} size="small">
+                    <Descriptions.Item label="Trạng thái">
+                      <Tag style={getStatusStyle(selectedOrder.currentOrderStatus?.currentStatus)}>
+                        {selectedOrder.currentOrderStatus?.currentStatus}
+                      </Tag>
+                      <Text type="secondary" style={{ marginLeft: 8 }}>
+                        {selectedOrder.currentOrderStatus?.statusDescription}
+                      </Text>
+                    </Descriptions.Item>
 
-                <Descriptions.Item label="Thông tin lấy hàng" span={2}>
-                  <Space direction="vertical">
-                    <Text strong>{selectedOrder.pickupName} - {selectedOrder.pickupPhone}</Text>
-                    <Space>
-                      <EnvironmentOutlined />
-                      <Text>{selectedOrder.pickupAddressDetail}</Text>
-                    </Space>
-                    <Text type="secondary">Thời gian: {formatDateTime(selectedOrder.pickupTime)}</Text>
-                    {selectedOrder.pickupDescription && (
-                      <Text type="secondary">Ghi chú: {selectedOrder.pickupDescription}</Text>
-                    )}
-                  </Space>
-                </Descriptions.Item>
-
-                <Descriptions.Item label="Thông tin giao hàng" span={2}>
-                  <Space direction="vertical">
-                    <Text strong>{selectedOrder.deliveryName} - {selectedOrder.deliveryPhone}</Text>
-                    <Space>
-                      <EnvironmentOutlined />
-                      <Text>{selectedOrder.deliveryAddressDetail}</Text>
-                    </Space>
-                    <Text type="secondary">Thời gian: {formatDateTime(selectedOrder.deliveryTime)}</Text>
-                    {selectedOrder.deliveryDescription && (
-                      <Text type="secondary">Ghi chú: {selectedOrder.deliveryDescription}</Text>
-                    )}
-                  </Space>
-                </Descriptions.Item>
-
-                <Descriptions.Item label="Chi tiết dịch vụ" span={2}>
-                  {selectedOrder.orderSummary?.items.map((item, index) => (
-                    <div key={index} style={{ marginBottom: 16 }}>
+                    <Descriptions.Item label="Thông tin lấy hàng">
                       <Space direction="vertical">
-                        <Text strong>{item.serviceName}</Text>
+                        <Text strong>{selectedOrder.pickupName} - {selectedOrder.pickupPhone}</Text>
                         <Space>
-                          <Text>Đơn giá: {formatCurrency(item.servicePrice)}</Text>
-                          <Text>Số lượng: {item.quantity}</Text>
-                          <Text>Tổng: {formatCurrency(item.subTotal)}</Text>
+                          <EnvironmentOutlined />
+                          <Text>{selectedOrder.pickupAddressDetail}</Text>
                         </Space>
-                        {item.extras.length > 0 && (
-                          <div>
-                            <Text>Dịch vụ thêm:</Text>
-                            {item.extras.map((extra, idx) => (
-                              <div key={idx}>
-                                <Text>{extra.extraName} - {formatCurrency(extra.extraPrice)}</Text>
-                              </div>
-                            ))}
-                          </div>
+                        <Text type="secondary">Thời gian: {formatDateTime(selectedOrder.pickupTime)}</Text>
+                        {selectedOrder.pickupDescription && (
+                          <Text type="secondary">Ghi chú: {selectedOrder.pickupDescription}</Text>
                         )}
                       </Space>
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Thông tin giao hàng">
+                      <Space direction="vertical">
+                        <Text strong>{selectedOrder.deliveryName} - {selectedOrder.deliveryPhone}</Text>
+                        <Space>
+                          <EnvironmentOutlined />
+                          <Text>{selectedOrder.deliveryAddressDetail}</Text>
+                        </Space>
+                        <Text type="secondary">Thời gian: {formatDateTime(selectedOrder.deliveryTime)}</Text>
+                        {selectedOrder.deliveryDescription && (
+                          <Text type="secondary">Ghi chú: {selectedOrder.deliveryDescription}</Text>
+                        )}
+                      </Space>
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Chi tiết dịch vụ">
+                      {selectedOrder.orderSummary?.items.map((item, index) => (
+                        <div key={index} style={{ marginBottom: 16 }}>
+                          <Space direction="vertical">
+                            <Text strong>{item.serviceName}</Text>
+                            <Space>
+                              <Text>Đơn giá: {formatCurrency(item.servicePrice)}</Text>
+                              <Text>Số lượng: {item.quantity}</Text>
+                              <Text>Tổng: {formatCurrency(item.subTotal)}</Text>
+                            </Space>
+                            {item.extras.length > 0 && (
+                              <div>
+                                <Text>Dịch vụ thêm:</Text>
+                                {item.extras.map((extra, idx) => (
+                                  <div key={idx}>
+                                    <Text>{extra.extraName} - {formatCurrency(extra.extraPrice)}</Text>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </Space>
+                        </div>
+                      ))}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Tổng tiền hàng">
+                      {formatCurrency(selectedOrder.orderSummary?.estimatedTotal)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Phí vận chuyển">
+                      {formatCurrency(selectedOrder.orderSummary?.shippingFee)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Giảm giá vận chuyển">
+                      {formatCurrency(selectedOrder.orderSummary?.shippingDiscount)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Phí phát sinh">
+                      {formatCurrency(selectedOrder.orderSummary?.applicableFee)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Giảm giá">
+                      {formatCurrency(selectedOrder.orderSummary?.discount)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Tổng cộng" className="total-amount">
+                      <Text strong style={{ fontSize: '16px', color: '#f5222d' }}>
+                        {formatCurrency(selectedOrder.orderSummary?.totalPrice)}
+                      </Text>
+                    </Descriptions.Item>
+
+                    {selectedOrder.notes && (
+                      <Descriptions.Item label="Ghi chú">
+                        {selectedOrder.notes}
+                      </Descriptions.Item>
+                    )}
+
+                    <Descriptions.Item label="Thời gian tạo đơn">
+                      {formatDateTime(selectedOrder.createdAt)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Cập nhật cuối">
+                      {formatDateTime(selectedOrder.currentOrderStatus?.lastUpdate)}
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Col>
+
+                <Col span={10}>
+                  {/* Map Section */}
+                  {(selectedOrder.pickupLatitude && selectedOrder.pickupLongitude) || 
+                   (selectedOrder.deliveryLatitude && selectedOrder.deliveryLongitude) ? (
+                    <div style={{ height: '100%' }}>
+                      <Text strong style={{ display: 'block', marginBottom: 16, fontSize: 16 }}>
+                        Bản đồ vị trí
+                      </Text>
+                      <div style={{ height: '500px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #d9d9d9' }}>
+                        <style>{`
+                          .leaflet-container {
+                            height: 500px !important;
+                            width: 100% !important;
+                          }
+                        `}</style>
+                        <MapWrapper center={[
+                          selectedOrder.pickupLatitude || selectedOrder.deliveryLatitude,
+                          selectedOrder.pickupLongitude || selectedOrder.deliveryLongitude
+                        ]}>
+                          <MapContainer
+                            center={[
+                              selectedOrder.pickupLatitude || selectedOrder.deliveryLatitude,
+                              selectedOrder.pickupLongitude || selectedOrder.deliveryLongitude
+                            ]}
+                            zoom={13}
+                            style={{ height: '100%', width: '100%' }}
+                            whenCreated={(mapInstance) => {
+                              setTimeout(() => {
+                                mapInstance.invalidateSize();
+                              }, 100);
+                            }}
+                          >
+                          <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            maxZoom={19}
+                            subdomains={['a', 'b', 'c']}
+                          />
+                          
+                          {/* Check if pickup and delivery are at same location */}
+                          {isSameLocation(selectedOrder) ? (
+                            /* Combined Marker for same location */
+                            <Marker 
+                              position={[selectedOrder.pickupLatitude, selectedOrder.pickupLongitude]}
+                              icon={combinedIcon}
+                            >
+                              <Popup>
+                                <div style={{ maxWidth: '250px' }}>
+                                  <strong style={{ color: '#722ed1' }}>📍 Địa chỉ nhận và giao hàng</strong><br />
+                                  <br />
+                                  <div style={{ backgroundColor: '#f0f8ff', padding: '8px', borderRadius: '4px', marginBottom: '8px' }}>
+                                    <strong style={{ color: '#1890ff' }}>📦 THÔNG TIN NHẬN HÀNG</strong><br />
+                                    <strong>Người nhận:</strong> {selectedOrder.pickupName}<br />
+                                    <strong>SĐT:</strong> {selectedOrder.pickupPhone}<br />
+                                    <strong>Thời gian:</strong> {formatDateTime(selectedOrder.pickupTime)}<br />
+                                    {selectedOrder.pickupDescription && (
+                                      <>
+                                        <strong>Ghi chú:</strong> {selectedOrder.pickupDescription}<br />
+                                      </>
+                                    )}
+                                  </div>
+                                  
+                                  <div style={{ backgroundColor: '#f6ffed', padding: '8px', borderRadius: '4px' }}>
+                                    <strong style={{ color: '#52c41a' }}>🚚 THÔNG TIN GIAO HÀNG</strong><br />
+                                    <strong>Người nhận:</strong> {selectedOrder.deliveryName}<br />
+                                    <strong>SĐT:</strong> {selectedOrder.deliveryPhone}<br />
+                                    <strong>Thời gian:</strong> {formatDateTime(selectedOrder.deliveryTime)}<br />
+                                    {selectedOrder.deliveryDescription && (
+                                      <>
+                                        <strong>Ghi chú:</strong> {selectedOrder.deliveryDescription}<br />
+                                      </>
+                                    )}
+                                  </div>
+                                  
+                                  <div style={{ marginTop: '8px', fontSize: '12px' }}>
+                                    <strong>Địa chỉ:</strong> {selectedOrder.pickupAddressDetail}
+                                  </div>
+                                </div>
+                              </Popup>
+                            </Marker>
+                          ) : (
+                            <>
+                              {/* Separate Pickup Marker */}
+                              {selectedOrder.pickupLatitude && selectedOrder.pickupLongitude && (
+                                <Marker 
+                                  position={[selectedOrder.pickupLatitude, selectedOrder.pickupLongitude]}
+                                  icon={pickupIcon}
+                                >
+                                  <Popup>
+                                    <div style={{ maxWidth: '200px' }}>
+                                      <strong style={{ color: '#1890ff' }}>📦 Địa chỉ nhận hàng</strong><br />
+                                      <strong>Người nhận:</strong> {selectedOrder.pickupName}<br />
+                                      <strong>SĐT:</strong> {selectedOrder.pickupPhone}<br />
+                                      <strong>Địa chỉ:</strong> {selectedOrder.pickupAddressDetail}<br />
+                                      <strong>Thời gian:</strong> {formatDateTime(selectedOrder.pickupTime)}<br />
+                                      {selectedOrder.pickupDescription && (
+                                        <>
+                                          <strong>Ghi chú:</strong> {selectedOrder.pickupDescription}
+                                        </>
+                                      )}
+                                    </div>
+                                  </Popup>
+                                </Marker>
+                              )}
+
+                              {/* Separate Delivery Marker */}
+                              {selectedOrder.deliveryLatitude && selectedOrder.deliveryLongitude && (
+                                <Marker 
+                                  position={[selectedOrder.deliveryLatitude, selectedOrder.deliveryLongitude]}
+                                  icon={deliveryIcon}
+                                >
+                                  <Popup>
+                                    <div style={{ maxWidth: '200px' }}>
+                                      <strong style={{ color: '#52c41a' }}>🚚 Địa chỉ giao hàng</strong><br />
+                                      <strong>Người nhận:</strong> {selectedOrder.deliveryName}<br />
+                                      <strong>SĐT:</strong> {selectedOrder.deliveryPhone}<br />
+                                      <strong>Địa chỉ:</strong> {selectedOrder.deliveryAddressDetail}<br />
+                                      <strong>Thời gian:</strong> {formatDateTime(selectedOrder.deliveryTime)}<br />
+                                      {selectedOrder.deliveryDescription && (
+                                        <>
+                                          <strong>Ghi chú:</strong> {selectedOrder.deliveryDescription}
+                                        </>
+                                      )}
+                                    </div>
+                                  </Popup>
+                                </Marker>
+                              )}
+                            </>
+                          )}
+                                                  </MapContainer>
+                        </MapWrapper>
+                        </div>
+                      
+                      {/* Map Legend */}
+                      <div style={{ 
+                        marginTop: '12px', 
+                        padding: '8px 12px', 
+                        backgroundColor: '#f6f6f6', 
+                        borderRadius: '6px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: '16px',
+                        flexWrap: 'wrap'
+                      }}>
+                        {!isSameLocation(selectedOrder) ? (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <div style={{ 
+                                width: '12px', 
+                                height: '12px', 
+                                backgroundColor: '#1890ff', 
+                                borderRadius: '50%' 
+                              }}></div>
+                              <Text type="secondary">Địa chỉ nhận hàng</Text>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <div style={{ 
+                                width: '12px', 
+                                height: '12px', 
+                                backgroundColor: '#52c41a', 
+                                borderRadius: '50%' 
+                              }}></div>
+                              <Text type="secondary">Địa chỉ giao hàng</Text>
+                            </div>
+                          </>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ 
+                              width: '12px', 
+                              height: '12px', 
+                              backgroundColor: '#722ed1', 
+                              borderRadius: '50%' 
+                            }}></div>
+                            <Text type="secondary">Địa chỉ nhận và giao hàng (cùng vị trí)</Text>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                </Descriptions.Item>
-
-                <Descriptions.Item label="Tổng tiền hàng">
-                  {formatCurrency(selectedOrder.orderSummary?.estimatedTotal)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Phí vận chuyển">
-                  {formatCurrency(selectedOrder.orderSummary?.shippingFee)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Giảm giá vận chuyển">
-                  {formatCurrency(selectedOrder.orderSummary?.shippingDiscount)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Phí phát sinh">
-                  {formatCurrency(selectedOrder.orderSummary?.applicableFee)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Giảm giá">
-                  {formatCurrency(selectedOrder.orderSummary?.discount)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Tổng cộng" className="total-amount">
-                  <Text strong style={{ fontSize: '16px', color: '#f5222d' }}>
-                    {formatCurrency(selectedOrder.orderSummary?.totalPrice)}
-                  </Text>
-                </Descriptions.Item>
-
-                {selectedOrder.notes && (
-                  <Descriptions.Item label="Ghi chú" span={2}>
-                    {selectedOrder.notes}
-                  </Descriptions.Item>
-                )}
-
-                <Descriptions.Item label="Thời gian tạo đơn">
-                  {formatDateTime(selectedOrder.createdAt)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Cập nhật cuối">
-                  {formatDateTime(selectedOrder.currentOrderStatus?.lastUpdate)}
-                </Descriptions.Item>
-              </Descriptions>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                      <Text type="secondary">Không có thông tin tọa độ để hiển thị bản đồ</Text>
+                    </div>
+                  )}
+                </Col>
+              </Row>
             </div>
           )
         )}
