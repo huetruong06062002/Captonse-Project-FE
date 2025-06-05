@@ -3,6 +3,20 @@ import { Drawer, Button, List, Typography, Descriptions, Divider, Card, Row, Col
 import { useSelector } from "react-redux";
 import moment from "moment";
 import { getRequest, postRequest, postRequestParams } from '@services/api';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+// Fix for default markers in react-leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 import { 
   FileTextOutlined, 
   UserOutlined, 
@@ -488,6 +502,56 @@ function OrderDetailDrawer(props) {
               />
             </Card>
           </Col>
+
+          {/* Map Section */}
+          {orderDetails.deliveryLatitude && orderDetails.deliveryLongitude && (
+            <Col xs={24}>
+              <Card 
+                title={
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <EnvironmentOutlined style={{ color: '#fa541c', marginRight: 8 }} />
+                    <span>Vị trí giao hàng</span>
+                  </div>
+                } 
+                bordered={false}
+                style={{ borderRadius: '12px', marginBottom: '24px' }}
+                headStyle={{ 
+                  borderBottom: '2px solid #fa541c',
+                  padding: '12px 16px'
+                }}
+                bodyStyle={{ padding: '16px' }}
+              >
+                <div style={{ height: '400px', borderRadius: '8px', overflow: 'hidden' }}>
+                  <MapContainer
+                    center={[orderDetails.deliveryLatitude, orderDetails.deliveryLongitude]}
+                    zoom={15}
+                    style={{ height: '100%', width: '100%' }}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <Marker position={[orderDetails.deliveryLatitude, orderDetails.deliveryLongitude]}>
+                      <Popup>
+                        <div>
+                          <strong>Địa chỉ giao hàng</strong><br />
+                          {orderDetails.deliveryAddressDetail}<br />
+                          <strong>Người nhận:</strong> {orderDetails.deliveryName}<br />
+                          <strong>SĐT:</strong> {orderDetails.deliveryPhone}
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </MapContainer>
+                </div>
+                <div style={{ marginTop: '12px', padding: '8px 0', borderTop: '1px solid #f0f0f0' }}>
+                  <Text type="secondary">
+                    <EnvironmentOutlined style={{ marginRight: 4 }} />
+                    Tọa độ: {orderDetails.deliveryLatitude}, {orderDetails.deliveryLongitude}
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+          )}
 
           <Col xs={24}>
             <Card 
