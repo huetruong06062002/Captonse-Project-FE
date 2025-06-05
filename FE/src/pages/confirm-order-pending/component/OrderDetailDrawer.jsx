@@ -553,7 +553,7 @@ function OrderDetailDrawer(props) {
                               <Text type="secondary">Dịch vụ bổ sung: </Text>
                               {item.extras.map((extra, idx) => (
                                 <Tag key={idx} color="green" style={{ margin: '2px' }}>
-                                  {extra.name} (+{formatCurrency(extra.price)})
+                                  {extra.extraName} (+{formatCurrency(extra.extraPrice)})
                                 </Tag>
                               ))}
                             </div>
