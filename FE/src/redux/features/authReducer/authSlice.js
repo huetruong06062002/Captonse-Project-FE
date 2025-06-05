@@ -122,7 +122,7 @@ const authSlice = createSlice({
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
-        message.error(action.payload?.message || "Login failed");
+        message.error(action.payload?.message || "Sai số điện thoại hoặc mật khẩu");
       });
   },
 });
