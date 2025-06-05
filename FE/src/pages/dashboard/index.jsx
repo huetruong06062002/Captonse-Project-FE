@@ -15,6 +15,7 @@ import {
 import { axiosClientVer2 } from "../../config/axiosInterceptor";
 import { getRequest } from "@services/api";
 import { Col, Row, Card, Rate, Table, Modal, Button, DatePicker, Radio, Spin, message, Tag } from "antd";
+import { EyeOutlined } from '@ant-design/icons';
 import { motion, useAnimation } from "framer-motion";
 
 import orderImage from "../../assets/image/order.png";
@@ -246,6 +247,11 @@ function DashBoard() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
   const [paymentDetailLoading, setPaymentDetailLoading] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState([]);
+  
+  // Thêm state cho modal chi tiết PayOS
+  const [isPayOSDetailModalOpen, setIsPayOSDetailModalOpen] = useState(false);
+  const [payOSDetailLoading, setPayOSDetailLoading] = useState(false);
+  const [payOSDetail, setPayOSDetail] = useState(null);
 
   useEffect(() => {
     const fetchNumberOfCustomer = async () => {
@@ -622,6 +628,20 @@ function DashBoard() {
   const handleViewPaymentDetails = () => {
     fetchPaymentMethodDetails();
     setIsPaymentDetailModalOpen(true);
+  };
+
+  // Hàm lấy chi tiết PayOS
+  const fetchPayOSDetails = async (paymentId) => {
+    setPayOSDetailLoading(true);
+    try {
+      const response = await getRequest(`payments/payos/info/${paymentId}`);
+      setPayOSDetail(response.data);
+      setIsPayOSDetailModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching PayOS details:", error);
+      message.error("Không thể lấy chi tiết thanh toán PayOS");
+    }
+    setPayOSDetailLoading(false);
   };
 
   // Memoize dữ liệu cho biểu đồ doanh thu theo thời gian để tránh re-render không cần thiết
@@ -1782,12 +1802,220 @@ function DashBoard() {
                       key: 'paymentDate',
                       width: 150,
                       render: (date) => dayjs(date).format('DD/MM/YYYY HH:mm')
-                    }
+                    },
+                    // Chỉ hiển thị cột Chi tiết cho PayOS
+                    ...(paymentMethod.name === 'PayOS' ? [{
+                      title: 'Chi tiết', 
+                      key: 'detail',
+                      width: 80,
+                      render: (_, record) => (
+                        <Button
+                          type="text"
+                          icon={<EyeOutlined />}
+                          onClick={() => fetchPayOSDetails(record.paymentId)}
+                          loading={payOSDetailLoading}
+                          size="small"
+                          style={{ color: '#1890ff' }}
+                        />
+                      )
+                    }] : [])
                   ]}
                   scroll={{ x: 'max-content' }}
                 />
               </div>
             ))}
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal hiển thị chi tiết PayOS */}
+      <Modal
+        title={
+          <div style={{ fontSize: 18, fontWeight: 600 }}>
+            Chi tiết thanh toán PayOS
+          </div>
+        }
+        open={isPayOSDetailModalOpen}
+        onCancel={() => {
+          setIsPayOSDetailModalOpen(false);
+          setPayOSDetail(null);
+        }}
+        footer={null}
+        width={800}
+        style={{ top: 20 }}
+      >
+        {payOSDetailLoading ? (
+          <div style={{ textAlign: 'center', padding: '30px 0' }}>
+            <Spin size="large" />
+          </div>
+        ) : payOSDetail ? (
+          <div style={{ padding: '20px 0' }}>
+            {/* Thông tin tổng quan */}
+            <div style={{ 
+              backgroundColor: '#f8f9fa', 
+              padding: '20px', 
+              borderRadius: '8px',
+              marginBottom: 24,
+              border: '1px solid #e9ecef'
+            }}>
+              <Row gutter={[16, 16]}>
+                <Col span={12}>
+                  <div>
+                    <strong style={{ color: '#666' }}>Mã giao dịch:</strong>
+                    <div style={{ fontSize: 16, fontWeight: 600, fontFamily: 'monospace' }}>
+                      {payOSDetail.id}
+                    </div>
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <div>
+                    <strong style={{ color: '#666' }}>Mã đơn hàng:</strong>
+                    <div style={{ fontSize: 16, fontWeight: 600 }}>
+                      {payOSDetail.orderCode}
+                    </div>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div>
+                    <strong style={{ color: '#666' }}>Số tiền:</strong>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#52c41a' }}>
+                      {payOSDetail.amount?.toLocaleString()} VNĐ
+                    </div>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div>
+                    <strong style={{ color: '#666' }}>Đã thanh toán:</strong>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#1890ff' }}>
+                      {payOSDetail.amountPaid?.toLocaleString()} VNĐ
+                    </div>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div>
+                    <strong style={{ color: '#666' }}>Còn lại:</strong>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: payOSDetail.amountRemaining > 0 ? '#ff4d4f' : '#52c41a' }}>
+                      {payOSDetail.amountRemaining?.toLocaleString()} VNĐ
+                    </div>
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <div>
+                    <strong style={{ color: '#666' }}>Trạng thái:</strong>
+                    <div>
+                      <Tag color={payOSDetail.status === 'PAID' ? 'green' : 'orange'} style={{ fontSize: 14, padding: '4px 12px' }}>
+                        {payOSDetail.status === 'PAID' ? 'Đã thanh toán' : payOSDetail.status}
+                      </Tag>
+                    </div>
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <div>
+                    <strong style={{ color: '#666' }}>Ngày tạo:</strong>
+                    <div style={{ fontSize: 14 }}>
+                      {dayjs(payOSDetail.createdAt).format('DD/MM/YYYY HH:mm:ss')}
+                    </div>
+                  </div>
+                </Col>
+                {payOSDetail.canceledAt && (
+                  <>
+                    <Col span={12}>
+                      <div>
+                        <strong style={{ color: '#666' }}>Ngày hủy:</strong>
+                        <div style={{ fontSize: 14, color: '#ff4d4f' }}>
+                          {dayjs(payOSDetail.canceledAt).format('DD/MM/YYYY HH:mm:ss')}
+                        </div>
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <div>
+                        <strong style={{ color: '#666' }}>Lý do hủy:</strong>
+                        <div style={{ fontSize: 14, color: '#ff4d4f' }}>
+                          {payOSDetail.cancellationReason || 'Không có'}
+                        </div>
+                      </div>
+                    </Col>
+                  </>
+                )}
+              </Row>
+            </div>
+
+            {/* Chi tiết giao dịch */}
+            {payOSDetail.transactions && payOSDetail.transactions.length > 0 && (
+              <div>
+                <h4 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
+                  Chi tiết giao dịch ngân hàng
+                </h4>
+                <Table
+                  dataSource={payOSDetail.transactions}
+                  rowKey="reference"
+                  size="small"
+                  pagination={false}
+                  columns={[
+                    {
+                      title: 'Mã tham chiếu',
+                      dataIndex: 'reference',
+                      key: 'reference',
+                      width: 140,
+                      render: (text) => <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{text}</span>
+                    },
+                    {
+                      title: 'Số tiền',
+                      dataIndex: 'amount',
+                      key: 'amount',
+                      width: 120,
+                      render: (amount) => (
+                        <span style={{ fontWeight: 600, color: '#52c41a' }}>
+                          {amount?.toLocaleString()} VNĐ
+                        </span>
+                      )
+                    },
+                    {
+                      title: 'STK nguồn',
+                      dataIndex: 'counterAccountNumber',
+                      key: 'counterAccountNumber',
+                      width: 140,
+                      render: (text) => <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{text}</span>
+                    },
+                    {
+                      title: 'Tên người gửi',
+                      dataIndex: 'counterAccountName',
+                      key: 'counterAccountName',
+                      width: 150
+                    },
+                    {
+                      title: 'Ngân hàng',
+                      dataIndex: 'counterAccountBankId',
+                      key: 'counterAccountBankId',
+                      width: 100,
+                      render: (text) => <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{text}</span>
+                    },
+                    {
+                      title: 'Thời gian GD',
+                      dataIndex: 'transactionDateTime',
+                      key: 'transactionDateTime',
+                      width: 140,
+                      render: (date) => dayjs(date).format('DD/MM/YYYY HH:mm:ss')
+                    }
+                  ]}
+                  scroll={{ x: 'max-content' }}
+                />
+                
+                {/* Nội dung chuyển khoản */}
+                {payOSDetail.transactions[0]?.description && (
+                  <div style={{ marginTop: 16, padding: 12, backgroundColor: '#f8f9fa', borderRadius: 6 }}>
+                    <strong style={{ color: '#666' }}>Nội dung chuyển khoản:</strong>
+                    <div style={{ marginTop: 4, fontSize: 13, wordBreak: 'break-all' }}>
+                      {payOSDetail.transactions[0].description}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '30px 0', color: '#999' }}>
+            Không có dữ liệu chi tiết
           </div>
         )}
       </Modal>
