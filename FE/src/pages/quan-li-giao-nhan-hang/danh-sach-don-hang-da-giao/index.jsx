@@ -273,12 +273,21 @@ export default function ListOrderAssignment() {
     },
     {
       title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status) => {
-        const color = status === 'ASSIGNED_PICKUP' ? 'blue' : 'green';
-        const text = status === 'ASSIGNED_PICKUP' ? 'Được phân công nhận' : 'Được phân công giao';
-        return <Tag color={color}>{text}</Tag>;
+      dataIndex: 'currentStatus',
+      key: 'currentStatus',
+      render: (currentStatus) => {
+        const statusMapping = {
+          'SCHEDULED_PICKUP': { text: 'Được phân công nhận', color: 'blue' },
+          'PICKINGUP': { text: 'Đã đi nhận hàng', color: 'processing' },
+          'PICKEDUP': { text: 'Đã nhận hàng', color: 'success' },
+          'SCHEDULED_DELIVERY': { text: 'Được phân công giao', color: 'orange' },
+          'DELIVERING': { text: 'Đã đi giao hàng', color: 'geekblue' },
+          'DELIVERED': { text: 'Đã giao hàng', color: 'purple' },
+          'COMPLETED': { text: 'Đã hoàn thành', color: 'green' }
+        };
+        
+        const statusInfo = statusMapping[currentStatus] || { text: currentStatus, color: 'default' };
+        return <Tag color={statusInfo.color}>{statusInfo.text}</Tag>;
       },
     },
     {
