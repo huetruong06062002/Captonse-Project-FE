@@ -68,27 +68,27 @@ function OrderDetailDrawer(props) {
 
   // Lấy thông tin chi tiết đơn hàng từ API khi drawer được mở
   useEffect(() => {
-          if (orderId) {
-        const fetchOrderDetails = async () => {
-          setLoading(true);
-          try {
-            const response = await getRequest(`/orders/${orderId}`);
-            console.log("Order details response:", response);
-            setOrderDetails(response.data);
+    if (orderId) {
+      const fetchOrderDetails = async () => {
+        setLoading(true);
+        try {
+          const response = await getRequest(`/orders/${orderId}`);
+          console.log("Order details response:", response);
+          setOrderDetails(response.data);
             // Set initial values for editing
             if (response.data?.orderSummary) {
               setEditOtherPrice(response.data.orderSummary.otherprice || 0);
               setEditOtherPriceNote(response.data.orderSummary.otherPriceNote || "");
             }
-          } catch (error) {
-            console.error("Error fetching order details:", error);
-            message.error("Không thể tải thông tin đơn hàng");
-          } finally {
-            setLoading(false);
-          }
-        };
-        fetchOrderDetails();
-      }
+        } catch (error) {
+          console.error("Error fetching order details:", error);
+          message.error("Không thể tải thông tin đơn hàng");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchOrderDetails();
+    }
   }, [orderId]);
 
   // Format currency
@@ -374,9 +374,9 @@ function OrderDetailDrawer(props) {
                 </Button>
               </>
             )}
-            <Button onClick={onClose} type="primary">
-              Đóng
-            </Button>
+          <Button onClick={onClose} type="primary">
+            Đóng
+          </Button>
           </Space>
         </div>
       }
