@@ -33,6 +33,7 @@ import PlaceOrderManagementCustomerStaff from '@pages/place-order-management-cus
 import AbsenDriverMangement from '@pages/quan-li-giao-nhan-hang/quan-li-lich-vang-tai-xe';
 import ListOrderAssignment from '@pages/quan-li-giao-nhan-hang/danh-sach-don-hang-da-giao';
 import ListAllOrdersFail from '@pages/quan-li-giao-nhan-hang/danh-sach-tat-ca-don-hang-loi';
+import ListOrdersChecking from '@pages/quan-li-giao-nhan-hang/danh-sach-don-hang-dang-kiem-tra';
 
 // Component để redirect dựa trên role
 const RoleBasedRedirect = () => {
@@ -115,6 +116,10 @@ function App() {
             <Route
               path={endPoints.CONFIRMCUSTOMERPENDING}
               element={<ConfirmOrderPending />}
+            />
+            <Route
+              path={endPoints.DANH_SACH_DON_HANG_DANG_KIEM_TRA}
+              element={<ListOrdersChecking />}
             />
 
             <Route path={endPoints.ORDERMANAGEMENTCUSTOMERSTAFF} element={<ORDERMANAGEMENTCUSTOMERSTAFF />} />

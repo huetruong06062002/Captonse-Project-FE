@@ -318,6 +318,12 @@ const AdminLayout = () => {
       allowedRoles: ["CustomerStaff"],
     },
     {
+      key: endPoints.DANH_SACH_DON_HANG_DANG_KIEM_TRA,
+      icon: <CheckCircleOutlined />,
+      label: createLabelWithTooltip("Đơn hàng đang nhận kiểm tra"),
+      allowedRoles: ["CustomerStaff"],
+    },
+    {
       key: endPoints.ORDERMANAGEMENTCUSTOMERSTAFF,
       icon: <ShoppingCartOutlined />,
       label: createLabelWithTooltip("Quản lý giỏ hàng khách hàng"),
