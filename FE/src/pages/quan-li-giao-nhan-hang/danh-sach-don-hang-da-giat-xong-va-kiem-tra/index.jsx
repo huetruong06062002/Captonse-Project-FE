@@ -62,13 +62,13 @@ const { Text } = Typography;
 // MapWrapper component to handle map rendering issues
 const MapWrapper = ({ children, ...props }) => {
   const [mapKey, setMapKey] = React.useState(0);
-  
+
   React.useEffect(() => {
     // Force re-render when modal opens
     const timer = setTimeout(() => {
       setMapKey(prev => prev + 1);
     }, 100);
-    
+
     return () => clearTimeout(timer);
   }, [props.center]);
 
@@ -84,15 +84,15 @@ function ListOrdersQualityChecked() {
 
   // Function to check if pickup and delivery locations are the same
   const isSameLocation = (order) => {
-    if (!order.pickupLatitude || !order.pickupLongitude || 
-        !order.deliveryLatitude || !order.deliveryLongitude) {
+    if (!order.pickupLatitude || !order.pickupLongitude ||
+      !order.deliveryLatitude || !order.deliveryLongitude) {
       return false;
     }
-    
+
     // Check if coordinates are exactly the same or very close (within 0.001 degrees)
     const latDiff = Math.abs(order.pickupLatitude - order.deliveryLatitude);
     const lngDiff = Math.abs(order.pickupLongitude - order.deliveryLongitude);
-    
+
     return latDiff < 0.001 && lngDiff < 0.001;
   };
 
@@ -252,7 +252,7 @@ function ListOrdersQualityChecked() {
       setIsLoadingDetail(true);
       const response = await getRequest(`/orders/${orderId}`);
       console.log("Order detail response:", response);
-      
+
       if (response && response.data) {
         console.log("Order detail data:", response.data);
         setSelectedOrder(response.data);
@@ -315,7 +315,7 @@ function ListOrdersQualityChecked() {
       setIsLoadingHistory(true);
       const response = await getRequest(`/orders/history/${orderId}`);
       console.log("Order history response:", response);
-      
+
       if (response && response.data) {
         console.log("Order history data:", response.data);
         setOrderHistory(response.data);
@@ -394,15 +394,15 @@ function ListOrdersQualityChecked() {
   const confirmCashPayment = async (values) => {
     try {
       setCashPaymentLoading(true);
-      
+
       // Tạo query parameters
       const queryParams = new URLSearchParams({
         orderId: selectedOrderForPayment.orderId,
         notes: values.notes || ''
       });
-      
+
       const response = await postRequest(`/customer-staff/order/confirm-complete?${queryParams.toString()}`, {});
-      
+
       if (response) {
         message.success('Xác nhận thanh toán tiền mặt thành công!');
         setIsCashPaymentModalVisible(false);
@@ -423,9 +423,9 @@ function ListOrdersQualityChecked() {
         orderId: values.orderId,
         description: values.description
       };
-      
+
       const response = await postRequest('/payments/payos/link', payload);
-      
+
       if (response && response.data && response.data.checkoutUrl) {
         message.success('Tạo link thanh toán thành công!');
         window.open(response.data.checkoutUrl, '_blank');
@@ -525,7 +525,7 @@ function ListOrdersQualityChecked() {
               icon={<HistoryOutlined />}
               size="small"
               onClick={() => handleViewHistory(record.orderId)}
-              style={{ minWidth: '36px' }}
+              style={{ minWidth: '36px', padding: '20px' }}
             />
           </Tooltip>
           <Tooltip title="Thanh toán tiền mặt">
@@ -534,10 +534,11 @@ function ListOrdersQualityChecked() {
               icon={<DollarOutlined />}
               size="small"
               onClick={() => handleCashPayment(record)}
-              style={{ 
-                backgroundColor: '#52c41a', 
+              style={{
+                backgroundColor: '#52c41a',
                 borderColor: '#52c41a',
-                minWidth: '36px'
+                minWidth: '36px',
+                paddingLeft: '5px'
               }}
             />
           </Tooltip>
@@ -547,10 +548,11 @@ function ListOrdersQualityChecked() {
               icon={<CreditCardOutlined />}
               size="small"
               onClick={() => handleOnlinePayment(record)}
-              style={{ 
-                backgroundColor: '#722ed1', 
+              style={{
+                backgroundColor: '#722ed1',
                 borderColor: '#722ed1',
-                minWidth: '36px'
+                minWidth: '36px',
+                paddingLeft: '5px'
               }}
             />
           </Tooltip>
@@ -677,8 +679,8 @@ function ListOrdersQualityChecked() {
                 <h4>Chi tiết đơn hàng</h4>
                 <Descriptions bordered column={1}>
                   {selectedOrder.orderSummary.items?.map((item, index) => (
-                    <Descriptions.Item 
-                      key={index} 
+                    <Descriptions.Item
+                      key={index}
                       label={`Dịch vụ ${index + 1}: ${item.serviceName || 'N/A'}`}
                     >
                       <div>
@@ -727,45 +729,45 @@ function ListOrdersQualityChecked() {
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                       />
-                      
+
                       {/* Pickup marker */}
-                      <Marker 
-                        position={[selectedOrder.pickupLatitude, selectedOrder.pickupLongitude]} 
+                      <Marker
+                        position={[selectedOrder.pickupLatitude, selectedOrder.pickupLongitude]}
                         icon={isSameLocation(selectedOrder) ? combinedIcon : pickupIcon}
                       >
                         <Popup>
                           <div>
-                            <strong>📍 Điểm nhận hàng</strong><br/>
-                            <strong>Tên:</strong> {selectedOrder.pickupName}<br/>
-                            <strong>SĐT:</strong> {selectedOrder.pickupPhone}<br/>
-                            <strong>Địa chỉ:</strong> {selectedOrder.pickupAddressDetail}<br/>
+                            <strong>📍 Điểm nhận hàng</strong><br />
+                            <strong>Tên:</strong> {selectedOrder.pickupName}<br />
+                            <strong>SĐT:</strong> {selectedOrder.pickupPhone}<br />
+                            <strong>Địa chỉ:</strong> {selectedOrder.pickupAddressDetail}<br />
                             {selectedOrder.pickupDescription && (
-                              <><strong>Mô tả:</strong> {selectedOrder.pickupDescription}<br/></>
+                              <><strong>Mô tả:</strong> {selectedOrder.pickupDescription}<br /></>
                             )}
                             {isSameLocation(selectedOrder) && (
                               <>
-                                <br/><strong>🚚 Điểm giao hàng</strong><br/>
-                                <strong>Tên:</strong> {selectedOrder.deliveryName}<br/>
-                                <strong>SĐT:</strong> {selectedOrder.deliveryPhone}<br/>
+                                <br /><strong>🚚 Điểm giao hàng</strong><br />
+                                <strong>Tên:</strong> {selectedOrder.deliveryName}<br />
+                                <strong>SĐT:</strong> {selectedOrder.deliveryPhone}<br />
                                 <strong>Địa chỉ:</strong> {selectedOrder.deliveryAddressDetail}
                               </>
                             )}
                           </div>
                         </Popup>
                       </Marker>
-                      
+
                       {/* Delivery marker - only if different from pickup */}
                       {!isSameLocation(selectedOrder) && selectedOrder.deliveryLatitude && selectedOrder.deliveryLongitude && (
-                        <Marker 
-                          position={[selectedOrder.deliveryLatitude, selectedOrder.deliveryLongitude]} 
+                        <Marker
+                          position={[selectedOrder.deliveryLatitude, selectedOrder.deliveryLongitude]}
                           icon={deliveryIcon}
                         >
                           <Popup>
                             <div>
-                              <strong>🚚 Điểm giao hàng</strong><br/>
-                              <strong>Tên:</strong> {selectedOrder.deliveryName}<br/>
-                              <strong>SĐT:</strong> {selectedOrder.deliveryPhone}<br/>
-                              <strong>Địa chỉ:</strong> {selectedOrder.deliveryAddressDetail}<br/>
+                              <strong>🚚 Điểm giao hàng</strong><br />
+                              <strong>Tên:</strong> {selectedOrder.deliveryName}<br />
+                              <strong>SĐT:</strong> {selectedOrder.deliveryPhone}<br />
+                              <strong>Địa chỉ:</strong> {selectedOrder.deliveryAddressDetail}<br />
                               {selectedOrder.deliveryDescription && (
                                 <><strong>Mô tả:</strong> {selectedOrder.deliveryDescription}</>
                               )}
@@ -810,7 +812,7 @@ function ListOrdersQualityChecked() {
                       </Tag>
                     )}
                   </div>
-                  
+
                   <div style={{ marginBottom: '8px' }}>
                     <Text>{item.statusDescription || 'Không có mô tả'}</Text>
                   </div>
