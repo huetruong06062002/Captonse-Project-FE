@@ -1,7 +1,7 @@
-import { Table, Tag, Input, Button, Space, Tooltip, message, Modal, Descriptions, Typography, Timeline, Image, Row, Col, Avatar, Empty, List, Divider, Checkbox, InputNumber, Spin, Card } from "antd";
+import { Table, Tag, Input, Button, Space, Tooltip, message, Modal, Descriptions, Typography, Timeline, Image, Row, Col, Avatar, Empty, List, Divider, Checkbox, InputNumber, Spin, Card, Steps, Form, Select } from "antd";
 import React, { useEffect, useState } from "react";
-import { getRequest, putRequest } from "@services/api";
-import { SearchOutlined, ReloadOutlined, EyeOutlined, HistoryOutlined, CameraOutlined, EnvironmentOutlined, EditOutlined, DollarOutlined, PlusOutlined, ShoppingCartOutlined, TagOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { getRequest, putRequest, postRequest } from "@services/api";
+import { SearchOutlined, ReloadOutlined, EyeOutlined, HistoryOutlined, CameraOutlined, EnvironmentOutlined, EditOutlined, DollarOutlined, PlusOutlined, ShoppingCartOutlined, TagOutlined, CheckCircleOutlined, ArrowLeftOutlined, DeleteOutlined } from '@ant-design/icons';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -104,6 +104,20 @@ function ListOrdersChecking() {
   const [editSelectedExtras, setEditSelectedExtras] = useState([]);
   const [editQuantity, setEditQuantity] = useState(1);
   const [loadingEditService, setLoadingEditService] = useState(false);
+
+  // Add to cart states
+  const [isAddToCartModalOpen, setIsAddToCartModalOpen] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [subCategories, setSubCategories] = useState([]);
+  const [selectedSubCategory, setSelectedSubCategory] = useState(null);
+  const [services, setServices] = useState([]);
+  const [selectedService, setSelectedService] = useState(null);
+  const [serviceDetails, setServiceDetails] = useState(null);
+  const [selectedExtras, setSelectedExtras] = useState([]);
+  const [quantity, setQuantity] = useState(1);
+  const [loadingAddToCart, setLoadingAddToCart] = useState(false);
 
   useEffect(() => {
     fetchOrdersChecking();
@@ -358,7 +372,7 @@ function ListOrdersChecking() {
   const fetchHistoryPhotos = async (statusHistoryId) => {
     try {
       setLoadingPhotos(true);
-      const response = await getRequest(`/orders/history/${statusHistoryId}/photos`);
+      const response = await getRequest(`/photos/?statusHistoryId=${statusHistoryId}`);
       if (response && response.data) {
         setSelectedHistoryPhotos(response.data);
         setIsPhotoModalVisible(true);
@@ -497,6 +511,9 @@ function ListOrdersChecking() {
   const calculateEditTotalPrice = () => {
     if (!editingOrderItem || !editServiceDetails) return 0;
     
+    // If quantity is 0, return 0
+    if (editQuantity === 0) return 0;
+    
     let total = editingOrderItem.servicePrice * editQuantity;
     
     // Add selected extras price from service details
@@ -521,8 +538,14 @@ function ListOrdersChecking() {
         throw new Error("Thông tin đơn hàng không hợp lệ");
       }
 
-      if (editQuantity <= 0) {
-        throw new Error("Số lượng phải lớn hơn 0");
+      if (editQuantity < 0) {
+        throw new Error("Số lượng không thể âm");
+      }
+
+      // If quantity is 0, show delete confirmation instead
+      if (editQuantity === 0) {
+        handleDeleteOrderItem();
+        return;
       }
 
       const payload = {
@@ -543,11 +566,9 @@ function ListOrdersChecking() {
       setIsEditServiceModalOpen(false);
       
       // Refresh order details
-      if (selectedOrder) {
-        const updatedResponse = await getRequest(`/orders/${selectedOrder.orderId}`);
-        if (updatedResponse.data) {
-          setSelectedOrder(updatedResponse.data);
-        }
+      const updatedResponse = await getRequest(`/orders/${selectedOrder.orderId}`);
+      if (updatedResponse.data) {
+        setSelectedOrder(updatedResponse.data);
       }
       
       // Refresh orders list
@@ -568,12 +589,305 @@ function ListOrdersChecking() {
     }
   };
 
+  const handleDeleteOrderItem = async () => {
+    try {
+      setLoadingEditService(true);
+      
+      if (!editingOrderItem || !editingOrderItem.orderitemId) {
+        throw new Error("Thông tin đơn hàng không hợp lệ");
+      }
+
+      // Show confirmation modal
+      Modal.confirm({
+        title: 'Xác nhận xóa sản phẩm',
+        content: `Bạn có chắc chắn muốn xóa "${editingOrderItem.serviceName}" khỏi đơn hàng?`,
+        okText: 'Xóa',
+        okType: 'danger',
+        cancelText: 'Hủy',
+        onOk: async () => {
+          try {
+            // Use update API with quantity 0 to delete the item
+            const response = await putRequest(`customer-staff/order/update-order`, {
+              orderItemId: editingOrderItem.orderitemId,
+              quantity: 0,
+              extraIds: editSelectedExtras
+            });
+            
+            if (!response.data) {
+              throw new Error("Không nhận được phản hồi từ server");
+            }
+
+            message.success("Xóa sản phẩm thành công!");
+            setIsEditServiceModalOpen(false);
+            
+            // Refresh order details
+            const updatedResponse = await getRequest(`/orders/${selectedOrder.orderId}`);
+            if (updatedResponse.data) {
+              setSelectedOrder(updatedResponse.data);
+            }
+            
+            // Refresh orders list
+            fetchOrdersChecking();
+          } catch (error) {
+            console.error("Error deleting order item:", error);
+            
+            if (error.response) {
+              const errorMessage = error.response.data?.message || error.response.data?.error || 'Lỗi từ server';
+              message.error(`Không thể xóa sản phẩm: ${errorMessage}`);
+            } else if (error.request) {
+              message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+            } else {
+              message.error(`Lỗi xóa sản phẩm: ${error.message || 'Lỗi không xác định'}`);
+            }
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Error in delete confirmation:", error);
+      message.error(`Lỗi: ${error.message || 'Lỗi không xác định'}`);
+    } finally {
+      setLoadingEditService(false);
+    }
+  };
+
   const handleCloseEditServiceModal = () => {
     setIsEditServiceModalOpen(false);
     setEditingOrderItem(null);
     setEditServiceDetails(null);
     setEditSelectedExtras([]);
     setEditQuantity(1);
+  };
+
+  // Add to cart functions
+  const handleAddToCart = () => {
+    setIsAddToCartModalOpen(true);
+    setCurrentStep(1);
+    fetchCategories();
+  };
+
+  const resetAddToCartState = () => {
+    setCurrentStep(1);
+    setSelectedCategory(null);
+    setSubCategories([]);
+    setSelectedSubCategory(null);
+    setServices([]);
+    setSelectedService(null);
+    setServiceDetails(null);
+    setSelectedExtras([]);
+    setQuantity(1);
+  };
+
+  const handleCloseAddToCartModal = () => {
+    setIsAddToCartModalOpen(false);
+    resetAddToCartState();
+  };
+
+  const fetchCategories = async () => {
+    try {
+      setLoadingAddToCart(true);
+      const response = await getRequest("/categories");
+      
+      if (!response.data) {
+        throw new Error("Không nhận được danh sách danh mục");
+      }
+
+      setCategories(response.data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Lỗi từ server';
+        message.error(`Không thể tải danh mục: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi tải danh mục: ${error.message || 'Lỗi không xác định'}`);
+      }
+    } finally {
+      setLoadingAddToCart(false);
+    }
+  };
+
+  const fetchSubCategories = async (categoryId) => {
+    try {
+      setLoadingAddToCart(true);
+      
+      if (!categoryId) {
+        throw new Error("ID danh mục không hợp lệ");
+      }
+
+      const response = await getRequest(`/categories/${categoryId}`);
+      
+      if (!response.data || !response.data.subCategories) {
+        throw new Error("Không nhận được danh sách danh mục con");
+      }
+
+      setSubCategories(response.data.subCategories);
+    } catch (error) {
+      console.error("Error fetching subcategories:", error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Lỗi từ server';
+        message.error(`Không thể tải danh mục con: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi tải danh mục con: ${error.message || 'Lỗi không xác định'}`);
+      }
+    } finally {
+      setLoadingAddToCart(false);
+    }
+  };
+
+  const fetchServiceDetails = async (serviceId) => {
+    try {
+      setLoadingAddToCart(true);
+      
+      if (!serviceId) {
+        throw new Error("ID dịch vụ không hợp lệ");
+      }
+
+      const response = await getRequest(`/service-details/${serviceId}`);
+      
+      if (!response.data) {
+        throw new Error("Không nhận được chi tiết dịch vụ");
+      }
+
+      setServiceDetails(response.data);
+    } catch (error) {
+      console.error("Error fetching service details:", error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Lỗi từ server';
+        message.error(`Không thể tải chi tiết dịch vụ: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi tải chi tiết dịch vụ: ${error.message || 'Lỗi không xác định'}`);
+      }
+    } finally {
+      setLoadingAddToCart(false);
+    }
+  };
+
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);
+    fetchSubCategories(category.categoryId);
+    setCurrentStep(2);
+  };
+
+  const handleSubCategorySelect = (subCategory) => {
+    setSelectedSubCategory(subCategory);
+    setServices(subCategory.serviceDetails || []);
+    setCurrentStep(3);
+  };
+
+  const handleServiceSelect = (service) => {
+    setSelectedService(service);
+    fetchServiceDetails(service.serviceId);
+    setCurrentStep(4);
+  };
+
+  const handleExtraToggle = (extraId) => {
+    setSelectedExtras(prev => 
+      prev.includes(extraId) 
+        ? prev.filter(id => id !== extraId)
+        : [...prev, extraId]
+    );
+  };
+
+  const calculateTotalPrice = () => {
+    if (!selectedService || !serviceDetails) return 0;
+    
+    let total = selectedService.price * quantity;
+    
+    // Add extras price
+    if (serviceDetails.extraCategories) {
+      serviceDetails.extraCategories.forEach(category => {
+        category.extras.forEach(extra => {
+          if (selectedExtras.includes(extra.extraId)) {
+            total += extra.price * quantity;
+          }
+        });
+      });
+    }
+    
+    return total;
+  };
+
+  const handleSubmitAddToCart = async () => {
+    try {
+      setLoadingAddToCart(true);
+      
+      if (!selectedService || !selectedService.serviceId) {
+        throw new Error("Chưa chọn dịch vụ");
+      }
+
+      if (quantity <= 0) {
+        throw new Error("Số lượng phải lớn hơn 0");
+      }
+
+      if (!selectedOrder?.orderId) {
+        throw new Error("Không tìm thấy thông tin đơn hàng");
+      }
+
+      const payload = {
+        serviceDetailId: selectedService.serviceId,
+        quantity: quantity,
+        extraIds: selectedExtras
+      };
+      
+      const response = await postRequest(`/customer-staff/order/add-item?orderId=${selectedOrder.orderId}`, payload);
+      
+      if (!response.data) {
+        throw new Error("Không nhận được phản hồi từ server");
+      }
+
+      message.success("Thêm sản phẩm vào đơn hàng thành công!");
+      handleCloseAddToCartModal();
+      
+      // Refresh order details
+      const updatedResponse = await getRequest(`/orders/${selectedOrder.orderId}`);
+      if (updatedResponse.data) {
+        setSelectedOrder(updatedResponse.data);
+      } else {
+        message.warning("Đã thêm sản phẩm nhưng không thể tải lại thông tin đơn hàng");
+      }
+      
+      // Refresh orders list
+      fetchOrdersChecking();
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || error.response.data?.error || 'Lỗi từ server';
+        message.error(`Không thể thêm sản phẩm: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi thêm sản phẩm: ${error.message || 'Lỗi không xác định'}`);
+      }
+    } finally {
+      setLoadingAddToCart(false);
+    }
+  };
+
+  const goToPreviousStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+      
+      if (currentStep === 2) {
+        setSelectedCategory(null);
+        setSubCategories([]);
+      } else if (currentStep === 3) {
+        setSelectedSubCategory(null);
+        setServices([]);
+      } else if (currentStep === 4) {
+        setSelectedService(null);
+        setServiceDetails(null);
+        setSelectedExtras([]);
+      }
+    }
   };
 
   const columns = [
@@ -843,8 +1157,14 @@ function ListOrdersChecking() {
         width={1400}
         style={{ top: 20 }}
         footer={[
-          <Button key="back" onClick={() => setIsModalVisible(false)}>
-            Đóng
+          <Button 
+            key="addToCart"
+            type="primary" 
+            icon={<PlusOutlined />}
+            onClick={handleAddToCart}
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+          >
+            Thêm sản phẩm vào đơn hàng
           </Button>
         ]}
       >
@@ -1160,16 +1480,12 @@ function ListOrdersChecking() {
       </Modal>
 
        {/* Modal xem lịch sử  */}
-      <Modal
+            <Modal
         title={<Text strong>Lịch sử đơn hàng {orderHistory?.[0]?.orderId}</Text>}
         open={isHistoryModalVisible}
         onCancel={() => setIsHistoryModalVisible(false)}
         width={800}
-        footer={[
-          <Button key="back" onClick={() => setIsHistoryModalVisible(false)}>
-            Đóng
-          </Button>
-        ]}
+        footer={null}
       >
         {isLoadingHistory ? (
           <div style={{ textAlign: 'center', padding: '20px' }}>Đang tải...</div>
@@ -1226,11 +1542,7 @@ function ListOrdersChecking() {
         open={isPhotoModalVisible}
         onCancel={() => setIsPhotoModalVisible(false)}
         width={800}
-        footer={[
-          <Button key="back" onClick={() => setIsPhotoModalVisible(false)}>
-            Đóng
-          </Button>
-        ]}
+        footer={null}
       >
         {loadingPhotos ? (
           <div style={{ textAlign: 'center', padding: '20px' }}>Đang tải ảnh...</div>
@@ -1295,10 +1607,10 @@ function ListOrdersChecking() {
           background: 'linear-gradient(135deg, #fff9e6 0%, #ffffff 100%)',
           borderRadius: '0 0 12px 12px'
         }}
-        footer={[
+        footer={editQuantity === 0 ? null : [
           <div key="footer" style={{ 
             display: 'flex', 
-            justifyContent: 'space-between', 
+            justifyContent: 'center',
             alignItems: 'center',
             padding: '16px 24px',
             background: 'linear-gradient(90deg, #f6f6f6, #fafafa)',
@@ -1306,21 +1618,8 @@ function ListOrdersChecking() {
             borderTop: '1px solid #f0f0f0'
           }}>
             <Button
-              size="large"
-              onClick={handleCloseEditServiceModal}
-              style={{
-                borderRadius: '8px',
-                height: '44px',
-                paddingLeft: '24px',
-                paddingRight: '24px',
-                fontWeight: '500'
-              }}
-            >
-              Hủy bỏ
-            </Button>
-            <Button
+              key="submit"
               type="primary"
-              size="large"
               loading={loadingEditService}
               onClick={handleSubmitEditService}
               icon={<CheckCircleOutlined />}
@@ -1558,11 +1857,11 @@ function ListOrdersChecking() {
                 borderRadius: '12px 12px 0 0'
               }}
             >
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px' }}>
                 <InputNumber
-                  min={1}
+                  min={0}
                   value={editQuantity}
-                  onChange={(value) => setEditQuantity(value || 1)}
+                  onChange={(value) => setEditQuantity(value || 0)}
                   style={{ 
                     width: '200px', 
                     fontSize: '18px',
@@ -1570,7 +1869,36 @@ function ListOrdersChecking() {
                   }}
                   size="large"
                 />
+                {editQuantity === 0 && (
+                  <Button 
+                    type="primary" 
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={handleDeleteOrderItem}
+                    loading={loadingEditService}
+                    style={{
+                      borderRadius: '8px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    Xóa sản phẩm
+                  </Button>
+                )}
               </div>
+              {editQuantity === 0 && (
+                <div style={{ 
+                  textAlign: 'center', 
+                  marginTop: 12,
+                  color: '#ff4d4f',
+                  fontSize: '14px',
+                  fontWeight: 500
+                }}>
+                  ⚠️ Số lượng = 0 sẽ xóa sản phẩm khỏi đơn hàng
+                </div>
+              )}
             </Card>
 
             {/* Total Price Card */}
@@ -1604,6 +1932,272 @@ function ListOrdersChecking() {
             </Card>
           </div>
         ) : null}
+      </Modal>
+
+      {/* Modal Add to Cart */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <ShoppingCartOutlined style={{ color: '#52c41a', marginRight: 8 }} />
+            <span>Thêm sản phẩm vào đơn hàng</span>
+          </div>
+        }
+        open={isAddToCartModalOpen}
+        onCancel={handleCloseAddToCartModal}
+        width={800}
+        footer={null}
+        destroyOnClose
+      >
+        <Steps
+          current={currentStep - 1}
+          style={{ marginBottom: 24 }}
+          items={[
+            { title: 'Chọn danh mục' },
+            { title: 'Chọn danh mục con' },
+            { title: 'Chọn dịch vụ' },
+            { title: 'Chi tiết & thanh toán' }
+          ]}
+        />
+
+        {loadingAddToCart ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Spin size="large" />
+            <div style={{ marginTop: '16px' }}>Đang tải...</div>
+          </div>
+        ) : (
+          <>
+            {/* Step 1: Categories */}
+            {currentStep === 1 && (
+              <div>
+                <Row gutter={[16, 16]}>
+                  {categories.map(category => (
+                    <Col span={8} key={category.categoryId}>
+                      <Card
+                        hoverable
+                        style={{ textAlign: 'center' }}
+                        onClick={() => handleCategorySelect(category)}
+                        cover={
+                          <div style={{ padding: '20px' }}>
+                            <Image
+                              src={category.icon}
+                              alt={category.name}
+                              width={60}
+                              height={60}
+                              style={{ objectFit: 'contain' }}
+                              fallback="https://via.placeholder.com/60x60?text=Cat"
+                            />
+                          </div>
+                        }
+                      >
+                        <Card.Meta title={category.name} />
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              </div>
+            )}
+
+            {/* Step 2: Sub Categories */}
+            {currentStep === 2 && (
+              <div>
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Button 
+                    type="link" 
+                    icon={<ArrowLeftOutlined />} 
+                    onClick={goToPreviousStep}
+                  >
+                    Quay lại
+                  </Button>
+                  <span>Danh mục: <strong>{selectedCategory?.name}</strong></span>
+                </div>
+                <Row gutter={[16, 16]}>
+                  {subCategories.map(subCategory => (
+                    <Col span={12} key={subCategory.subCategoryId}>
+                      <Card
+                        hoverable
+                        onClick={() => handleSubCategorySelect(subCategory)}
+                      >
+                        <Card.Meta 
+                          title={subCategory.name}
+                          description={`${subCategory.serviceDetails?.length || 0} dịch vụ`}
+                        />
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              </div>
+            )}
+
+            {/* Step 3: Services */}
+            {currentStep === 3 && (
+              <div>
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Button 
+                    type="link" 
+                    icon={<ArrowLeftOutlined />} 
+                    onClick={goToPreviousStep}
+                  >
+                    Quay lại
+                  </Button>
+                  <span>Danh mục con: <strong>{selectedSubCategory?.name}</strong></span>
+                </div>
+                <Row gutter={[16, 16]}>
+                  {services.map(service => (
+                    <Col span={24} key={service.serviceId}>
+                      <Card
+                        hoverable
+                        onClick={() => handleServiceSelect(service)}
+                        style={{ marginBottom: 8 }}
+                      >
+                        <Row>
+                          <Col span={4}>
+                            {service.imageUrl && (
+                              <Image
+                                src={service.imageUrl}
+                                alt={service.name}
+                                width={80}
+                                height={80}
+                                style={{ objectFit: 'cover', borderRadius: 8 }}
+                                fallback="https://via.placeholder.com/80x80?text=Service"
+                              />
+                            )}
+                          </Col>
+                          <Col span={20}>
+                            <div style={{ padding: '0 16px' }}>
+                              <h4>{service.name}</h4>
+                              <p style={{ color: '#666' }}>{service.description}</p>
+                              <Text strong style={{ color: '#52c41a', fontSize: '16px' }}>
+                                {formatCurrency(service.price)}
+                              </Text>
+                            </div>
+                          </Col>
+                        </Row>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              </div>
+            )}
+
+            {/* Step 4: Service Details */}
+            {currentStep === 4 && (
+              <div>
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Button 
+                    type="link" 
+                    icon={<ArrowLeftOutlined />} 
+                    onClick={goToPreviousStep}
+                  >
+                    Quay lại
+                  </Button>
+                </div>
+
+                {/* Service Info */}
+                <Card title="Thông tin dịch vụ" style={{ marginBottom: 16 }}>
+                  <Row>
+                    <Col span={6}>
+                      {serviceDetails?.imageUrl && (
+                        <Image
+                          src={serviceDetails.imageUrl}
+                          alt={serviceDetails.name}
+                          width={120}
+                          height={120}
+                          style={{ objectFit: 'cover', borderRadius: 8 }}
+                          fallback="https://via.placeholder.com/120x120?text=Service"
+                        />
+                      )}
+                    </Col>
+                    <Col span={18}>
+                      <div style={{ padding: '0 16px' }}>
+                        <h3>{serviceDetails?.name}</h3>
+                        <p style={{ color: '#666' }}>{serviceDetails?.description}</p>
+                        <Text strong style={{ color: '#52c41a', fontSize: '18px' }}>
+                          Giá: {formatCurrency(selectedService?.price || 0)}
+                        </Text>
+                      </div>
+                    </Col>
+                  </Row>
+                </Card>
+
+                {/* Extras */}
+                {serviceDetails?.extraCategories && serviceDetails.extraCategories.length > 0 && (
+                  <Card title="Dịch vụ bổ sung" style={{ marginBottom: 16 }}>
+                    {serviceDetails.extraCategories.map(category => (
+                      <div key={category.extraCategoryId} style={{ marginBottom: 16 }}>
+                        <div style={{
+                          background: 'linear-gradient(90deg, #722ed1, #9254de)',
+                          color: 'white',
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          marginBottom: 12,
+                          fontWeight: 'bold'
+                        }}>
+                          {category.categoryName}
+                        </div>
+                        <Row gutter={[8, 8]}>
+                          {category.extras.map(extra => (
+                            <Col span={24} key={extra.extraId}>
+                              <Checkbox
+                                checked={selectedExtras.includes(extra.extraId)}
+                                onChange={() => handleExtraToggle(extra.extraId)}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                                  <span>{extra.name}</span>
+                                  <Text strong style={{ color: '#52c41a' }}>
+                                    +{formatCurrency(extra.price)}
+                                  </Text>
+                                </div>
+                              </Checkbox>
+                            </Col>
+                          ))}
+                        </Row>
+                      </div>
+                    ))}
+                  </Card>
+                )}
+
+                {/* Quantity */}
+                <Card title="Số lượng" style={{ marginBottom: 16 }}>
+                  <InputNumber
+                    min={1}
+                    value={quantity}
+                    onChange={(value) => setQuantity(value || 1)}
+                    style={{ 
+                      width: '200px', 
+                      fontSize: '18px',
+                      borderRadius: '8px'
+                    }}
+                    size="large"
+                  />
+                </Card>
+
+                {/* Total Price */}
+                <Card>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography.Title level={4} style={{ margin: 0 }}>Tổng cộng:</Typography.Title>
+                    <Typography.Title level={3} style={{ margin: 0, color: '#52c41a' }}>
+                      {formatCurrency(calculateTotalPrice())}
+                    </Typography.Title>
+                  </div>
+                </Card>
+
+                {/* Submit Button */}
+                <div style={{ textAlign: 'center', marginTop: 16 }}>
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<PlusOutlined />}
+                    onClick={handleSubmitAddToCart}
+                    loading={loadingAddToCart}
+                    style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                  >
+                    Thêm vào đơn hàng
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </Modal>
     </>
   );
