@@ -365,9 +365,6 @@ export default function ORDERMANAGEMENTCUSTOMERSTAFF() {
             <PhoneOutlined style={{ color: '#52c41a' }} />
             <Text>{record.userInfo.phoneNumber}</Text>
           </Space>
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            ID: {record.userInfo.userId.substring(0, 8)}...
-          </Text>
         </Space>
       ),
     },
