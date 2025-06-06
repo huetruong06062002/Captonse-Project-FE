@@ -776,8 +776,8 @@ export default function PlaceOrderManagementCustomerStaff() {
 
   // Update item quantity and extras
   const updateItem = async (orderItemId, newQuantity, newExtraIds) => {
-    if (newQuantity < 1 || newQuantity > 100) {
-      message.error('Số lượng phải từ 1 đến 100');
+    if (newQuantity < 0 || newQuantity > 100) {
+      message.error('Số lượng phải từ 0 đến 100');
       return;
     }
 
@@ -1731,12 +1731,12 @@ export default function PlaceOrderManagementCustomerStaff() {
             name="quantity"
             rules={[
               { required: true, message: 'Vui lòng nhập số lượng!' },
-              { type: 'number', min: 1, max: 100, message: 'Số lượng phải từ 1 đến 100!' }
+              { type: 'number', min: 0, max: 100, message: 'Số lượng phải từ 0 đến 100!' }
             ]}
             initialValue={1}
           >
             <InputNumber 
-              min={1} 
+              min={0} 
               max={100}
               placeholder="Nhập số lượng"
               style={{ width: '100%' }}
@@ -1965,11 +1965,11 @@ export default function PlaceOrderManagementCustomerStaff() {
                       style={{ margin: 0 }}
                       rules={[
                         { required: true, message: 'Số lượng là bắt buộc!' },
-                        { type: 'number', min: 1, max: 100, message: 'Số lượng từ 1-100!' }
+                        { type: 'number', min: 0, max: 100, message: 'Số lượng từ 0-100!' }
                       ]}
                     >
                       <InputNumber
-                        min={1}
+                        min={0}
                         max={100}
                         style={{ width: '100%' }}
                         loading={updatingItems[item.orderItemId]}
