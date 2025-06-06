@@ -244,6 +244,12 @@ const AdminLayout = () => {
           allowedRoles: ["Admin", "Staff"],
         },
         {
+          key: `${endPoints.DANH_SACH_TAT_CA_DON_HANG_LOI}`,
+          icon: <ExclamationCircleOutlined />,
+          label: createLabelWithTooltip("Danh sách tất cả đơn hàng lỗi"),
+          allowedRoles: ["Admin"],
+        },
+        {
           key: `${endPoints.QUAN_LI_LICH_VANG_TAI_XE}`,
           icon: <CalendarOutlined />,
           label: createLabelWithTooltip("Quản lý lịch vắng tài xế"),
