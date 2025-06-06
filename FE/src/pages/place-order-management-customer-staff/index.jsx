@@ -393,13 +393,6 @@ export default function PlaceOrderManagementCustomerStaff() {
       sorter: (a, b) => (a.dob || '').localeCompare(b.dob || ''),
     },
     {
-      title: 'Điểm thưởng',
-      dataIndex: 'rewardPoints',
-      key: 'rewardPoints',
-      sorter: (a, b) => a.rewardPoints - b.rewardPoints,
-      render: (points) => <Tag color="gold">{points} điểm</Tag>,
-    },
-    {
       title: 'Ngày tạo',
       dataIndex: 'dateCreated',
       key: 'dateCreated',
@@ -444,7 +437,19 @@ export default function PlaceOrderManagementCustomerStaff() {
     } catch (e) {
       setAddressList([]);
       console.log(e);
-      message.error(e.response.data.message);
+      
+      // Kiểm tra nếu là lỗi 404 hoặc message "No addresses found"
+      if (e.response?.status === 404 || 
+          e.response?.data?.message?.includes('No addresses found') ||
+          e.response?.data?.message?.includes('not found')) {
+        // Vẫn mở modal nhưng hiển thị thông báo thân thiện
+        message.info('Khách hàng chưa có địa chỉ nào. Bạn có thể thêm địa chỉ mới.');
+      } else {
+        // Các lỗi khác thì hiển thị error và không mở modal
+        const errorMessage = e.response?.data?.message || 'Không thể tải danh sách địa chỉ';
+        message.error(errorMessage);
+        setCurrentUserIdForAddress(null); // Reset để không mở modal
+      }
     }
     setAddressLoading(false);
   };
@@ -1112,63 +1117,77 @@ export default function PlaceOrderManagementCustomerStaff() {
 
       {/* Address Modal */}
       <Modal
-        open={!!addressList.length}
-        onCancel={() => setAddressList([])}
+        open={!!currentUserIdForAddress}
+        onCancel={() => {
+          setAddressList([]);
+          setCurrentUserIdForAddress(null);
+        }}
         width={900}
         footer={null}
         title="Địa chỉ khách hàng"
       >
-        <div style={{ height: 400, marginBottom: 16 }}>
-          <MapContainer
-            center={
-              addressList.length
-                ? [addressList[0].latitude, addressList[0].longitude]
-                : [10.7769, 106.7009]
-            }
-            zoom={13}
-            style={{ height: '100%', width: '100%' }}
-            scrollWheelZoom={true}
-          >
-            <MapResizeTrigger trigger={!!addressList.length} />
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            {addressList.map(addr => (
-              <Marker
-                key={addr.addressId}
-                position={[addr.latitude, addr.longitude]}
-                icon={L.icon({
-                  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-                  iconSize: [25, 41],
-                  iconAnchor: [12, 41],
-                  popupAnchor: [1, -34],
-                  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-                  shadowSize: [41, 41]
-                })}
+        {addressList.length > 0 ? (
+          // Hiển thị khi có địa chỉ
+          <>
+            <div style={{ height: 400, marginBottom: 16 }}>
+              <MapContainer
+                center={[addressList[0].latitude, addressList[0].longitude]}
+                zoom={13}
+                style={{ height: '100%', width: '100%' }}
+                scrollWheelZoom={true}
               >
-                <Popup>
-                  <b>{addr.contactName}</b><br />
-                  {addr.detailAddress}<br />
-                  <i>{addr.contactPhone}</i>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        </div>
-        <Table
-          dataSource={addressList}
-          rowKey="addressId"
-          columns={[
-            { title: 'Tên liên hệ', dataIndex: 'contactName' },
-            { title: 'SĐT', dataIndex: 'contactPhone' },
-            { title: 'Nhãn', dataIndex: 'addressLabel' },
-            { title: 'Địa chỉ', dataIndex: 'detailAddress' },
-            { title: 'Mô tả', dataIndex: 'description' },
-            { title: 'Ngày tạo', dataIndex: 'dateCreated', render: d => new Date(d).toLocaleString('vi-VN') },
-          ]}
-          pagination={false}
-          size="small"
-        />
+                <MapResizeTrigger trigger={!!addressList.length} />
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                {addressList.map(addr => (
+                  <Marker
+                    key={addr.addressId}
+                    position={[addr.latitude, addr.longitude]}
+                    icon={L.icon({
+                      iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+                      iconSize: [25, 41],
+                      iconAnchor: [12, 41],
+                      popupAnchor: [1, -34],
+                      shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+                      shadowSize: [41, 41]
+                    })}
+                  >
+                    <Popup>
+                      <b>{addr.contactName}</b><br />
+                      {addr.detailAddress}<br />
+                      <i>{addr.contactPhone}</i>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            </div>
+            <Table
+              dataSource={addressList}
+              rowKey="addressId"
+              columns={[
+                { title: 'Tên liên hệ', dataIndex: 'contactName' },
+                { title: 'SĐT', dataIndex: 'contactPhone' },
+                { title: 'Nhãn', dataIndex: 'addressLabel' },
+                { title: 'Địa chỉ', dataIndex: 'detailAddress' },
+                { title: 'Mô tả', dataIndex: 'description' },
+                { title: 'Ngày tạo', dataIndex: 'dateCreated', render: d => new Date(d).toLocaleString('vi-VN') },
+              ]}
+              pagination={false}
+              size="small"
+            />
+          </>
+        ) : (
+          // Hiển thị khi không có địa chỉ
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <EnvironmentOutlined style={{ fontSize: '80px', color: '#d9d9d9', marginBottom: '24px' }} />
+            <h2 style={{ color: '#999', marginBottom: '12px', fontSize: '24px' }}>Chưa có địa chỉ</h2>
+            <p style={{ color: '#666', marginBottom: '32px', fontSize: '16px' }}>
+              Khách hàng chưa có địa chỉ nào. Bạn có thể thêm địa chỉ mới bên dưới.
+            </p>
+          </div>
+        )}
+        
         <Button
           type="primary"
           style={{ marginBottom: 16, background: '#1890ff' }}
