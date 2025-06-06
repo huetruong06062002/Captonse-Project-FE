@@ -130,13 +130,23 @@ function ConfirmOrderPending() {
         params
       );
 
-      if (response.data) {
-        setOrders(response.data.data);
-        setTotalRecords(response.data.totalRecords);
+      if (!response.data) {
+        throw new Error("Không nhận được dữ liệu từ server");
       }
+
+      setOrders(response.data.data || []);
+      setTotalRecords(response.data.totalRecords || 0);
     } catch (error) {
       console.error("Error fetching pending orders:", error);
-      message.error("Không thể tải danh sách đơn hàng. Vui lòng thử lại sau!");
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || error.response.data?.error || 'Lỗi từ server';
+        message.error(`Không thể tải danh sách đơn hàng: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi tải đơn hàng: ${error.message || 'Lỗi không xác định'}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -187,18 +197,34 @@ function ConfirmOrderPending() {
 
   const postProcessOrder = async (orderId) => {
     try {
+      if (!orderId) {
+        throw new Error("ID đơn hàng không hợp lệ");
+      }
+
       const response = await axiosClientVer2.post(
         `/customer-staff/process-order/${orderId}`
       );
-      if (response.data) {
-        setAssignmentId(response.data.assignmentId); // Lưu assignmentId để xử lý sau này
-        message.success(response.data.message);
-        fetchPendingOrder();
-        return { success: true, data: response.data };
+      
+      if (!response.data) {
+        throw new Error("Không nhận được phản hồi từ server");
       }
-      console.log("Response:", response); // Kiểm tra phản hồi từ API
+
+      setAssignmentId(response.data.assignmentId); // Lưu assignmentId để xử lý sau này
+      message.success(response.data.message || "Nhận xử lý đơn hàng thành công");
+      fetchPendingOrder();
+      return { success: true, data: response.data };
     } catch (error) {
-      message.error(error.response?.data?.message || "Có lỗi xảy ra khi nhận xử lý đơn hàng");
+      console.error("Error processing order:", error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || error.response.data?.error || 'Lỗi từ server';
+        message.error(`Không thể nhận xử lý đơn hàng: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi nhận xử lý: ${error.message || 'Lỗi không xác định'}`);
+      }
+      
       return { success: false, error: error };
     }
   };
@@ -246,34 +272,94 @@ function ConfirmOrderPending() {
   };
 
   const handleConfirmOrderSuccess = async (orderId) => {
-    const response = await postRequest(
-      `/customer-staff/confirm-order?orderId=${orderId}&note=${note}`
-    );
-    if (response.data) {
-      message.success(response.data.message);
+    try {
+      if (!orderId) {
+        throw new Error("ID đơn hàng không hợp lệ");
+      }
+
+      const response = await postRequest(
+        `/customer-staff/confirm-order?orderId=${orderId}&note=${note}`
+      );
+      
+      if (!response.data) {
+        throw new Error("Không nhận được phản hồi từ server");
+      }
+
+      message.success(response.data.message || "Xác nhận đơn hàng thành công");
       fetchPendingOrder();
+    } catch (error) {
+      console.error("Error confirming order:", error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || error.response.data?.error || 'Lỗi từ server';
+        message.error(`Không thể xác nhận đơn hàng: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi xác nhận đơn hàng: ${error.message || 'Lỗi không xác định'}`);
+      }
     }
-    console.log("check response", response); // Kiểm tra phản hồi từ API
   };
   // API: cancel-order - Xác nhận hủy đơn hàng (khách hàng muốn hủy)
   const handleCancelOrder = async () => {
-    const response = await postRequest(
-      `/customer-staff/cancel-order?assignmentId=${assignmentId}&notes=${note}`
-    );
-    if (response.data) {
-      message.success(response.data.message);
+    try {
+      if (!assignmentId) {
+        throw new Error("ID assignment không hợp lệ");
+      }
+
+      const response = await postRequest(
+        `/customer-staff/cancel-order?assignmentId=${assignmentId}&notes=${note}`
+      );
+      
+      if (!response.data) {
+        throw new Error("Không nhận được phản hồi từ server");
+      }
+
+      message.success(response.data.message || "Hủy đơn hàng thành công");
       fetchPendingOrder();
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || error.response.data?.error || 'Lỗi từ server';
+        message.error(`Không thể hủy đơn hàng: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi hủy đơn hàng: ${error.message || 'Lỗi không xác định'}`);
+      }
     }
   };
 
   // API: cancel-processing - Hủy nhận xử lý (staff không thể xử lý tiếp)
   const handleRejectOrder = async () => {
-    const response = await postRequest(
-      `/customer-staff/cancel-processing?assignmentId=${assignmentId}&note=${note}`
-    );
-    if (response.data) {
-      message.success(response.data.message);
+    try {
+      if (!assignmentId) {
+        throw new Error("ID assignment không hợp lệ");
+      }
+
+      const response = await postRequest(
+        `/customer-staff/cancel-processing?assignmentId=${assignmentId}&note=${note}`
+      );
+      
+      if (!response || !response.data) {
+        throw new Error("Không nhận được phản hồi từ server");
+      }
+
+      console.log("response", response);
+      message.success(response.data.message || "Hủy nhận xử lý thành công");
       fetchPendingOrder();
+    } catch (error) {
+      console.error("Error rejecting order:", error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || error.response.data?.error || 'Lỗi từ server';
+        message.error(`Không thể hủy nhận xử lý: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi hủy nhận xử lý: ${error.message || 'Lỗi không xác định'}`);
+      }
     }
   };
 

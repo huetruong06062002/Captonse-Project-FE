@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Drawer, Button, List, Typography, Descriptions, Divider, Card, Row, Col, Avatar, Alert, Empty, Result, Spin, Tag, InputNumber, Space, Input, Modal, Steps, Checkbox, Image } from "antd";
 import { useSelector } from "react-redux";
 import moment from "moment";
-import { getRequest, postRequest, postRequestParams } from '@services/api';
+import { getRequest, postRequest, postRequestParams, putRequest } from '@services/api';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -66,23 +66,50 @@ function OrderDetailDrawer(props) {
   const [quantity, setQuantity] = useState(1);
   const [loadingAddToCart, setLoadingAddToCart] = useState(false);
 
+  // Edit service states
+  const [isEditServiceModalOpen, setIsEditServiceModalOpen] = useState(false);
+  const [editingOrderItem, setEditingOrderItem] = useState(null);
+  const [editServiceDetails, setEditServiceDetails] = useState(null);
+  const [editSelectedExtras, setEditSelectedExtras] = useState([]);
+  const [editQuantity, setEditQuantity] = useState(1);
+  const [loadingEditService, setLoadingEditService] = useState(false);
+  console.log("editServiceDetails", editServiceDetails);
+
   // Lấy thông tin chi tiết đơn hàng từ API khi drawer được mở
   useEffect(() => {
     if (orderId) {
       const fetchOrderDetails = async () => {
         setLoading(true);
         try {
+          if (!orderId) {
+            throw new Error("ID đơn hàng không hợp lệ");
+          }
+
           const response = await getRequest(`/orders/${orderId}`);
           console.log("Order details response:", response);
+          
+          if (!response.data) {
+            throw new Error("Không nhận được thông tin đơn hàng");
+          }
+
           setOrderDetails(response.data);
-            // Set initial values for editing
-            if (response.data?.orderSummary) {
-              setEditOtherPrice(response.data.orderSummary.otherprice || 0);
-              setEditOtherPriceNote(response.data.orderSummary.otherPriceNote || "");
-            }
+          
+          // Set initial values for editing
+          if (response.data?.orderSummary) {
+            setEditOtherPrice(response.data.orderSummary.otherprice || 0);
+            setEditOtherPriceNote(response.data.orderSummary.otherPriceNote || "");
+          }
         } catch (error) {
           console.error("Error fetching order details:", error);
-          message.error("Không thể tải thông tin đơn hàng");
+          
+          if (error.response) {
+            const errorMessage = error.response.data?.message || 'Lỗi từ server';
+            message.error(`Không thể tải thông tin đơn hàng: ${errorMessage}`);
+          } else if (error.request) {
+            message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+          } else {
+            message.error(`Lỗi tải đơn hàng: ${error.message || 'Lỗi không xác định'}`);
+          }
         } finally {
           setLoading(false);
         }
@@ -119,6 +146,10 @@ function OrderDetailDrawer(props) {
 
   const handleSavePrice = async () => {
     try {
+      if (editOtherPrice < 0) {
+        throw new Error("Giá không thể âm");
+      }
+
       const payload = {
         otherPrice: editOtherPrice,
         otherPriceNote: editOtherPriceNote
@@ -126,20 +157,35 @@ function OrderDetailDrawer(props) {
       
       const response = await postRequest(`/customer-staff/order/otherprice?orderId=${orderId}`, payload);
       
-      if (response.data) {
-        message.success("Cập nhật giá thành công!");
-        setIsEditingPrice(false);
-        // Refresh order details
-        const updatedResponse = await getRequest(`/orders/${orderId}`);
+      if (!response.data) {
+        throw new Error("Không nhận được phản hồi từ server");
+      }
+
+      message.success("Cập nhật giá thành công!");
+      setIsEditingPrice(false);
+      
+      // Refresh order details
+      const updatedResponse = await getRequest(`/orders/${orderId}`);
+      if (updatedResponse.data) {
         setOrderDetails(updatedResponse.data);
         if (updatedResponse.data?.orderSummary) {
           setEditOtherPrice(updatedResponse.data.orderSummary.otherprice || 0);
           setEditOtherPriceNote(updatedResponse.data.orderSummary.otherPriceNote || "");
         }
+      } else {
+        message.warning("Đã cập nhật nhưng không thể tải lại thông tin đơn hàng");
       }
     } catch (error) {
       console.error("Error updating price:", error);
-      message.error("Không thể cập nhật giá. Vui lòng thử lại!");
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || error.response.data?.error || 'Lỗi từ server';
+        message.error(`Không thể cập nhật giá: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi cập nhật giá: ${error.message || 'Lỗi không xác định'}`);
+      }
     }
   };
 
@@ -180,12 +226,23 @@ function OrderDetailDrawer(props) {
     try {
       setLoadingAddToCart(true);
       const response = await getRequest("/categories");
-      if (response.data) {
-        setCategories(response.data);
+      
+      if (!response.data) {
+        throw new Error("Không nhận được dữ liệu danh mục");
       }
+
+      setCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
-      message.error("Không thể tải danh sách danh mục");
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Lỗi từ server';
+        message.error(`Không thể tải danh sách danh mục: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi tải danh mục: ${error.message || 'Lỗi không xác định'}`);
+      }
     } finally {
       setLoadingAddToCart(false);
     }
@@ -194,13 +251,29 @@ function OrderDetailDrawer(props) {
   const fetchSubCategories = async (categoryId) => {
     try {
       setLoadingAddToCart(true);
-      const response = await getRequest(`/categories/${categoryId}`);
-      if (response.data) {
-        setSubCategories(response.data.subCategories || []);
+      
+      if (!categoryId) {
+        throw new Error("ID danh mục không hợp lệ");
       }
+
+      const response = await getRequest(`/categories/${categoryId}`);
+      
+      if (!response.data) {
+        throw new Error("Không nhận được dữ liệu danh mục con");
+      }
+
+      setSubCategories(response.data.subCategories || []);
     } catch (error) {
       console.error("Error fetching subcategories:", error);
-      message.error("Không thể tải danh sách danh mục con");
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Lỗi từ server';
+        message.error(`Không thể tải danh sách danh mục con: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi tải danh mục con: ${error.message || 'Lỗi không xác định'}`);
+      }
     } finally {
       setLoadingAddToCart(false);
     }
@@ -209,13 +282,29 @@ function OrderDetailDrawer(props) {
   const fetchServiceDetails = async (serviceId) => {
     try {
       setLoadingAddToCart(true);
-      const response = await getRequest(`/service-details/${serviceId}`);
-      if (response.data) {
-        setServiceDetails(response.data);
+      
+      if (!serviceId) {
+        throw new Error("ID dịch vụ không hợp lệ");
       }
+
+      const response = await getRequest(`/service-details/${serviceId}`);
+      
+      if (!response.data) {
+        throw new Error("Không nhận được chi tiết dịch vụ");
+      }
+
+      setServiceDetails(response.data);
     } catch (error) {
       console.error("Error fetching service details:", error);
-      message.error("Không thể tải chi tiết dịch vụ");
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Lỗi từ server';
+        message.error(`Không thể tải chi tiết dịch vụ: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi tải chi tiết dịch vụ: ${error.message || 'Lỗi không xác định'}`);
+      }
     } finally {
       setLoadingAddToCart(false);
     }
@@ -269,6 +358,15 @@ function OrderDetailDrawer(props) {
   const handleSubmitAddToCart = async () => {
     try {
       setLoadingAddToCart(true);
+      
+      if (!selectedService || !selectedService.serviceId) {
+        throw new Error("Chưa chọn dịch vụ");
+      }
+
+      if (quantity <= 0) {
+        throw new Error("Số lượng phải lớn hơn 0");
+      }
+
       const payload = {
         serviceDetailId: selectedService.serviceId,
         quantity: quantity,
@@ -277,16 +375,31 @@ function OrderDetailDrawer(props) {
       
       const response = await postRequest(`/customer-staff/order/add-item?orderId=${orderId}`, payload);
       
-      if (response.data) {
-        message.success("Thêm sản phẩm vào giỏ hàng thành công!");
-        handleCloseAddToCartModal();
-        // Refresh order details
-        const updatedResponse = await getRequest(`/orders/${orderId}`);
+      if (!response.data) {
+        throw new Error("Không nhận được phản hồi từ server");
+      }
+
+      message.success("Thêm sản phẩm vào giỏ hàng thành công!");
+      handleCloseAddToCartModal();
+      
+      // Refresh order details
+      const updatedResponse = await getRequest(`/orders/${orderId}`);
+      if (updatedResponse.data) {
         setOrderDetails(updatedResponse.data);
+      } else {
+        message.warning("Đã thêm sản phẩm nhưng không thể tải lại thông tin đơn hàng");
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
-      message.error("Không thể thêm sản phẩm vào giỏ hàng");
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || error.response.data?.error || 'Lỗi từ server';
+        message.error(`Không thể thêm sản phẩm: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        message.error(`Lỗi thêm sản phẩm: ${error.message || 'Lỗi không xác định'}`);
+      }
     } finally {
       setLoadingAddToCart(false);
     }
@@ -308,6 +421,223 @@ function OrderDetailDrawer(props) {
         setSelectedExtras([]);
       }
     }
+  };
+
+  // Edit service functions
+  const handleEditService = async (orderItem) => {
+    console.log("Editing order item:", orderItem); // Debug log
+    setEditingOrderItem(orderItem);
+    setEditQuantity(orderItem.quantity);
+    // Use orderextraId from extras array - these are currently selected
+    setEditSelectedExtras(orderItem.extras.map(extra => extra.orderextraId));
+    setIsEditServiceModalOpen(true);
+    
+    // Try to find service details by searching through available services
+    await findAndFetchServiceDetails(orderItem);
+  };
+
+  const findAndFetchServiceDetails = async (orderItem) => {
+    try {
+      setLoadingEditService(true);
+      // First get all categories
+      const categoriesResponse = await getRequest("/categories");
+      
+      if (!categoriesResponse.data) {
+        throw new Error("Không thể tải danh sách danh mục");
+      }
+
+      let foundServiceId = null;
+      
+      // Search through all categories and subcategories
+      for (const category of categoriesResponse.data) {
+        const subCategoriesResponse = await getRequest(`/categories/${category.categoryId}`);
+        if (subCategoriesResponse.data && subCategoriesResponse.data.subCategories) {
+          for (const subCategory of subCategoriesResponse.data.subCategories) {
+            if (subCategory.serviceDetails) {
+              const matchingService = subCategory.serviceDetails.find(service => 
+                service.name === orderItem.serviceName && service.price === orderItem.servicePrice
+              );
+              if (matchingService) {
+                foundServiceId = matchingService.serviceId;
+                break;
+              }
+            }
+          }
+        }
+        if (foundServiceId) break;
+      }
+      
+      if (foundServiceId) {
+        // Now get the full service details with extras
+        const serviceDetailsResponse = await getRequest(`/service-details/${foundServiceId}`);
+        if (!serviceDetailsResponse.data) {
+          throw new Error("Không thể tải chi tiết dịch vụ");
+        }
+
+        setEditServiceDetails(serviceDetailsResponse.data);
+        
+        // Map current orderextraId to extraId by matching names and prices
+        const mappedExtraIds = [];
+        if (orderItem.extras && serviceDetailsResponse.data.extraCategories) {
+          orderItem.extras.forEach(orderExtra => {
+            serviceDetailsResponse.data.extraCategories.forEach(category => {
+              category.extras.forEach(serviceExtra => {
+                if (serviceExtra.name === orderExtra.extraName && 
+                    serviceExtra.price === orderExtra.extraPrice) {
+                  mappedExtraIds.push(serviceExtra.extraId);
+                }
+              });
+            });
+          });
+        }
+        setEditSelectedExtras(mappedExtraIds);
+      } else {
+        message.warning("Không tìm thấy thông tin chi tiết dịch vụ. Hiển thị thông tin cơ bản.");
+        // Fallback to basic info if service not found
+        setEditServiceDetails({
+          name: orderItem.serviceName,
+          price: orderItem.servicePrice,
+          imageUrl: null,
+          description: null,
+          extraCategories: []
+        });
+      }
+    } catch (error) {
+      console.error("Error finding service details:", error);
+      message.error(`Lỗi khi tải thông tin dịch vụ: ${error.message || 'Lỗi không xác định'}`);
+      
+      // Fallback to basic info
+      setEditServiceDetails({
+        name: orderItem.serviceName,
+        price: orderItem.servicePrice,
+        imageUrl: null,
+        description: null,
+        extraCategories: []
+      });
+    } finally {
+      setLoadingEditService(false);
+    }
+  };
+
+  const fetchEditServiceDetails = async (serviceId) => {
+    try {
+      setLoadingEditService(true);
+      const response = await getRequest(`/service-details/${serviceId}`);
+      if (response.data) {
+        setEditServiceDetails(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching service details for edit:", error);
+      message.error("Không thể tải chi tiết dịch vụ");
+    } finally {
+      setLoadingEditService(false);
+    }
+  };
+
+  const handleEditExtraToggle = (extraId) => {
+    setEditSelectedExtras(prev => 
+      prev.includes(extraId) 
+        ? prev.filter(id => id !== extraId)
+        : [...prev, extraId]
+    );
+  };
+
+  // Function to check if an extra is currently selected (based on orderextraId mapping)
+  const isExtraCurrentlySelected = (extraId) => {
+    // First check if it's in the current selection
+    if (editSelectedExtras.includes(extraId)) return true;
+    
+    // Also check if this extra was originally in the order (by name matching)
+    if (editingOrderItem && editingOrderItem.extras) {
+      return editingOrderItem.extras.some(orderExtra => 
+        // We need to find a way to match, for now we'll use the extraId in the current selection
+        editSelectedExtras.includes(extraId)
+      );
+    }
+    
+    return false;
+  };
+
+  const calculateEditTotalPrice = () => {
+    if (!editingOrderItem || !editServiceDetails) return 0;
+    
+    let total = editingOrderItem.servicePrice * editQuantity;
+    
+    // Add selected extras price from service details (full available extras)
+    if (editServiceDetails.extraCategories) {
+      editServiceDetails.extraCategories.forEach(category => {
+        category.extras.forEach(extra => {
+          if (editSelectedExtras.includes(extra.extraId)) {
+            total += extra.price * editQuantity;
+          }
+        });
+      });
+    }
+    
+    return total;
+  };
+
+  const handleSubmitEditService = async () => {
+    try {
+      setLoadingEditService(true);
+      
+      if (!editingOrderItem || !editingOrderItem.orderitemId) {
+        throw new Error("Thông tin đơn hàng không hợp lệ");
+      }
+
+      if (editQuantity <= 0) {
+        throw new Error("Số lượng phải lớn hơn 0");
+      }
+
+      const payload = {
+        orderItemId: editingOrderItem.orderitemId,
+        quantity: editQuantity,
+        extraIds: editSelectedExtras
+      };
+      
+      console.log("Update payload:", payload);
+      
+      const response = await putRequest(`customer-staff/order/update-order`, payload);
+      
+      if (!response.data) {
+        throw new Error("Không nhận được phản hồi từ server");
+      }
+
+      message.success("Cập nhật dịch vụ thành công!");
+      setIsEditServiceModalOpen(false);
+      
+      // Refresh order details
+      const updatedResponse = await getRequest(`/orders/${orderId}`);
+      if (updatedResponse.data) {
+        setOrderDetails(updatedResponse.data);
+      } else {
+        message.warning("Đã cập nhật nhưng không thể tải lại thông tin đơn hàng");
+      }
+    } catch (error) {
+      console.error("Error updating service:", error);
+      
+      if (error.response) {
+        // Server responded with error status
+        const errorMessage = error.response.data?.message || error.response.data?.error || 'Lỗi từ server';
+        message.error(`Không thể cập nhật dịch vụ: ${errorMessage}`);
+      } else if (error.request) {
+        // Request was made but no response received
+        message.error("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        // Something else happened
+        message.error(`Lỗi cập nhật dịch vụ: ${error.message || 'Lỗi không xác định'}`);
+      }
+    } finally {
+      setLoadingEditService(false);
+    }
+  };
+
+  const handleCloseEditServiceModal = () => {
+    setIsEditServiceModalOpen(false);
+    setEditingOrderItem(null);
+    setEditServiceDetails(null);
+    setEditSelectedExtras([]);
+    setEditQuantity(1);
   };
 
   console.log("Order details:", orderDetails);
@@ -620,6 +950,19 @@ function OrderDetailDrawer(props) {
                                   {extra.extraName} (+{formatCurrency(extra.extraPrice)})
                                 </Tag>
                               ))}
+                            </div>
+                          )}
+                          {assignmentId && (
+                            <div style={{ marginTop: 12 }}>
+                              <Button
+                                type="primary"
+                                size="small"
+                                icon={<EditOutlined />}
+                                onClick={() => handleEditService(item)}
+                                style={{ backgroundColor: '#722ed1', borderColor: '#722ed1' }}
+                              >
+                                Chỉnh sửa
+                              </Button>
                             </div>
                           )}
                         </div>
@@ -1048,6 +1391,139 @@ function OrderDetailDrawer(props) {
             )}
           </>
         )}
+      </Modal>
+
+      {/* Modal Edit Service */}
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <EditOutlined style={{ color: '#722ed1', marginRight: 8 }} />
+            <span>Chỉnh sửa dịch vụ</span>
+          </div>
+        }
+        open={isEditServiceModalOpen}
+        onCancel={handleCloseEditServiceModal}
+        width={800}
+        footer={[
+          <Button
+            key="submit"
+            type="primary"
+            loading={loadingEditService}
+            onClick={handleSubmitEditService}
+            style={{ backgroundColor: '#722ed1', borderColor: '#722ed1' }}
+          >
+            Cập nhật dịch vụ
+          </Button>
+        ]}
+        destroyOnClose
+      >
+        {loadingEditService ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Spin size="large" tip="Đang tải..." />
+          </div>
+        ) : editingOrderItem && editServiceDetails ? (
+          <div>
+            {/* Service Info */}
+            <Card style={{ marginBottom: 16 }}>
+              <Row gutter={16}>
+
+                <Col span={16}>
+                  <Title level={4}>{editServiceDetails.name}</Title>
+                  <Text>Giá: <Text strong style={{ color: '#722ed1' }}>{formatCurrency(editServiceDetails.price)}</Text></Text>
+                  {editServiceDetails.description && (
+                    <div style={{ marginTop: 8 }}>
+                      <Text type="secondary">{editServiceDetails.description}</Text>
+                    </div>
+                  )}
+                </Col>
+              </Row>
+            </Card>
+
+            {/* Current Selection Info */}
+            <Card title="Thông tin hiện tại" style={{ marginBottom: 16, backgroundColor: '#fafafa' }}>
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Text strong>Số lượng hiện tại: </Text>
+                  <Text>{editingOrderItem.quantity}</Text>
+                </Col>
+                <Col span={8}>
+                  <Text strong>Dịch vụ bổ sung: </Text>
+                  <Text>{editingOrderItem.extras.length} dịch vụ</Text>
+                </Col>
+                <Col span={8}>
+                  <Text strong>Tổng tiền hiện tại: </Text>
+                  <Text style={{ color: '#722ed1' }}>{formatCurrency(editingOrderItem.subTotal)}</Text>
+                </Col>
+              </Row>
+              {editingOrderItem.extras.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <Text strong>Chi tiết dịch vụ bổ sung hiện tại: </Text>
+                  <div style={{ marginTop: 4 }}>
+                    {editingOrderItem.extras.map((extra, idx) => (
+                      <Tag key={idx} color="blue" style={{ margin: '2px' }}>
+                        {extra.extraName} (+{formatCurrency(extra.extraPrice)})
+                      </Tag>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {/* All Available Extras */}
+            {editServiceDetails && editServiceDetails.extraCategories && editServiceDetails.extraCategories.length > 0 && (
+              <Card title="Dịch vụ bổ sung" style={{ marginBottom: 16 }}>
+  
+                {editServiceDetails.extraCategories.map(category => (
+                  <div key={category.extraCategoryId} style={{ marginBottom: 16 }}>
+                    <Title level={5}>{category.categoryName}</Title>
+                    <Row gutter={[8, 8]}>
+                      {category.extras.map(extra => (
+                        <Col span={24} key={extra.extraId}>
+                          <Checkbox
+                            checked={editSelectedExtras.includes(extra.extraId)}
+                            onChange={() => handleEditExtraToggle(extra.extraId)}
+                          >
+                            <div style={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              width: '100%',
+                              alignItems: 'center'
+                            }}>
+                              <span>{extra.name}</span>
+                              <Text strong style={{ color: '#722ed1' }}>
+                                +{formatCurrency(extra.price)}
+                              </Text>
+                            </div>
+                          </Checkbox>
+                        </Col>
+                      ))}
+                    </Row>
+                  </div>
+                ))}
+              </Card>
+            )}
+
+            {/* Quantity */}
+            <Card title="Số lượng" style={{ marginBottom: 16 }}>
+              <InputNumber
+                min={1}
+                value={editQuantity}
+                onChange={(value) => setEditQuantity(value || 1)}
+                style={{ width: '100px' }}
+              />
+            </Card>
+
+            {/* Total Price */}
+            <Card>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Title level={4} style={{ margin: 0 }}>Tổng cộng mới:</Title>
+                <Title level={3} style={{ margin: 0, color: '#722ed1' }}>
+                  {formatCurrency(calculateEditTotalPrice())}
+                </Title>
+              </div>
+            </Card>
+          </div>
+        ) : null}
       </Modal>
     </Drawer>
   );
