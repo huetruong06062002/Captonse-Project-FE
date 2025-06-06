@@ -1,5 +1,3 @@
-
-
 const endPoints = {
   ALL: "/",
   DANH_SACH_TAT_CA_DON_HANG: "list-all-orders",
@@ -8,6 +6,7 @@ const endPoints = {
   DANH_SACH_DON_HANG_DA_NHAN: "list-orders-receiver",
   DANH_SACH_DON_HANG_DA_KIEM_TRA_CHAT_LUONG: "list-orders-checked-quality",
   DANH_SACH_DON_HANG_DANG_KIEM_TRA: "list-orders-checking",
+  DANH_SACH_DON_HANG_DA_GIAT_XONG_VA_KIEM_TRA: "list-orders-quality-checked",
   QUAN_LI_LICH_VANG_TAI_XE: "list-driver-absence",
   DANH_SACH_DON_HANG_DA_GIAO: "list-order-assignment",
   SERVICES: "services",
