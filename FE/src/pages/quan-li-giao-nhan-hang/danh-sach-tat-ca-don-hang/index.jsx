@@ -346,6 +346,12 @@ function ListAllOrders() {
       
       if (response && response.status === 200) {
         message.success(`Đã xóa thành công ${selectedRowKeys.length} đơn hàng`);
+        
+        // Nếu đơn hàng được xóa là kết quả tìm kiếm, ẩn kết quả tìm kiếm
+        if (searchResult && selectedRowKeys.includes(searchResult.orderId)) {
+          setSearchResult(null);
+        }
+        
         setSelectedRowKeys([]);
         fetchAllOrder();
       } else {
@@ -796,6 +802,16 @@ function ListAllOrders() {
                 >
                   Xem lịch sử
                 </Button>
+                <Button 
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => {
+                    setSelectedRowKeys([searchResult.orderId]);
+                    setIsDeleteModalVisible(true);
+                  }}
+                >
+                  Xóa đơn hàng
+                </Button>
               </Space>
             </div>
           </div>
@@ -1218,6 +1234,22 @@ function ListAllOrders() {
       >
         <div style={{ padding: '16px 0' }}>
           <p>Bạn có chắc chắn muốn xóa {selectedRowKeys.length} đơn hàng đã chọn?</p>
+          {selectedRowKeys.length === 1 && searchResult && selectedRowKeys[0] === searchResult.orderId && (
+            <div style={{ 
+              padding: '12px', 
+              backgroundColor: '#f6ffed', 
+              borderRadius: '6px', 
+              marginBottom: '12px',
+              border: '1px solid #b7eb8f'
+            }}>
+              <Text strong>Đơn hàng sẽ bị xóa:</Text>
+              <div style={{ marginTop: '8px' }}>
+                <Text>Mã: <Text strong style={{ color: '#1890ff' }}>{searchResult.orderId}</Text></Text><br/>
+                <Text>Tên: <Text strong>{searchResult.orderName}</Text></Text><br/>
+                <Text>Tổng giá: <Text strong style={{ color: '#d4380d' }}>{searchResult.totalPrice?.toLocaleString()} VND</Text></Text>
+              </div>
+            </div>
+          )}
           <p><Text strong>Lưu ý:</Text> Hành động này không thể hoàn tác và sẽ xóa tất cả dữ liệu liên quan.</p>
           
           <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
