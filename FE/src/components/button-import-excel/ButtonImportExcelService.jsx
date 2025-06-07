@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Button, message, Modal, Upload, Space, Typography, Divider } from 'antd';
 import { CloudUploadOutlined, InboxOutlined, DownloadOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import { useDispatch } from 'react-redux';
+import { fetchServices } from '@redux/features/serviceReducer/serviceSlice';
 
 const { Text, Link } = Typography;
 const { Dragger } = Upload;
@@ -10,7 +12,7 @@ const ButtonImportExcelService = () => {
   const [uploading, setUploading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fileList, setFileList] = useState([]);
-
+  const dispatch = useDispatch();
   const showModal = () => {
     setIsModalOpen(true);
   };
@@ -42,6 +44,7 @@ const ButtonImportExcelService = () => {
           },
         }
       );
+      dispatch(fetchServices());
       message.success('Tải file lên thành công!');
       setIsModalOpen(false);
       setFileList([]);
