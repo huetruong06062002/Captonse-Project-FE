@@ -47,7 +47,7 @@ export const createExtra = createAsyncThunk(
   async (extraData, { rejectWithValue, getState }) => {
     try {
       const response = await postRequestMultipartFormData("/extras", extraData, {});
-      message.success("Dịch vụ đã được tạo thành công");
+      // message.success("Dịch vụ đã được tạo thành công");
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -120,7 +120,7 @@ const extrasSlice = createSlice({
       .addCase(createExtra.fulfilled, (state, action) => {
         state.isLoading = false;
         state.extras.push(action.payload);
-        message.success("Dịch vụ đã được tạo thành công");
+        // message.success("Dịch vụ đã được tạo thành công");
       })
       .addCase(createExtra.rejected, (state, action) => {
         state.isLoading = false;

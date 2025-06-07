@@ -105,12 +105,34 @@ function ExtraCategories() {
   const handleDeleteCategory = async (extraCategoryId) => {
     try {
       setLoading(true);
+      
+      // Cập nhật UI ngay lập tức
+      if (categories) {
+        const updatedCategories = categories.filter(
+          category => category.extraCategoryId !== extraCategoryId
+        );
+        
+        // Cập nhật filteredCategories ngay lập tức
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = currentPage * pageSize;
+        setFilteredCategories(updatedCategories.slice(startIndex, endIndex));
+        
+        // Reset về trang 1 nếu trang hiện tại không còn dữ liệu
+        if (updatedCategories.slice(startIndex, endIndex).length === 0 && currentPage > 1) {
+          setCurrentPage(1);
+        }
+      }
+      
+      // Gọi API để xóa thực sự
       await dispatch(deleteExtraCategory(extraCategoryId));
-      message.success("Xóa danh mục thành công!");
+      
+      // Refresh lại để đồng bộ với server
       await dispatch(getExtraCategories());
+      
     } catch (error) {
-      message.error("Xóa danh mục thất bại!");
       console.error("Delete category error:", error);
+      // Nếu có lỗi, refresh lại để khôi phục data
+      await dispatch(getExtraCategories());
     } finally {
       setLoading(false);
     }
@@ -139,12 +161,30 @@ function ExtraCategories() {
   const handleDeleteExtra = async (extraId) => {
     try {
       setLoading(true);
+      
+      // Cập nhật UI ngay lập tức bằng cách filter local state
+      if (categories) {
+        const updatedCategories = categories.map(category => ({
+          ...category,
+          extras: category.extras?.filter(extra => extra.extraId !== extraId) || []
+        }));
+        
+        // Cập nhật filteredCategories ngay lập tức
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = currentPage * pageSize;
+        setFilteredCategories(updatedCategories.slice(startIndex, endIndex));
+      }
+      
+      // Gọi API để xóa thực sự
       await dispatch(deleteExtra(extraId));
-      message.success("Xóa dịch vụ thành công!");
+      
+      // Refresh lại để đồng bộ với server
       await dispatch(getExtraCategories());
+      
     } catch (error) {
-      message.error("Xóa dịch vụ thất bại!");
       console.error("Delete error:", error);
+      // Nếu có lỗi, refresh lại để khôi phục data
+      await dispatch(getExtraCategories());
     } finally {
       setLoading(false);
     }
@@ -167,11 +207,17 @@ function ExtraCategories() {
         price: values.price
       };
 
-      await dispatch(updateExtra(updatedExtra));
-      await dispatch(getExtraCategories());
-      message.success("Cập nhật thành công!");
-      setIsEditModalVisible(false);
-      editForm.resetFields();
+      const result = await dispatch(updateExtra(updatedExtra));
+      
+      if (result.type.endsWith('/fulfilled')) {
+        message.success("Cập nhật thành công!");
+        setIsEditModalVisible(false);
+        editForm.resetFields();
+        // Force refresh danh sách
+        await dispatch(getExtraCategories());
+      } else {
+        message.error("Cập nhật thất bại!");
+      }
     } catch (error) {
       message.error("Cập nhật thất bại!");
     } finally {
@@ -237,18 +283,17 @@ function ExtraCategories() {
                     Cập nhật dịch vụ
                   </Menu.Item>
                   <Menu.Item key="delete" style={{ padding: 0 }}>
-                    <Popconfirm
-                      title="Xóa dịch vụ"
-                      description="Bạn có chắc chắn muốn xóa dịch vụ này?"
-                      onConfirm={(e) => {
-                        e.stopPropagation();
-                        handleDeleteExtra(extra.extraId);
-                      }}
-                      onCancel={(e) => e.stopPropagation()}
-                      okText="Xóa"
-                      cancelText="Hủy"
-                      okButtonProps={{ danger: true }}
-                    >
+                                          <Popconfirm
+                        title="Xóa dịch vụ"
+                        description="Bạn có chắc chắn muốn xóa dịch vụ này?"
+                        onConfirm={(e) => {
+                          e.stopPropagation();
+                          handleDeleteExtra(extra.extraId);
+                        }}
+                        okText="Xóa"
+                        okButtonProps={{ danger: true }}
+                        cancelButtonProps={{ style: { display: 'none' } }}
+                      >
                       <div 
                         style={{ 
                           padding: '5px 12px', 
@@ -297,13 +342,22 @@ function ExtraCategories() {
       return;
     }
     try {
-      await dispatch(createExtraCategory(newCategoryName));
-      setIsModalVisible(false);
-      setNewCategoryName("");
-      message.success("Tạo danh mục thành công!");
-      dispatch(getExtraCategories());
+      setLoading(true);
+      const result = await dispatch(createExtraCategory(newCategoryName));
+      
+      if (result.type.endsWith('/fulfilled')) {
+        setIsModalVisible(false);
+        setNewCategoryName("");
+        message.success("Tạo danh mục thành công!");
+        // Force refresh danh sách
+        await dispatch(getExtraCategories());
+      } else {
+        message.error("Tạo danh mục thất bại!");
+      }
     } catch (error) {
       message.error("Tạo danh mục thất bại!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -336,12 +390,18 @@ function ExtraCategories() {
       formData.append("Image", newService.image);
 
       setLoading(true);
-      await dispatch(createExtra(formData));
-      message.success("Thêm dịch vụ thành công!");
-      setIsAddServiceModalVisible(false);
-      form.resetFields();
-      setNewService({ name: "", description: "", price: "", image: null });
-      dispatch(getExtraCategories());
+      const result = await dispatch(createExtra(formData));
+      
+      if (result.type.endsWith('/fulfilled')) {
+        message.success("Thêm dịch vụ thành công!");
+        setIsAddServiceModalVisible(false);
+        form.resetFields();
+        setNewService({ name: "", description: "", price: "", image: null });
+        // Force refresh danh sách
+        await dispatch(getExtraCategories());
+      } else {
+        message.error("Thêm dịch vụ thất bại!");
+      }
     } catch (error) {
       message.error("Thêm dịch vụ thất bại!");
     } finally {
@@ -456,8 +516,8 @@ function ExtraCategories() {
                                 description="Bạn có chắc chắn muốn xóa danh mục này? Tất cả dịch vụ trong danh mục cũng sẽ bị xóa."
                                 onConfirm={() => handleDeleteCategory(category.extraCategoryId)}
                                 okText="Xóa"
-                                cancelText="Hủy"
                                 okButtonProps={{ danger: true }}
+                                cancelButtonProps={{ style: { display: 'none' } }}
                               >
                                 <div 
                                   style={{ 
@@ -537,8 +597,7 @@ function ExtraCategories() {
         onOk={handleCreateExtraCategory}
         onCancel={() => setIsModalVisible(false)}
         okText="Tạo danh mục"
-        cancelText="Hủy"
-        cancelButtonProps={{ style: { display: 'inline-block' } }}
+        cancelButtonProps={{ style: { display: 'none' } }}
       >
         <Form layout="vertical">
           <Form.Item 
