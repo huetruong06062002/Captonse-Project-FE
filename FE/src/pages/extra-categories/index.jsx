@@ -102,10 +102,18 @@ function ExtraCategories() {
     setCurrentPage(page);
   };
 
-  const handleDeleteCategory = (extraCategoryId) => {
-    dispatch(deleteExtraCategory(extraCategoryId)).then(() =>
-      dispatch(getExtraCategories())
-    );
+  const handleDeleteCategory = async (extraCategoryId) => {
+    try {
+      setLoading(true);
+      await dispatch(deleteExtraCategory(extraCategoryId));
+      message.success("Xóa danh mục thành công!");
+      await dispatch(getExtraCategories());
+    } catch (error) {
+      message.error("Xóa danh mục thất bại!");
+      console.error("Delete category error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditExtra = (extra) => {
@@ -128,10 +136,18 @@ function ExtraCategories() {
     }, 100);
   };
 
-  const handleDeleteExtra = (extraId) => {
-    dispatch(deleteExtra(extraId)).then(() => {
-      dispatch(getExtraCategories());
-    });
+  const handleDeleteExtra = async (extraId) => {
+    try {
+      setLoading(true);
+      await dispatch(deleteExtra(extraId));
+      message.success("Xóa dịch vụ thành công!");
+      await dispatch(getExtraCategories());
+    } catch (error) {
+      message.error("Xóa dịch vụ thất bại!");
+      console.error("Delete error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleUpdateExtra = async () => {
@@ -220,16 +236,33 @@ function ExtraCategories() {
                   >
                     Cập nhật dịch vụ
                   </Menu.Item>
-                  <Menu.Item
-                    key="delete"
-                    icon={<DeleteOutlined style={{ color: '#ff4d4f' }} />}
-                    danger
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteExtra(extra.extraId);
-                    }}
-                  >
-                    Xóa dịch vụ
+                  <Menu.Item key="delete" style={{ padding: 0 }}>
+                    <Popconfirm
+                      title="Xóa dịch vụ"
+                      description="Bạn có chắc chắn muốn xóa dịch vụ này?"
+                      onConfirm={(e) => {
+                        e.stopPropagation();
+                        handleDeleteExtra(extra.extraId);
+                      }}
+                      onCancel={(e) => e.stopPropagation()}
+                      okText="Xóa"
+                      cancelText="Hủy"
+                      okButtonProps={{ danger: true }}
+                    >
+                      <div 
+                        style={{ 
+                          padding: '5px 12px', 
+                          color: '#ff4d4f',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <DeleteOutlined style={{ color: '#ff4d4f' }} />
+                        Xóa dịch vụ
+                      </div>
+                    </Popconfirm>
                   </Menu.Item>
                 </Menu>
               )}
@@ -417,13 +450,28 @@ function ExtraCategories() {
                               Thêm dịch vụ
                             </Menu.Item>
                             <Menu.Divider />
-                            <Menu.Item
-                              key="delete"
-                              danger
-                              icon={<DeleteOutlined />}
-                              onClick={() => handleDeleteCategory(category.extraCategoryId)}
-                            >
-                              Xóa danh mục
+                            <Menu.Item key="delete" style={{ padding: 0 }}>
+                              <Popconfirm
+                                title="Xóa danh mục"
+                                description="Bạn có chắc chắn muốn xóa danh mục này? Tất cả dịch vụ trong danh mục cũng sẽ bị xóa."
+                                onConfirm={() => handleDeleteCategory(category.extraCategoryId)}
+                                okText="Xóa"
+                                cancelText="Hủy"
+                                okButtonProps={{ danger: true }}
+                              >
+                                <div 
+                                  style={{ 
+                                    padding: '5px 12px', 
+                                    color: '#ff4d4f',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                  }}
+                                >
+                                  <DeleteOutlined />
+                                  Xóa danh mục
+                                </div>
+                              </Popconfirm>
                             </Menu.Item>
                           </Menu>
                         )}
