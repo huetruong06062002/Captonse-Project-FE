@@ -116,6 +116,8 @@ function ListAllOrders() {
   const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchResult, setSearchResult] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     fetchAllOrder();
@@ -362,6 +364,31 @@ function ListAllOrders() {
     setIsDeleteModalVisible(false);
   };
 
+  const handleSearchOrder = async (searchValue) => {
+    if (!searchValue || !searchValue.trim()) {
+      message.warning('Vui lòng nhập mã đơn hàng để tìm kiếm');
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await getRequest(`orders/search/${searchValue.trim()}`);
+      if (response && response.data) {
+        setSearchResult(response.data);
+        message.success('Tìm thấy đơn hàng: ' + response.data.orderId);
+      } else {
+        message.error('Không tìm thấy đơn hàng với mã: ' + searchValue);
+        setSearchResult(null);
+      }
+    } catch (error) {
+      console.error("Error searching order:", error);
+      message.error('Không tìm thấy đơn hàng với mã: ' + searchValue);
+      setSearchResult(null);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const columns = [
     {
       title: "Mã đơn hàng",
@@ -532,12 +559,13 @@ function ListAllOrders() {
           </Space>
           <Space>
             <Search
-              placeholder="Tìm kiếm đơn hàng..."
+              placeholder="Nhập mã đơn hàng để tìm kiếm..."
               allowClear
               enterButton={
                 <Button 
                   type="primary" 
                   icon={<SearchOutlined />}
+                  loading={isSearching}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -549,7 +577,7 @@ function ListAllOrders() {
                 </Button>
               }
               size="large"
-              onSearch={(value) => console.log("Search:", value)}
+              onSearch={handleSearchOrder}
               style={{ 
                 width: 400,
               }}
@@ -603,6 +631,175 @@ function ListAllOrders() {
             marginTop: '12px'
           }}
         />
+
+        {/* Kết quả tìm kiếm */}
+        {searchResult && (
+          <div style={{
+            marginTop: '24px',
+            padding: '20px',
+            backgroundColor: '#f6ffed',
+            border: '1px solid #b7eb8f',
+            borderRadius: '8px'
+          }}>
+            <div style={{ marginBottom: '16px' }}>
+              <Text strong style={{ fontSize: '16px', color: '#52c41a' }}>
+                🔍 Kết quả tìm kiếm
+              </Text>
+              <Button 
+                type="text" 
+                size="small" 
+                onClick={() => setSearchResult(null)}
+                style={{ float: 'right', color: '#999' }}
+              >
+                ✕ Đóng
+              </Button>
+            </div>
+            
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={12} md={8} lg={4}>
+                <div style={{ 
+                  padding: '12px', 
+                  backgroundColor: 'white', 
+                  borderRadius: '6px',
+                  textAlign: 'center'
+                }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>Mã đơn hàng</Text>
+                  <div>
+                    <Text 
+                      strong 
+                      style={{ 
+                        color: '#1890ff', 
+                        fontSize: '14px', 
+                        cursor: 'pointer' 
+                      }}
+                      onClick={() => handleViewDetail(searchResult.orderId)}
+                    >
+                      {searchResult.orderId}
+                    </Text>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col xs={24} sm={12} md={8} lg={5}>
+                <div style={{ 
+                  padding: '12px', 
+                  backgroundColor: 'white', 
+                  borderRadius: '6px',
+                  textAlign: 'center'
+                }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>Tên đơn hàng</Text>
+                  <div>
+                    <Text strong style={{ fontSize: '14px' }}>{searchResult.orderName}</Text>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col xs={24} sm={12} md={8} lg={3}>
+                <div style={{ 
+                  padding: '12px', 
+                  backgroundColor: 'white', 
+                  borderRadius: '6px',
+                  textAlign: 'center'
+                }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>Số lượng dịch vụ</Text>
+                  <div>
+                    <span style={{ 
+                      backgroundColor: '#f6ffed', 
+                      color: '#52c41a',
+                      padding: '2px 8px',
+                      borderRadius: '10px',
+                      fontWeight: 500,
+                      fontSize: '14px'
+                    }}>
+                      {searchResult.serviceCount}
+                    </span>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col xs={24} sm={12} md={8} lg={4}>
+                <div style={{ 
+                  padding: '12px', 
+                  backgroundColor: 'white', 
+                  borderRadius: '6px',
+                  textAlign: 'center'
+                }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>Tổng giá</Text>
+                  <div>
+                    <Text strong style={{ 
+                      color: '#d4380d', 
+                      fontSize: '14px' 
+                    }}>
+                      {searchResult.totalPrice?.toLocaleString()} VND
+                    </Text>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col xs={24} sm={12} md={8} lg={4}>
+                <div style={{ 
+                  padding: '12px', 
+                  backgroundColor: 'white', 
+                  borderRadius: '6px',
+                  textAlign: 'center'
+                }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>Ngày đặt hàng</Text>
+                  <div>
+                    <Text style={{ fontSize: '13px' }}>
+                      {formatDateTime(searchResult.orderedDate)}
+                    </Text>
+                  </div>
+                </div>
+              </Col>
+              
+              <Col xs={24} sm={12} md={8} lg={4}>
+                <div style={{ 
+                  padding: '12px', 
+                  backgroundColor: 'white', 
+                  borderRadius: '6px',
+                  textAlign: 'center'
+                }}>
+                  <Text type="secondary" style={{ fontSize: '12px' }}>Trạng thái</Text>
+                  <div style={{ marginTop: '4px' }}>
+                    <Tag style={{
+                      ...getStatusStyle(searchResult.orderStatus),
+                      fontSize: '11px',
+                      padding: '2px 8px'
+                    }}>
+                      {searchResult.orderStatus}
+                    </Tag>
+                  </div>
+                  {searchResult.emergency && (
+                    <div style={{ marginTop: '4px' }}>
+                      <Tag color="red" style={{ fontSize: '10px' }}>KHẨN CẤP</Tag>
+                    </div>
+                  )}
+                </div>
+              </Col>
+            </Row>
+            
+            <div style={{ 
+              marginTop: '16px', 
+              textAlign: 'center' 
+            }}>
+              <Space>
+                <Button 
+                  type="primary" 
+                  icon={<EyeOutlined />}
+                  onClick={() => handleViewDetail(searchResult.orderId)}
+                >
+                  Xem chi tiết
+                </Button>
+                <Button 
+                  icon={<HistoryOutlined />}
+                  onClick={() => handleViewHistory(searchResult.orderId)}
+                >
+                  Xem lịch sử
+                </Button>
+              </Space>
+            </div>
+          </div>
+        )}
       </div>
 
 
@@ -1038,6 +1235,8 @@ function ListAllOrders() {
           </div>
         </div>
       </Modal>
+
+
     </>
   );
 }
