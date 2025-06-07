@@ -44,6 +44,7 @@ export const ServicesDetail = (props) => {
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(null);
   const [selectedServicesUpdate, setSelectedServicesUpdate] = useState("");
   const [selectedServicesUpdateId, setSelectedServicesUpdateId] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const firstRender = useRef(true);
 
@@ -126,9 +127,15 @@ export const ServicesDetail = (props) => {
     formData.append("Description", Description || "");
     formData.append("Price", +Price);
 
-    // Kiểm tra nếu có ảnh được chọn với cách xử lý mới
-    if (Image && Image.file) {
-      formData.append("Image", Image.file);
+    // Kiểm tra nếu có ảnh được chọn - sử dụng selectedImage state
+    if (selectedImage) {
+      formData.append("Image", selectedImage);
+    }
+
+    // Debug: Kiểm tra dữ liệu FormData
+    console.log("FormData contents:");
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
     }
 
     try {
@@ -146,6 +153,7 @@ export const ServicesDetail = (props) => {
       message.success("Dịch vụ đã được thêm thành công");
       setAddSubCategoryModalVisible(false); // Đóng modal sau khi thêm
       form.resetFields(); // Reset form fields
+      setSelectedImage(null); // Reset selected image
       await getServiceDetail(); // Lấy lại thông tin chi tiết để cập nhật
     } catch (err) {
       message.error("Không thể thêm dịch vụ");
@@ -409,6 +417,7 @@ export const ServicesDetail = (props) => {
         onCancel={() => {
           setAddSubCategoryModalVisible(false);
           form.resetFields();
+          setSelectedImage(null);
         }}
         footer={null}
         width={600}
@@ -436,9 +445,9 @@ export const ServicesDetail = (props) => {
           >
             <Input.TextArea 
               placeholder="Nhập mô tả cho dịch vụ"
-              rows={4}
-              showCount
+              rows={3}
               maxLength={500}
+              style={{ resize: 'none' }}
             />
           </Form.Item>
           <Form.Item
@@ -459,49 +468,50 @@ export const ServicesDetail = (props) => {
           <Form.Item
             name="Image"
             label="Hình ảnh"
-            rules={[{ required: true, message: "Vui lòng tải hình ảnh" }]}
+            rules={[
+              { 
+                required: true, 
+                validator: () => {
+                  if (!selectedImage) {
+                    return Promise.reject('Vui lòng tải hình ảnh');
+                  }
+                  return Promise.resolve();
+                }
+              }
+            ]}
             tooltip="Hình ảnh minh họa cho dịch vụ"
           >
-            <div className="upload-container">
-              <input 
-                type="file" 
-                id="subcategory-image-upload"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) {
-                    // Set the file to form
-                    form.setFieldsValue({
-                      Image: { file: file, fileList: [{ originFileObj: file }] }
-                    });
-                  }
-                }}
-                accept="image/*" 
-                style={{ display: 'none' }}
-              />
-              <Button 
-                onClick={() => document.getElementById('subcategory-image-upload').click()}
-                icon={<FileImageOutlined />} 
-                type="primary"
-              >
-                Chọn ảnh
-              </Button>
-              <Text type="secondary" style={{ marginLeft: 8 }}>
-                {form.getFieldValue('Image')?.file?.name || 'Chưa chọn ảnh'}
-              </Text>
-            </div>
-            
-            {form.getFieldValue('Image')?.file && (
-              <div className="image-preview" style={{ marginTop: 16 }}>
-                <img 
-                  src={URL.createObjectURL(form.getFieldValue('Image').file)} 
-                  alt="Preview" 
-                  style={{ maxWidth: '100%', maxHeight: '200px' }}
+            <Upload
+              name="image"
+              listType="picture-card"
+              className="avatar-uploader"
+              showUploadList={false}
+              beforeUpload={(file) => {
+                // Set file vào state
+                setSelectedImage(file);
+                // Trigger form validation
+                form.validateFields(['Image']);
+                return false; // Ngăn auto upload
+              }}
+              accept="image/*"
+            >
+              {selectedImage ? (
+                <img
+                  src={URL?.createObjectURL(selectedImage)}
+                  alt="preview"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
                 />
-                <div style={{ marginTop: 8 }}>
-                  <Text type="secondary">Hình ảnh xem trước</Text>
+              ) : (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Tải ảnh lên</div>
                 </div>
-              </div>
-            )}
+              )}
+            </Upload>
           </Form.Item>
           
           <Divider />
@@ -511,6 +521,7 @@ export const ServicesDetail = (props) => {
               <Button onClick={() => {
                 setAddSubCategoryModalVisible(false);
                 form.resetFields();
+                setSelectedImage(null);
               }}>
                 Hủy
               </Button>
