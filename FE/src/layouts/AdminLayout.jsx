@@ -56,6 +56,7 @@ import { imageBaseUrl } from "@utils/imageUtils";
 import DashBoard from "@pages/dashboard";
 import ConfirmOrderPending from "@pages/confirm-order-pending";
 import { getRequestParams } from "@services/api";
+import { RiAedElectrodesLine } from 'react-icons/ri';
 
 const { Header, Sider, Content } = Layout;
 
@@ -347,6 +348,12 @@ const AdminLayout = () => {
       label: createLabelWithTooltip("Chính sách"),
       allowedRoles: ["Admin"],
     },
+    {
+      key: endPoints.CHATWIITHAI,
+      icon: <RiAedElectrodesLine  />,
+      label: createLabelWithTooltip("Chat với ai support"),
+      allowedRoles: ["Admin"],
+    },
   ], [collapsed]);
 
   const menuItemsRef = useRef(menuItems);
@@ -445,7 +452,6 @@ const AdminLayout = () => {
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-    ABCXYZ
       <Sider
         trigger={null}
         collapsible
